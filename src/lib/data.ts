@@ -7,7 +7,6 @@ export const basicDecks: Deck[] = [
     description: 'Master the fundamental Japanese syllabary.',
     cardCount: 46,
     isCustom: false,
-    imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'hiragana chart'
   },
   {
@@ -16,7 +15,6 @@ export const basicDecks: Deck[] = [
     description: 'Learn the script used for foreign words.',
     cardCount: 46,
     isCustom: false,
-    imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'katakana chart'
   },
   {
@@ -25,7 +23,6 @@ export const basicDecks: Deck[] = [
     description: 'Essential words for beginner proficiency.',
     cardCount: 100,
     isCustom: false,
-    imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'japanese vocabulary'
   },
 ];
@@ -37,7 +34,6 @@ export const userDecks: Deck[] = [
     description: 'Useful phrases for your trip to Japan.',
     cardCount: 25,
     isCustom: true,
-    imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'japan travel'
   },
 ];
@@ -83,6 +79,33 @@ export const grammarPoints: GrammarPoint[] = [
       { japanese: 'かれはすしをたべます。', english: 'He eats sushi. (Kare wa sushi o tabemasu.)' },
     ],
   },
+  {
+    id: 'g-3',
+    title: 'Possessive Particle 「の」 (no)',
+    explanation: 'The particle 「の」 (no) is used to show possession, similar to "apostrophe s" in English. It links two nouns, where the first noun possesses or describes the second noun.',
+    examples: [
+      { japanese: 'これはわたしのペンです。', english: 'This is my pen. (Kore wa watashi no pen desu.)' },
+      { japanese: 'さくらさんのかばんは大きいです。', english: 'Sakura\'s bag is big. (Sakura-san no kaban wa ookii desu.)' },
+    ],
+  },
+    {
+    id: 'g-4',
+    title: 'Adjectives (い-Adjectives and な-Adjectives)',
+    explanation: 'Japanese has two types of adjectives. い-adjectives end with い (like "ookii" - big). な-adjectives require な (na) when they come before a noun (like "kirei na hana" - beautiful flower).',
+    examples: [
+      { japanese: 'このラーメンはおいしいです。', english: 'This ramen is delicious. (Kono raamen wa oishii desu.)' },
+      { japanese: 'しずかなへやがすきです。', english: 'I like quiet rooms. (Shizuka na heya ga suki desu.)' },
+    ],
+  },
+  {
+    id: 'g-5',
+    title: 'Question Particle 「か」 (ka)',
+    explanation: 'To turn a statement into a question, you simply add the particle 「か」 (ka) to the end of the sentence. The word order does not change, and a question mark is usually not necessary in formal writing.',
+    examples: [
+      { japanese: 'これはペンですか。', english: 'Is this a pen? (Kore wa pen desu ka.)' },
+      { japanese: 'さとうさんはせんせいですか。', english: 'Is Mr. Sato a teacher? (Satou-san wa sensei desu ka.)' },
+    ],
+  }
 ];
 
 export const quizzes: Quiz[] = [
