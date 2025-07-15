@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,20 +12,7 @@ type DeckCardProps = {
 export function DeckCard({ deck }: DeckCardProps) {
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
-      <CardHeader className="p-0">
-        <Link href={`/decks/${deck.id}`} className="block">
-          <div className="relative aspect-video">
-            <Image
-              src={deck.imageUrl || 'https://placehold.co/600x400.png'}
-              alt={deck.name}
-              fill
-              className="object-cover"
-              data-ai-hint={deck.aiHint}
-            />
-          </div>
-        </Link>
-      </CardHeader>
-      <CardContent className="flex-grow p-4">
+      <CardHeader>
         <div className="flex justify-between items-start">
             <CardTitle className="font-headline text-lg mb-2">
                 <Link href={`/decks/${deck.id}`} className="hover:text-primary transition-colors">
@@ -35,6 +21,8 @@ export function DeckCard({ deck }: DeckCardProps) {
             </CardTitle>
             {deck.isCustom && <Badge variant="outline">Custom</Badge>}
         </div>
+      </CardHeader>
+      <CardContent className="flex-grow p-4 pt-0">
         <p className="text-sm text-muted-foreground line-clamp-2">{deck.description}</p>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between items-center">
