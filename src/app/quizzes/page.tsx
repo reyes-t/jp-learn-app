@@ -2,6 +2,7 @@ import { quizzes } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileQuestion, PlayCircle } from "lucide-react";
+import Link from "next/link";
 
 export default function QuizzesPage() {
   return (
@@ -27,10 +28,19 @@ export default function QuizzesPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button className="w-full">
-                <PlayCircle className="mr-2 h-4 w-4" />
-                Start Quiz
-              </Button>
+              {quiz.deckId ? (
+                <Button className="w-full" asChild>
+                  <Link href={`/decks/${quiz.deckId}/study`}>
+                    <PlayCircle className="mr-2 h-4 w-4" />
+                    Start Quiz
+                  </Link>
+                </Button>
+              ) : (
+                <Button className="w-full" disabled>
+                  <PlayCircle className="mr-2 h-4 w-4" />
+                  Start Quiz
+                </Button>
+              )}
             </CardFooter>
           </Card>
         ))}
