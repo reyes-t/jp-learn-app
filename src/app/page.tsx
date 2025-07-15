@@ -9,21 +9,6 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto">
-      <section className="text-center py-16 md:py-24">
-        <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4">
-          Master Japanese, Your Way
-        </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-          An all-in-one platform to learn Japanese with AI-powered flashcards,
-          grammar guides, and interactive quizzes.
-        </p>
-        <Button size="lg" asChild>
-          <Link href="/decks">
-            Start Learning Now <ArrowRight className="ml-2" />
-          </Link>
-        </Button>
-      </section>
-
       <section id="decks" className="py-12">
         <div className="flex items-center justify-between mb-8">
             <div>
