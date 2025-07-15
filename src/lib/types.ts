@@ -16,7 +16,7 @@ export type Card = {
 };
 
 export type GrammarPoint = {
-  id: string;
+  id:string;
   title: string;
   explanation: string;
   examples: {
@@ -25,10 +25,17 @@ export type GrammarPoint = {
   }[];
 };
 
+export type QuizQuestion = {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+};
+
 export type Quiz = {
   id: string;
   title: string;
   description: string;
-  questionCount: number;
-  deckId?: string;
+  questions: QuizQuestion[];
 };

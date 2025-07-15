@@ -24,23 +24,16 @@ export default function QuizzesPage() {
             <CardContent className="flex-grow">
               <div className="flex items-center text-sm text-muted-foreground">
                 <FileQuestion className="mr-2 h-4 w-4" />
-                <span>{quiz.questionCount} questions</span>
+                <span>{quiz.questions.length} questions</span>
               </div>
             </CardContent>
             <CardFooter>
-              {quiz.deckId ? (
                 <Button className="w-full" asChild>
-                  <Link href={`/decks/${quiz.deckId}/study`}>
+                  <Link href={`/quizzes/${quiz.id}`}>
                     <PlayCircle className="mr-2 h-4 w-4" />
                     Start Quiz
                   </Link>
                 </Button>
-              ) : (
-                <Button className="w-full" disabled>
-                  <PlayCircle className="mr-2 h-4 w-4" />
-                  Start Quiz
-                </Button>
-              )}
             </CardFooter>
           </Card>
         ))}

@@ -109,6 +109,26 @@ export const grammarPoints: GrammarPoint[] = [
 ];
 
 export const quizzes: Quiz[] = [
-    { id: 'q-1', title: 'Hiragana Challenge', description: 'Test your knowledge of the basic Hiragana characters.', questionCount: 20, deckId: 'hiragana' },
-    { id: 'q-2', title: 'N5 Vocabulary Quiz', description: 'How well do you know the essential N5 words?', questionCount: 25, deckId: 'n5-vocab' },
+    {
+        id: 'q-1',
+        title: 'Beginner Grammar Quiz',
+        description: 'Test your knowledge of basic Japanese sentence structure.',
+        questions: [
+            { id: 'q1-1', question: 'Which particle is used to mark the topic of a sentence?', options: ['を (o)', 'が (ga)', 'は (wa)', 'に (ni)'], correctAnswer: 'は (wa)', explanation: '「は」 (wa) is the topic marker particle, indicating what the sentence is about.' },
+            { id: 'q1-2', question: 'How do you say "I am a student" in polite Japanese?', options: ['Watashi wa gakusei da', 'Watashi wa gakusei desu', 'Watashi ga gakusei desu', 'Gakusei desu watashi wa'], correctAnswer: 'Watashi wa gakusei desu', explanation: '「です」 (desu) is the polite copula used at the end of a sentence to state what something is.' },
+            { id: 'q1-3', question: 'What does「これ」 (kore) mean?', options: ['That (near you)', 'That (over there)', 'This', 'Where'], correctAnswer: 'This', explanation: '「これ」 (kore) means "this," referring to something close to the speaker.' },
+            { id: 'q1-4', question: 'Which of the following is an い-adjective?', options: ['きれい (kirei)', 'しずか (shizuka)', 'げんき (genki)', 'おいしい (oishii)'], correctAnswer: 'おいしい (oishii)', explanation: 'い-adjectives end with the hiragana character い, like おいしい (delicious).' },
+            { id: 'q1-5', question: 'How do you turn a statement into a question?', options: ['Add 「か」 (ka) to the end', 'Add 「ね」 (ne) to the end', 'Change the verb form', 'Reverse the word order'], correctAnswer: 'Add 「か」 (ka) to the end', explanation: 'Adding the particle 「か」 (ka) to the end of a declarative sentence turns it into a question.' },
+        ]
+    },
+    {
+        id: 'q-2',
+        title: 'N5 Vocabulary Quiz',
+        description: 'How well do you know the essential N5 words?',
+        questions: [
+            { id: 'q2-1', question: 'What is the Japanese word for "teacher"?', options: ['医者 (isha)', '学生 (gakusei)', '会社員 (kaishain)', '先生 (sensei)'], correctAnswer: '先生 (sensei)', explanation: '「先生」 (sensei) is the word for teacher. It can also be used as a title of respect for doctors, lawyers, and other professionals.' },
+            { id: 'q2-2', question: 'The word 「ともだち」 (tomodachi) means:', options: ['Family', 'Friend', 'Coworker', 'Sibling'], correctAnswer: 'Friend', explanation: '「ともだち」 (tomodachi) is the common word for "friend".' },
+            { id: 'q2-3', question: 'Which word means "to eat"?', options: ['のむ (nomu)', 'たべる (taberu)', 'かう (kau)', 'みる (miru)'], correctAnswer: 'たべる (taberu)', explanation: '「たべる」 (taberu) is the dictionary form of the verb "to eat".' },
+        ]
+    },
 ];
