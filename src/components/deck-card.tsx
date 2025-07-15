@@ -14,7 +14,7 @@ export function DeckCard({ deck }: DeckCardProps) {
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
       <CardHeader className="p-0">
-        <Link href={`/dashboard/decks/${deck.id}`} className="block">
+        <Link href={`/decks/${deck.id}`} className="block">
           <div className="relative aspect-video">
             <Image
               src={deck.imageUrl || 'https://placehold.co/600x400.png'}
@@ -29,7 +29,7 @@ export function DeckCard({ deck }: DeckCardProps) {
       <CardContent className="flex-grow p-4">
         <div className="flex justify-between items-start">
             <CardTitle className="font-headline text-lg mb-2">
-                <Link href={`/dashboard/decks/${deck.id}`} className="hover:text-primary transition-colors">
+                <Link href={`/decks/${deck.id}`} className="hover:text-primary transition-colors">
                     {deck.name}
                 </Link>
             </CardTitle>
@@ -43,7 +43,7 @@ export function DeckCard({ deck }: DeckCardProps) {
             <span>{deck.cardCount} cards</span>
         </div>
         <Button asChild size="sm">
-          <Link href={`/dashboard/decks/${deck.id}/study`}>Study</Link>
+          <Link href={`/decks/${deck.id}/study`}>Study</Link>
         </Button>
       </CardFooter>
     </Card>

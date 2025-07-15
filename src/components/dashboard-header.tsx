@@ -22,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { CircleUser, Home, Search } from "lucide-react"
+import React from "react"
 
 export function DashboardHeader() {
   const pathname = usePathname()
@@ -34,7 +35,7 @@ export function DashboardHeader() {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/dashboard">
+              <Link href="/">
                 <Home className="h-4 w-4" />
               </Link>
             </BreadcrumbLink>

@@ -69,7 +69,7 @@ export default function StudyPage() {
                         setIncorrectAnswers(0);
                     }}>Study Again</Button>
                     <Button variant="outline" asChild>
-                        <Link href={`/dashboard/decks/${deck.id}`}>Back to Deck</Link>
+                        <Link href={`/decks/${deck.id}`}>Back to Deck</Link>
                     </Button>
                 </CardFooter>
             </Card>
@@ -82,7 +82,7 @@ export default function StudyPage() {
       <div className="w-full max-w-lg">
         <div className="flex justify-between items-center mb-2">
             <Link
-                href={`/dashboard/decks/${deck.id}`}
+                href={`/decks/${deck.id}`}
                 className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
             >
                 <ArrowLeft className="w-4 h-4" />

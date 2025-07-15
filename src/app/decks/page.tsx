@@ -4,13 +4,13 @@ import { basicDecks, userDecks } from '@/lib/data';
 import { PlusCircle, BookHeart } from 'lucide-react';
 import { CreateDeckDialog } from '@/components/create-deck-dialog';
 
-export default function DashboardPage() {
+export default function DecksPage() {
   return (
     <div className="container mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Welcome back!</h1>
-          <p className="text-muted-foreground">Continue your Japanese learning journey.</p>
+          <h1 className="text-3xl font-bold font-headline">Your Decks</h1>
+          <p className="text-muted-foreground">Manage your flashcard decks.</p>
         </div>
         <CreateDeckDialog />
       </div>
@@ -18,7 +18,7 @@ export default function DashboardPage() {
       <section>
         <h2 className="text-2xl font-semibold font-headline mb-4 flex items-center gap-2">
             <BookHeart className="text-primary"/>
-            Your Decks
+            Your Custom Decks
         </h2>
         {userDecks.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

@@ -18,7 +18,7 @@ export default function DeckDetailPage({ params }: { params: { id: string } }) {
   return (
     <div className="container mx-auto">
        <Link
-          href="/dashboard"
+          href="/decks"
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -31,7 +31,7 @@ export default function DeckDetailPage({ params }: { params: { id: string } }) {
         </div>
         <div className="flex gap-2">
           <Button asChild>
-            <Link href={`/dashboard/decks/${deck.id}/study`}>
+            <Link href={`/decks/${deck.id}/study`}>
               <PlayCircle className="mr-2 h-4 w-4" />
               Study Deck
             </Link>
