@@ -1,18 +1,63 @@
-import { allDecks, cards as allCards } from '@/lib/data';
+
+"use client";
+
+import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, PlayCircle, PlusCircle, Sparkles } from 'lucide-react';
+import { ArrowLeft, PlayCircle, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddCardSheet } from '@/components/add-card-sheet';
+import type { Deck, Card as CardType } from '@/lib/types';
+import { allDecks as initialDecks } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DeckDetailPage({ params }: { params: { id: string } }) {
-  const deck = allDecks.find((d) => d.id === params.id);
-  const cards = allCards.filter((c) => c.deckId === params.id);
+  const [deck, setDeck] = useState<Deck | undefined>(undefined);
+  const [cards, setCards] = useState<CardType[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Load all decks from localStorage or fall back to initial data
+    const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
+    const allDecks = [...initialDecks, ...storedDecks];
+    const currentDeck = allDecks.find((d) => d.id === params.id);
+    setDeck(currentDeck);
+
+    // Load cards from localStorage or fall back to empty array
+    const storedCards = JSON.parse(localStorage.getItem(`cards_${params.id}`) || '[]');
+    setCards(storedCards);
+  }, [params.id]);
+
+  const handleCardAdded = (newCard: { front: string; back: string }) => {
+    const newCardWithId: CardType = {
+      id: `card-${Date.now()}`,
+      deckId: params.id,
+      ...newCard,
+    };
+    
+    const updatedCards = [...cards, newCardWithId];
+    setCards(updatedCards);
+    localStorage.setItem(`cards_${params.id}`, JSON.stringify(updatedCards));
+
+    // Also update the card count in the deck list
+    const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
+    const updatedDecks = storedDecks.map((d: Deck) => 
+      d.id === params.id ? { ...d, cardCount: updatedCards.length } : d
+    );
+    localStorage.setItem('userDecks', JSON.stringify(updatedDecks));
+
+
+    toast({
+        title: "Card Added!",
+        description: "Your new card has been saved to the deck.",
+    });
+  };
 
   if (!deck) {
-    notFound();
+    // Still loading or not found
+    return null; 
   }
 
   return (
@@ -36,7 +81,7 @@ export default function DeckDetailPage({ params }: { params: { id: string } }) {
               Study Deck
             </Link>
           </Button>
-          <AddCardSheet />
+          <AddCardSheet onCardAdded={handleCardAdded} />
         </div>
       </div>
       

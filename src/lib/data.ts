@@ -32,7 +32,7 @@ export const userDecks: Deck[] = [
     id: 'travel-phrases',
     name: 'Travel Phrases',
     description: 'Useful phrases for your trip to Japan.',
-    cardCount: 25,
+    cardCount: 3,
     isCustom: true,
     aiHint: 'japan travel'
   },

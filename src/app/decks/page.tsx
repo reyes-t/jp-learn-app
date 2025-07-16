@@ -1,18 +1,31 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DeckCard } from '@/components/deck-card';
 import { CreateDeckDialog } from '@/components/create-deck-dialog';
-import { basicDecks as initialBasicDecks, userDecks as initialUserDecks } from '@/lib/data';
+import { basicDecks as initialBasicDecks } from '@/lib/data';
 import { BookHeart } from 'lucide-react';
 import type { Deck } from '@/lib/types';
 
 export default function DecksPage() {
-  const [userDecks, setUserDecks] = useState<Deck[]>(initialUserDecks);
+  const [userDecks, setUserDecks] = useState<Deck[]>([]);
+
+  useEffect(() => {
+    // Load decks from localStorage on initial render
+    const savedDecks = localStorage.getItem('userDecks');
+    if (savedDecks) {
+      setUserDecks(JSON.parse(savedDecks));
+    }
+  }, []);
 
   const handleDeckCreated = (newDeck: Deck) => {
-    setUserDecks((prevDecks) => [newDeck, ...prevDecks]);
+    setUserDecks((prevDecks) => {
+      const updatedDecks = [newDeck, ...prevDecks];
+      // Save updated decks to localStorage
+      localStorage.setItem('userDecks', JSON.stringify(updatedDecks));
+      return updatedDecks;
+    });
   };
 
   return (
