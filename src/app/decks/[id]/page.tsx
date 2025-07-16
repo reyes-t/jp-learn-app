@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { notFound } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, PlayCircle, Sparkles } from 'lucide-react';
@@ -13,38 +13,42 @@ import type { Deck, Card as CardType } from '@/lib/types';
 import { allDecks as initialDecks } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 
-export default function DeckDetailPage({ params }: { params: { id: string } }) {
+export default function DeckDetailPage() {
+  const params = useParams();
+  const deckId = params.id as string;
   const [deck, setDeck] = useState<Deck | undefined>(undefined);
   const [cards, setCards] = useState<CardType[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!deckId) return;
+
     // Load all decks from localStorage or fall back to initial data
     const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
     const allDecks = [...initialDecks, ...storedDecks];
-    const currentDeck = allDecks.find((d) => d.id === params.id);
+    const currentDeck = allDecks.find((d) => d.id === deckId);
     setDeck(currentDeck);
 
     // Load cards from localStorage or fall back to empty array
-    const storedCards = JSON.parse(localStorage.getItem(`cards_${params.id}`) || '[]');
+    const storedCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
     setCards(storedCards);
-  }, [params.id]);
+  }, [deckId]);
 
   const handleCardAdded = (newCard: { front: string; back: string }) => {
     const newCardWithId: CardType = {
       id: `card-${Date.now()}`,
-      deckId: params.id,
+      deckId: deckId,
       ...newCard,
     };
     
     const updatedCards = [...cards, newCardWithId];
     setCards(updatedCards);
-    localStorage.setItem(`cards_${params.id}`, JSON.stringify(updatedCards));
+    localStorage.setItem(`cards_${deckId}`, JSON.stringify(updatedCards));
 
     // Also update the card count in the deck list
     const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
     const updatedDecks = storedDecks.map((d: Deck) => 
-      d.id === params.id ? { ...d, cardCount: updatedCards.length } : d
+      d.id === deckId ? { ...d, cardCount: updatedCards.length } : d
     );
     localStorage.setItem('userDecks', JSON.stringify(updatedDecks));
 
