@@ -39,52 +39,54 @@ export function DashboardHeader({
   return (
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b bg-background px-4 md:px-6">
       <SidebarTrigger className="md:hidden" />
-      <Breadcrumb className="hidden md:flex">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/">
-                <Home className="h-4 w-4" />
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          {pathSegments.map((segment, index) => {
-            const href = "/" + pathSegments.slice(0, index + 1).join("/")
-            const isLast = index === pathSegments.length - 1
-            const segmentTitle = isLast && title ? title : capitalize(segment);
-            
-            return (
-              <React.Fragment key={href}>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  {isLast ? (
-                    <BreadcrumbPage className="font-headline capitalize">
-                      {segmentTitle}
-                    </BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink asChild>
-                      <Link href={href} className="font-headline capitalize">
-                        {segment}
-                      </Link>
-                    </BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
-              </React.Fragment>
-            )
-          })}
-        </BreadcrumbList>
-      </Breadcrumb>
-      <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <form className="ml-auto flex-1 sm:flex-initial">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search decks or lessons..."
-              className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-            />
-          </div>
-        </form>
+      <div className="flex w-full items-center gap-4 md:gap-2 lg:gap-4">
+        <Breadcrumb className="hidden flex-1 md:flex">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/">
+                  <Home className="h-4 w-4" />
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            {pathSegments.map((segment, index) => {
+              const href = "/" + pathSegments.slice(0, index + 1).join("/")
+              const isLast = index === pathSegments.length - 1
+              const segmentTitle = isLast && title ? title : capitalize(segment);
+              
+              return (
+                <React.Fragment key={href}>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    {isLast ? (
+                      <BreadcrumbPage className="font-headline capitalize">
+                        {segmentTitle}
+                      </BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink asChild>
+                        <Link href={href} className="font-headline capitalize">
+                          {segment}
+                        </Link>
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+                </React.Fragment>
+              )
+            })}
+          </BreadcrumbList>
+        </Breadcrumb>
+        <div className="ml-auto flex-shrink-0">
+          <form>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search decks or lessons..."
+                className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+              />
+            </div>
+          </form>
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">
