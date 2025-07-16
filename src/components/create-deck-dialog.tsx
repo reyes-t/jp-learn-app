@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState } from "react";
 import {
@@ -8,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,8 +18,13 @@ import { PlusCircle, Sparkles, Wand2 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { useToast } from "@/hooks/use-toast";
 import { generateFlashcards } from "@/app/actions";
+import type { Deck } from "@/lib/types";
 
-export function CreateDeckDialog() {
+interface CreateDeckDialogProps {
+    onDeckCreated: (newDeck: Deck) => void;
+}
+
+export function CreateDeckDialog({ onDeckCreated }: CreateDeckDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -31,18 +36,24 @@ export function CreateDeckDialog() {
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
     
-    // In a real app, you'd call a server action here to create the deck.
-    console.log("Creating deck:", { name, description });
+    const newDeck: Deck = {
+        id: `custom-${Date.now()}`,
+        name,
+        description,
+        cardCount: 0,
+        isCustom: true,
+    };
+
+    onDeckCreated(newDeck);
+    
     toast({
       title: "Deck Created!",
       description: `The deck "${name}" has been created.`,
     });
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
     setIsSubmitting(false);
     setOpen(false);
+    (event.target as HTMLFormElement).reset();
   };
   
   const handleAiSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -58,9 +69,17 @@ export function CreateDeckDialog() {
     
     const result = await generateFlashcards({ topic });
     
-    if (result.success) {
-      // In a real app, you'd save this deck and its cards.
-      console.log("Generated deck:", result.data);
+    if (result.success && result.data) {
+      const newDeck: Deck = {
+        id: `ai-${Date.now()}`,
+        name: topic,
+        description: `An AI-generated deck about ${topic}.`,
+        cardCount: result.data.flashcards.length,
+        isCustom: true,
+      };
+      onDeckCreated(newDeck);
+      // In a real app, you'd also save the generated cards associated with this deck.
+      console.log("Generated cards:", result.data.flashcards);
       toast({
         title: "Deck Generated Successfully!",
         description: `Your new deck on "${topic}" is ready.`,
@@ -75,6 +94,7 @@ export function CreateDeckDialog() {
     
     setIsSubmitting(false);
     setOpen(false);
+    (event.target as HTMLFormElement).reset();
   };
 
   return (
