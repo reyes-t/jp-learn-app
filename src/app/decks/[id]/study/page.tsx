@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { allDecks as initialDecks } from '@/lib/data';
+import { allDecks as initialDecks, cards as initialCards } from '@/lib/data';
 import type { Card as CardType, Deck } from '@/lib/types';
 import { Flashcard } from '@/components/flashcard';
 import { Button } from '@/components/ui/button';
@@ -30,9 +30,17 @@ export default function StudyPage() {
     const currentDeck = allDecks.find((d) => d.id === deckId);
     setDeck(currentDeck);
 
-    // Load cards from localStorage for the specific deck
-    const storedCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
-    setCards(storedCards);
+    if (currentDeck) {
+      if (currentDeck.isCustom) {
+        // Load cards from localStorage for custom decks
+        const storedCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
+        setCards(storedCards);
+      } else {
+        // Load cards from initial data for pre-generated decks
+        const pregenCards = initialCards.filter(card => card.deckId === deckId);
+        setCards(pregenCards);
+      }
+    }
   }, [deckId]);
 
   if (!deck) {
@@ -69,7 +77,7 @@ export default function StudyPage() {
                     <CardTitle className="font-headline text-2xl">No Cards in Deck</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p>This deck doesn't have any cards yet. Add some cards to start studying!</p>
+                    <p>This deck doesn't have any cards yet. {deck.isCustom ? "Add some cards to start studying!" : ""}</p>
                 </CardContent>
                 <CardFooter className="flex-col gap-4">
                     <Button variant="outline" asChild>

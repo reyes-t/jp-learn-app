@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddCardSheet } from '@/components/add-card-sheet';
 import type { Deck, Card as CardType } from '@/lib/types';
-import { allDecks as initialDecks } from '@/lib/data';
+import { allDecks as initialDecks, cards as initialCards } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { EditCardSheet } from '@/components/edit-card-sheet';
 
@@ -30,9 +30,17 @@ export default function DeckDetailPage() {
     const currentDeck = allDecks.find((d) => d.id === deckId);
     setDeck(currentDeck);
 
-    // Load cards from localStorage or fall back to empty array
-    const storedCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
-    setCards(storedCards);
+    if (currentDeck) {
+      if (currentDeck.isCustom) {
+        // Load cards from localStorage for custom decks
+        const storedCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
+        setCards(storedCards);
+      } else {
+        // Load cards from initial data for pre-generated decks
+        const pregenCards = initialCards.filter(card => card.deckId === deckId);
+        setCards(pregenCards);
+      }
+    }
   }, [deckId]);
 
   const handleCardAdded = (newCard: { front: string; back: string }) => {
@@ -98,7 +106,7 @@ export default function DeckDetailPage() {
               Study Deck
             </Link>
           </Button>
-          <AddCardSheet onCardAdded={handleCardAdded} />
+          {deck.isCustom && <AddCardSheet onCardAdded={handleCardAdded} />}
         </div>
       </div>
       
@@ -111,10 +119,12 @@ export default function DeckDetailPage() {
                         This deck has {cards.length} card{cards.length === 1 ? '' : 's'}.
                     </CardDescription>
                 </div>
-                <Button variant="outline">
+                 {deck.isCustom && (
+                  <Button variant="outline">
                     <Sparkles className="mr-2 h-4 w-4" />
                     Generate with AI
-                </Button>
+                  </Button>
+                )}
             </div>
         </CardHeader>
         <CardContent>
@@ -123,7 +133,7 @@ export default function DeckDetailPage() {
                     <TableRow>
                         <TableHead>Front</TableHead>
                         <TableHead>Back</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        {deck.isCustom && <TableHead className="text-right">Actions</TableHead>}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -132,15 +142,17 @@ export default function DeckDetailPage() {
                             <TableRow key={card.id}>
                                 <TableCell className="font-medium">{card.front}</TableCell>
                                 <TableCell>{card.back}</TableCell>
-                                <TableCell className="text-right">
+                                {deck.isCustom && (
+                                  <TableCell className="text-right">
                                     <EditCardSheet card={card} onCardUpdated={handleCardUpdated} />
-                                </TableCell>
+                                  </TableCell>
+                                )}
                             </TableRow>
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={3} className="h-24 text-center">
-                                No cards yet. Add one to get started!
+                            <TableCell colSpan={deck.isCustom ? 3 : 2} className="h-24 text-center">
+                                No cards yet. {deck.isCustom ? "Add one to get started!" : ""}
                             </TableCell>
                         </TableRow>
                     )}
