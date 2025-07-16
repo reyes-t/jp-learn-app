@@ -28,24 +28,11 @@ import React, { useState, useEffect } from "react"
 // A helper function to capitalize the first letter of a string
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-export function DashboardHeader({
-    title,
-}: {
-    title?: string;
-}) {
-  const pathname = usePathname()
-  const [isClient, setIsClient] = useState(false);
+const HeaderBreadcrumb = ({ title }: { title?: string }) => {
+    const pathname = usePathname();
+    const pathSegments = pathname.split("/").filter(Boolean);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  const pathSegments = pathname.split("/").filter(Boolean)
-
-  return (
-    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b bg-background px-4 md:px-6">
-      <SidebarTrigger className="md:hidden" />
-      <div className="flex w-full items-center gap-4 md:gap-2 lg:gap-4">
+    return (
         <Breadcrumb className="hidden flex-1 md:flex">
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -55,7 +42,7 @@ export function DashboardHeader({
                 </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
-            {isClient && pathSegments.map((segment, index) => {
+            {pathSegments.map((segment, index) => {
               const href = "/" + pathSegments.slice(0, index + 1).join("/")
               const isLast = index === pathSegments.length - 1
               const segmentTitle = isLast && title ? title : capitalize(segment);
@@ -81,6 +68,27 @@ export function DashboardHeader({
             })}
           </BreadcrumbList>
         </Breadcrumb>
+    )
+}
+
+
+export function DashboardHeader({
+    title,
+}: {
+    title?: string;
+}) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+
+  return (
+    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b bg-background px-4 md:px-6">
+      <SidebarTrigger className="md:hidden" />
+      <div className="flex w-full items-center gap-4 md:gap-2 lg:gap-4">
+        {isClient ? <HeaderBreadcrumb title={title} /> : <div className="hidden flex-1 md:flex" />}
         <div className="ml-auto flex-shrink-0">
           <form>
             <div className="relative">
