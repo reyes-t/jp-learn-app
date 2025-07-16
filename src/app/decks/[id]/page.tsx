@@ -12,6 +12,7 @@ import { AddCardSheet } from '@/components/add-card-sheet';
 import type { Deck, Card as CardType } from '@/lib/types';
 import { allDecks as initialDecks } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
+import { EditCardSheet } from '@/components/edit-card-sheet';
 
 export default function DeckDetailPage() {
   const params = useParams();
@@ -56,6 +57,18 @@ export default function DeckDetailPage() {
     toast({
         title: "Card Added!",
         description: "Your new card has been saved to the deck.",
+    });
+  };
+
+  const handleCardUpdated = (updatedCard: CardType) => {
+    const updatedCards = cards.map(card => 
+      card.id === updatedCard.id ? updatedCard : card
+    );
+    setCards(updatedCards);
+    localStorage.setItem(`cards_${deckId}`, JSON.stringify(updatedCards));
+    toast({
+      title: 'Card Updated!',
+      description: 'Your changes have been saved.',
     });
   };
 
@@ -120,7 +133,7 @@ export default function DeckDetailPage() {
                                 <TableCell className="font-medium">{card.front}</TableCell>
                                 <TableCell>{card.back}</TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm">Edit</Button>
+                                    <EditCardSheet card={card} onCardUpdated={handleCardUpdated} />
                                 </TableCell>
                             </TableRow>
                         ))
