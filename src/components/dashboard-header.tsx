@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -24,7 +25,14 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { CircleUser, Home, Search } from "lucide-react"
 import React from "react"
 
-export function DashboardHeader() {
+// A helper function to capitalize the first letter of a string
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+export function DashboardHeader({
+    title,
+}: {
+    title?: string;
+}) {
   const pathname = usePathname()
   const pathSegments = pathname.split("/").filter(Boolean)
 
@@ -43,13 +51,15 @@ export function DashboardHeader() {
           {pathSegments.map((segment, index) => {
             const href = "/" + pathSegments.slice(0, index + 1).join("/")
             const isLast = index === pathSegments.length - 1
+            const segmentTitle = isLast && title ? title : capitalize(segment);
+            
             return (
               <React.Fragment key={href}>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   {isLast ? (
                     <BreadcrumbPage className="font-headline capitalize">
-                      {segment}
+                      {segmentTitle}
                     </BreadcrumbPage>
                   ) : (
                     <BreadcrumbLink asChild>

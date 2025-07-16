@@ -1,9 +1,10 @@
 
 "use client"
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { allDecks, cards as allCards } from '@/lib/data';
+import { allDecks as initialDecks } from '@/lib/data';
+import type { Card as CardType, Deck } from '@/lib/types';
 import { Flashcard } from '@/components/flashcard';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -14,20 +15,33 @@ export default function StudyPage() {
   const params = useParams();
   const deckId = params.id as string;
   
-  const deck = useMemo(() => allDecks.find((d) => d.id === deckId), [deckId]);
-  const cards = useMemo(() => allCards.filter((c) => c.deckId === deckId), [deckId]);
+  const [deck, setDeck] = useState<Deck | undefined>(undefined);
+  const [cards, setCards] = useState<CardType[]>([]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
 
+  useEffect(() => {
+    // Load all decks from localStorage or fall back to initial data
+    const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
+    const allDecks = [...initialDecks, ...storedDecks];
+    const currentDeck = allDecks.find((d) => d.id === deckId);
+    setDeck(currentDeck);
+
+    // Load cards from localStorage for the specific deck
+    const storedCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
+    setCards(storedCards);
+  }, [deckId]);
+
   if (!deck) {
-    notFound();
+    // Still loading or not found
+    return null; 
   }
   
   const isFinished = currentIndex >= cards.length;
-  const progress = isFinished ? 100 : (currentIndex / cards.length) * 100;
+  const progress = cards.length > 0 ? (isFinished ? 100 : (currentIndex / cards.length) * 100) : 100;
   const currentCard = cards[currentIndex];
 
   const handleNextCard = (knewIt: boolean) => {
@@ -47,6 +61,26 @@ export default function StudyPage() {
     setShowAnswer(false);
   };
   
+  if (cards.length === 0) {
+    return (
+        <div className="container mx-auto flex flex-col items-center justify-center h-full">
+            <Card className="w-full max-w-md text-center">
+                <CardHeader>
+                    <CardTitle className="font-headline text-2xl">No Cards in Deck</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p>This deck doesn't have any cards yet. Add some cards to start studying!</p>
+                </CardContent>
+                <CardFooter className="flex-col gap-4">
+                    <Button variant="outline" asChild>
+                        <Link href={`/decks/${deck.id}`}>Back to Deck</Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    )
+  }
+
   if (isFinished) {
     const total = correctAnswers + incorrectAnswers;
     const score = total > 0 ? Math.round((correctAnswers / total) * 100) : 0;

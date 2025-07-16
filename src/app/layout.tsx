@@ -1,3 +1,4 @@
+
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -29,9 +30,10 @@ import './globals.css';
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode & {props?: {childProps?: {title?: string}}}
 }) {
   const pathname = usePathname()
+  const pageTitle = children?.props?.childProps?.title;
 
   const isActive = (path: string) => pathname === path
 
@@ -123,7 +125,7 @@ export default function RootLayout({
             </SidebarFooter>
           </Sidebar>
           <SidebarInset className="flex flex-col">
-            <DashboardHeader />
+            <DashboardHeader title={pageTitle}/>
             <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
               {children}
             </main>
