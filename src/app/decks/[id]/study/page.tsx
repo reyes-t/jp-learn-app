@@ -1,3 +1,4 @@
+
 "use client"
 import { useState, useMemo } from 'react';
 import { notFound, useParams } from 'next/navigation';
@@ -38,6 +39,13 @@ export default function StudyPage() {
     setShowAnswer(false);
     setCurrentIndex(i => i + 1);
   };
+
+  const resetStudySession = () => {
+    setCurrentIndex(0);
+    setCorrectAnswers(0);
+    setIncorrectAnswers(0);
+    setShowAnswer(false);
+  };
   
   if (isFinished) {
     const total = correctAnswers + incorrectAnswers;
@@ -63,11 +71,7 @@ export default function StudyPage() {
                     </div>
                 </CardContent>
                 <CardFooter className="flex-col gap-4">
-                    <Button onClick={() => {
-                        setCurrentIndex(0);
-                        setCorrectAnswers(0);
-                        setIncorrectAnswers(0);
-                    }}>Study Again</Button>
+                    <Button onClick={resetStudySession}>Study Again</Button>
                     <Button variant="outline" asChild>
                         <Link href={`/decks/${deck.id}`}>Back to Deck</Link>
                     </Button>

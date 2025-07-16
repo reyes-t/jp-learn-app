@@ -1,3 +1,4 @@
+
 "use client"
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -15,8 +16,11 @@ export function Flashcard({ front, back, onFlip }: FlashcardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const handleFlip = () => {
+    // Only call onFlip the first time the card is flipped
+    if (!isFlipped) {
+      onFlip?.();
+    }
     setIsFlipped(!isFlipped);
-    onFlip?.();
   };
 
   return (
