@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { quizzes } from '@/lib/data';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle2, XCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, XCircle, ArrowLeft, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
@@ -23,6 +23,16 @@ export default function QuizPage() {
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [correctAnswers, setCorrectAnswers] = useState(0);
+    const [bestScore, setBestScore] = useState(0);
+
+    useEffect(() => {
+        if (quiz) {
+            const storedBestScore = localStorage.getItem(`bestScore_${quiz.id}`);
+            if (storedBestScore) {
+                setBestScore(Number(storedBestScore));
+            }
+        }
+    }, [quiz]);
 
     if (!quiz) {
         notFound();
@@ -59,6 +69,12 @@ export default function QuizPage() {
 
     if (isQuizFinished) {
         const score = Math.round((correctAnswers / quiz.questions.length) * 100);
+        
+        if (score > bestScore) {
+            localStorage.setItem(`bestScore_${quiz.id}`, score.toString());
+            setBestScore(score);
+        }
+
         return (
             <div className="container mx-auto flex flex-col items-center justify-center h-full">
                 <Card className="w-full max-w-md text-center">
@@ -66,7 +82,11 @@ export default function QuizPage() {
                         <CardTitle className="font-headline text-2xl">Quiz Complete!</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-lg">You scored {score}%</p>
+                        <p className="text-lg mb-2">You scored {score}%</p>
+                        <div className="text-sm text-primary font-medium flex items-center justify-center gap-2 mb-4">
+                            <Trophy className="w-4 h-4" />
+                            <span>Best Score: {bestScore}%</span>
+                        </div>
                         <div className="flex justify-around mt-4">
                             <div className="text-green-500">
                                 <p className="font-bold text-2xl">{correctAnswers}</p>
