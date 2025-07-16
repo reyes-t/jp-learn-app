@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { CircleUser, Home, Search } from "lucide-react"
-import React from "react"
+import React, { useState, useEffect } from "react"
 
 // A helper function to capitalize the first letter of a string
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -34,6 +34,12 @@ export function DashboardHeader({
     title?: string;
 }) {
   const pathname = usePathname()
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const pathSegments = pathname.split("/").filter(Boolean)
 
   return (
@@ -49,7 +55,7 @@ export function DashboardHeader({
                 </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
-            {pathSegments.map((segment, index) => {
+            {isClient && pathSegments.map((segment, index) => {
               const href = "/" + pathSegments.slice(0, index + 1).join("/")
               const isLast = index === pathSegments.length - 1
               const segmentTitle = isLast && title ? title : capitalize(segment);
