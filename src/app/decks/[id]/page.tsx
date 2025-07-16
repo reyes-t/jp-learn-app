@@ -63,9 +63,6 @@ export default function DeckDetailPage() {
     // Still loading or not found
     return null; 
   }
-  
-  // This prop will be passed up to the layout
-  (DeckDetailPage as any).childProps = { title: deck.name };
 
   return (
     <div className="container mx-auto">

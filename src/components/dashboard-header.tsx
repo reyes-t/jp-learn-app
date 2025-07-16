@@ -24,13 +24,30 @@ import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { CircleUser, Home, Search } from "lucide-react"
 import React, { useState, useEffect } from "react"
+import { allDecks as initialDecks } from "@/lib/data"
+import type { Deck } from "@/lib/types"
 
 // A helper function to capitalize the first letter of a string
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-const HeaderBreadcrumb = ({ title }: { title?: string }) => {
+const HeaderBreadcrumb = () => {
     const pathname = usePathname();
+    const [title, setTitle] = useState<string | undefined>(undefined);
     const pathSegments = pathname.split("/").filter(Boolean);
+
+    useEffect(() => {
+      if (pathSegments.length > 1 && pathSegments[0] === 'decks') {
+          const deckId = pathSegments[1];
+          const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
+          const allDecks: Deck[] = [...initialDecks, ...storedDecks];
+          const currentDeck = allDecks.find(d => d.id === deckId);
+          if (currentDeck) {
+              setTitle(currentDeck.name);
+          }
+      } else {
+        setTitle(undefined);
+      }
+    }, [pathname, pathSegments]);
 
     return (
         <Breadcrumb className="hidden flex-1 md:flex">
@@ -72,11 +89,7 @@ const HeaderBreadcrumb = ({ title }: { title?: string }) => {
 }
 
 
-export function DashboardHeader({
-    title,
-}: {
-    title?: string;
-}) {
+export function DashboardHeader() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -87,20 +100,18 @@ export function DashboardHeader({
   return (
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b bg-background px-4 md:px-6">
       <SidebarTrigger className="md:hidden" />
-      <div className="flex w-full items-center gap-4 md:gap-2 lg:gap-4">
-        {isClient ? <HeaderBreadcrumb title={title} /> : <div className="hidden flex-1 md:flex" />}
-        <div className="ml-auto flex-shrink-0">
-          <form>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search decks or lessons..."
-                className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-              />
-            </div>
-          </form>
-        </div>
+      {isClient ? <HeaderBreadcrumb /> : <div className="hidden flex-1 md:flex" />}
+      <div className="ml-auto flex flex-shrink-0 items-center gap-4">
+        <form>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search decks or lessons..."
+              className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+            />
+          </div>
+        </form>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">
