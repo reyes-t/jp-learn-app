@@ -142,6 +142,7 @@ export default function StudyPage() {
       </div>
 
       <Flashcard 
+        key={currentCard.id}
         front={currentCard.front}
         back={currentCard.back}
         onFlip={() => setShowAnswer(true)}
