@@ -27,14 +27,18 @@ export default function StudyPage() {
   
   const [deck, setDeck] = useState<Deck | undefined>(undefined);
   const [allCards, setAllCards] = useState<CardType[]>([]);
-  const [studyQueue, setStudyQueue] = useState<CardType[]>([]);
-  const [totalDueCount, setTotalDueCount] = useState(0);
   
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [showAnswer, setShowAnswer] = useState(false);
+  // State for the current session
+  const [sessionQueue, setSessionQueue] = useState<CardType[]>([]);
+  const [correctlyAnsweredOnce, setCorrectlyAnsweredOnce] = useState<CardType[]>([]);
+  const [initialSessionSize, setInitialSessionSize] = useState(0);
+
+  // Stats for the current session
   const [sessionCorrect, setSessionCorrect] = useState(0);
   const [sessionIncorrect, setSessionIncorrect] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
 
+  // Load initial data and set up the study session
   useEffect(() => {
     // Load all decks from localStorage or fall back to initial data
     const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
@@ -47,110 +51,108 @@ export default function StudyPage() {
         if (currentDeck.isCustom) {
             loadedCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
         } else {
-            // For pre-made decks, check if they've been studied before.
-            // If so, load from localStorage, otherwise use initial data.
             const storedPregen = localStorage.getItem(`cards_${deckId}`);
-            if (storedPregen) {
-                loadedCards = JSON.parse(storedPregen);
-            } else {
-                loadedCards = initialCards.filter(card => card.deckId === deckId);
-            }
+            loadedCards = storedPregen ? JSON.parse(storedPregen) : initialCards.filter(card => card.deckId === deckId);
         }
         
-        // Initialize SRS data for cards that don't have it
         const now = new Date();
         const cardsWithSrs = loadedCards.map(card => ({
             ...card,
             srsLevel: card.srsLevel ?? 0,
             nextReview: card.nextReview ? new Date(card.nextReview) : now,
         }));
-
         setAllCards(cardsWithSrs);
 
         const dueCards = cardsWithSrs
-            .filter(card => card.nextReview <= now)
-            .sort(() => Math.random() - 0.5); // Shuffle due cards
+            .filter(card => new Date(card.nextReview) <= now)
+            .sort(() => Math.random() - 0.5);
         
-        setTotalDueCount(dueCards.length);
-
         const storedSettings = JSON.parse(localStorage.getItem(`deckSettings_${deckId}`) || '{}');
         const sessionSize = storedSettings.sessionSize;
 
-        if (sessionSize && dueCards.length > sessionSize) {
-            setStudyQueue(dueCards.slice(0, sessionSize));
-        } else {
-            setStudyQueue(dueCards);
-        }
+        const session = sessionSize && dueCards.length > sessionSize ? dueCards.slice(0, sessionSize) : dueCards;
+        setSessionQueue(session);
+        setInitialSessionSize(session.length);
     }
   }, [deckId]);
-
+  
   const updateCardInStorage = (updatedCard: CardType) => {
     const cardIndex = allCards.findIndex(c => c.id === updatedCard.id);
     if (cardIndex > -1) {
         const updatedAllCards = [...allCards];
         updatedAllCards[cardIndex] = updatedCard;
-        setAllCards(updatedAllCards);
+        setAllCards(updatedAllCards); // Update the master list of cards
         localStorage.setItem(`cards_${deckId}`, JSON.stringify(updatedAllCards));
     }
   };
 
-  if (!deck) {
-    // Still loading or not found
-    return null; 
-  }
-  
-  const isFinished = currentIndex >= studyQueue.length;
-  const progress = studyQueue.length > 0 ? (isFinished ? 100 : (currentIndex / studyQueue.length) * 100) : 100;
-  const currentCard = studyQueue[currentIndex];
-
   const handleNextCard = (knewIt: boolean) => {
+    const [currentCard, ...restOfQueue] = sessionQueue;
     if (!currentCard) return;
 
-    let updatedCard: CardType;
-    const now = new Date();
-
     if (knewIt) {
-      setSessionCorrect(c => c + 1);
-      const newSrsLevel = Math.min((currentCard.srsLevel || 0) + 1, srsIntervals.length - 1);
-      const nextReviewDate = addDays(now, srsIntervals[newSrsLevel]);
-      updatedCard = { ...currentCard, srsLevel: newSrsLevel, nextReview: nextReviewDate };
+        // Card answered correctly. Move it to the `correctlyAnsweredOnce` pile.
+        // If it's already there, it means it was answered correctly twice.
+        const alreadyKnewItOnce = correctlyAnsweredOnce.find(c => c.id === currentCard.id);
+
+        if (alreadyKnewItOnce) {
+            // This is the second time they got it right.
+            // Update SRS level and permanently remove from this session.
+            setSessionCorrect(c => c + 1);
+            const newSrsLevel = Math.min((currentCard.srsLevel || 0) + 1, srsIntervals.length - 1);
+            const nextReviewDate = addDays(new Date(), srsIntervals[newSrsLevel]);
+            const updatedCard = { ...currentCard, srsLevel: newSrsLevel, nextReview: nextReviewDate };
+            updateCardInStorage(updatedCard);
+            // Remove from the `correctlyAnsweredOnce` list
+            setCorrectlyAnsweredOnce(prev => prev.filter(c => c.id !== currentCard.id));
+        } else {
+            // First time they got it right. Add to the list.
+            setCorrectlyAnsweredOnce(prev => [...prev, currentCard]);
+        }
     } else {
-      setSessionIncorrect(c => c + 1);
-      const newSrsLevel = 0;
-      const nextReviewDate = addDays(now, srsIntervals[newSrsLevel]); // Review again tomorrow
-      updatedCard = { ...currentCard, srsLevel: newSrsLevel, nextReview: nextReviewDate };
-    }
-    
-    updateCardInStorage(updatedCard);
-    
-    setShowAnswer(false);
-    setCurrentIndex(i => i + 1);
-  };
-
-  const resetStudySession = () => {
-    // Re-calculates due cards for a new session
-    const now = new Date();
-    const dueCards = allCards
-        .filter(card => card.nextReview <= now)
-        .sort(() => Math.random() - 0.5);
-    
-    setTotalDueCount(dueCards.length);
-
-    const storedSettings = JSON.parse(localStorage.getItem(`deckSettings_${deckId}`) || '{}');
-    const sessionSize = storedSettings.sessionSize;
-
-    if (sessionSize && dueCards.length > sessionSize) {
-        setStudyQueue(dueCards.slice(0, sessionSize));
-    } else {
-        setStudyQueue(dueCards);
+        // Card answered incorrectly. Reset SRS and put at the back of the queue.
+        setSessionIncorrect(c => c + 1);
+        const newSrsLevel = 0;
+        const nextReviewDate = addDays(new Date(), srsIntervals[newSrsLevel]);
+        const updatedCard = { ...currentCard, srsLevel: newSrsLevel, nextReview: nextReviewDate };
+        updateCardInStorage(updatedCard);
+        
+        // Put the card back at the end of the session queue to be repeated.
+        restOfQueue.push(currentCard);
     }
 
-    setCurrentIndex(0);
-    setSessionCorrect(0);
-    setSessionIncorrect(0);
+    // If the main queue is empty, start reviewing the cards they got right once.
+    if (restOfQueue.length === 0 && correctlyAnsweredOnce.length > 0) {
+        // Only re-queue cards that haven't been completed yet.
+        const cardsToRequeue = correctlyAnsweredOnce.filter(c => 
+            !sessionQueue.find(sc => sc.id === c.id) // check if it was already re-queued
+        );
+        setSessionQueue(cardsToRequeue);
+    } else {
+        setSessionQueue(restOfQueue);
+    }
+    
     setShowAnswer(false);
   };
   
+  const totalDueCount = useMemo(() => {
+    const now = new Date();
+    return allCards.filter(card => new Date(card.nextReview) <= now).length;
+  }, [allCards]);
+
+  const resetStudySession = () => {
+    window.location.reload();
+  };
+
+  if (!deck) {
+    return null; // Loading state
+  }
+
+  const isFinished = sessionQueue.length === 0 && correctlyAnsweredOnce.length === 0 && initialSessionSize > 0;
+  const cardsCompletedThisSession = initialSessionSize - sessionQueue.length - correctlyAnsweredOnce.length;
+  const progress = initialSessionSize > 0 ? (cardsCompletedThisSession / initialSessionSize) * 100 : (isFinished ? 100 : 0);
+  const currentCard = sessionQueue[0];
+
   if (allCards.length === 0) {
     return (
         <div className="container mx-auto flex flex-col items-center justify-center h-full">
@@ -171,7 +173,7 @@ export default function StudyPage() {
     )
   }
   
-  if (totalDueCount === 0) {
+  if (totalDueCount === 0 && initialSessionSize === 0) {
      return (
         <div className="container mx-auto flex flex-col items-center justify-center h-full">
             <Card className="w-full max-w-md text-center">
@@ -192,7 +194,7 @@ export default function StudyPage() {
   }
 
   if (isFinished) {
-    const remainingDue = totalDueCount - studyQueue.length;
+    const remainingDue = totalDueCount;
     return (
         <div className="container mx-auto flex flex-col items-center justify-center h-full">
             <Card className="w-full max-w-md text-center">
@@ -200,15 +202,15 @@ export default function StudyPage() {
                     <CardTitle className="font-headline text-2xl">Session Complete!</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-lg">You reviewed {sessionCorrect + sessionIncorrect} cards.</p>
-                    <div className="flex justify-around mt-4">
+                    <p className="text-lg">You reviewed {initialSessionSize} cards.</p>
+                     <div className="flex justify-around mt-4">
                         <div className="text-green-500">
                             <p className="font-bold text-2xl">{sessionCorrect}</p>
                             <p>Correct</p>
                         </div>
                         <div className="text-red-500">
                             <p className="font-bold text-2xl">{sessionIncorrect}</p>
-                            <p>Incorrect</p>
+                            <p>Incorrect Attempts</p>
                         </div>
                     </div>
                     {remainingDue > 0 && (
@@ -242,7 +244,7 @@ export default function StudyPage() {
                 Exit
             </Link>
             <div className="text-sm text-muted-foreground">
-                Card {currentIndex + 1} of {studyQueue.length}
+                {cardsCompletedThisSession} / {initialSessionSize} cards completed
             </div>
         </div>
         <Progress value={progress} />
@@ -251,37 +253,43 @@ export default function StudyPage() {
        <Alert className="max-w-lg">
         <Info className="h-4 w-4" />
         <AlertDescription>
-          There are <strong>{totalDueCount}</strong> cards due for review in this deck. This session contains {studyQueue.length}.
+          There are <strong>{totalDueCount}</strong> total cards due. This session contains <strong>{initialSessionSize}</strong> cards.
         </AlertDescription>
       </Alert>
 
-      <Flashcard 
-        key={currentCard.id}
-        front={currentCard.front}
-        back={currentCard.back}
-        onFlip={() => setShowAnswer(true)}
-      />
+      {currentCard ? (
+        <>
+            <Flashcard 
+                key={currentCard.id}
+                front={currentCard.front}
+                back={currentCard.back}
+                onFlip={() => setShowAnswer(true)}
+            />
 
-      {showAnswer && (
-        <div className="flex items-center gap-4 animate-in fade-in duration-500">
-            <Button
-                variant="destructive"
-                size="lg"
-                className="w-40"
-                onClick={() => handleNextCard(false)}
-            >
-                <X className="mr-2 h-5 w-5" />
-                Didn't Know
-            </Button>
-            <Button
-                size="lg"
-                className="w-40 bg-green-500 hover:bg-green-600"
-                onClick={() => handleNextCard(true)}
-            >
-                <Check className="mr-2 h-5 w-5" />
-                Knew It
-            </Button>
-        </div>
+            {showAnswer && (
+                <div className="flex items-center gap-4 animate-in fade-in duration-500">
+                    <Button
+                        variant="destructive"
+                        size="lg"
+                        className="w-40"
+                        onClick={() => handleNextCard(false)}
+                    >
+                        <X className="mr-2 h-5 w-5" />
+                        Didn't Know
+                    </Button>
+                    <Button
+                        size="lg"
+                        className="w-40 bg-green-500 hover:bg-green-600"
+                        onClick={() => handleNextCard(true)}
+                    >
+                        <Check className="mr-2 h-5 w-5" />
+                        Knew It
+                    </Button>
+                </div>
+            )}
+        </>
+      ) : (
+          <div className="text-center text-muted-foreground">Loading study session...</div>
       )}
     </div>
   );
