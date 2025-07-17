@@ -65,21 +65,20 @@ export function DeckCard({ deck }: DeckCardProps) {
           </CardHeader>
           <CardContent className="flex-grow p-4 pt-0">
             <p className="text-sm text-muted-foreground line-clamp-2">{deck.description}</p>
-            {progress > 0 && (
-              <div className="mt-4">
-                  <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs font-medium text-muted-foreground">Mastery</span>
-                      <span className="text-xs font-bold text-primary">{progress}%</span>
-                  </div>
-                  <Progress value={progress} className="h-2"/>
-                  <p className="text-xs text-muted-foreground mt-1">{studiedCount} of {deck.cardCount} cards mastered.</p>
-              </div>
-            )}
           </CardContent>
         </div>
       </Link>
       <CardFooter className="p-4 pt-0 flex justify-between items-end bg-card">
-          <div className="flex flex-col items-start gap-1 text-sm text-muted-foreground">
+          <div className="flex flex-col items-start gap-2 text-sm text-muted-foreground w-full">
+               {progress > 0 && (
+                <div className="w-full">
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs font-medium text-muted-foreground">Mastery</span>
+                        <span className="text-xs font-bold text-primary">{progress}%</span>
+                    </div>
+                    <Progress value={progress} className="h-2"/>
+                </div>
+              )}
               {dueCount > 0 && (
                 <div className="flex items-center gap-2 text-primary font-semibold">
                     <BookCheck className="w-4 h-4"/>
@@ -91,7 +90,7 @@ export function DeckCard({ deck }: DeckCardProps) {
                  <span>{deck.cardCount} cards</span>
               </div>
           </div>
-          <Button asChild size="sm" onClick={(e) => e.stopPropagation()}>
+          <Button asChild size="sm" onClick={(e) => e.stopPropagation()} className="shrink-0">
             <Link href={`/decks/${deck.id}/study`}>Study</Link>
           </Button>
       </CardFooter>
