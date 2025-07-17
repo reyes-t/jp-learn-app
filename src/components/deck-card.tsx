@@ -31,39 +31,40 @@ export function DeckCard({ deck }: DeckCardProps) {
   }, [deck.id, deck.cardCount]);
 
   return (
-    <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-            <CardTitle className="font-headline text-lg mb-2">
-                <Link href={`/decks/${deck.id}`} className="hover:text-primary transition-colors">
-                    {deck.name}
-                </Link>
-            </CardTitle>
-            {deck.isCustom && <Badge variant="outline">Custom</Badge>}
-        </div>
-      </CardHeader>
-      <CardContent className="flex-grow p-4 pt-0">
-        <p className="text-sm text-muted-foreground line-clamp-2">{deck.description}</p>
-        {progress > 0 && (
-          <div className="mt-4">
-              <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-medium text-muted-foreground">Progress</span>
-                  <span className="text-xs font-bold text-primary">{progress}%</span>
-              </div>
-              <Progress value={progress} className="h-2"/>
-              <p className="text-xs text-muted-foreground mt-1">{studiedCount} of {deck.cardCount} cards mastered.</p>
+    <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 relative">
+      <Link href={`/decks/${deck.id}`} className="absolute inset-0 z-0" aria-label={`View deck: ${deck.name}`}/>
+      <div className="flex flex-col flex-grow z-10 bg-card">
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-start">
+              <CardTitle className="font-headline text-lg mb-2">
+                   {deck.name}
+              </CardTitle>
+              {deck.isCustom && <Badge variant="outline">Custom</Badge>}
           </div>
-        )}
-      </CardContent>
-      <CardFooter className="p-4 pt-0 flex justify-between items-center">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Layers className="w-4 h-4"/>
-            <span>{deck.cardCount} cards</span>
-        </div>
-        <Button asChild size="sm">
-          <Link href={`/decks/${deck.id}/study`}>Study</Link>
-        </Button>
-      </CardFooter>
+        </CardHeader>
+        <CardContent className="flex-grow p-4 pt-0">
+          <p className="text-sm text-muted-foreground line-clamp-2">{deck.description}</p>
+          {progress > 0 && (
+            <div className="mt-4">
+                <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-medium text-muted-foreground">Progress</span>
+                    <span className="text-xs font-bold text-primary">{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-2"/>
+                <p className="text-xs text-muted-foreground mt-1">{studiedCount} of {deck.cardCount} cards mastered.</p>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="p-4 pt-0 flex justify-between items-center">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Layers className="w-4 h-4"/>
+              <span>{deck.cardCount} cards</span>
+          </div>
+          <Button asChild size="sm" onClick={(e) => e.stopPropagation()}>
+            <Link href={`/decks/${deck.id}/study`}>Study</Link>
+          </Button>
+        </CardFooter>
+      </div>
     </Card>
   );
 }
