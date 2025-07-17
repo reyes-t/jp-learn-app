@@ -18,7 +18,7 @@ import { PlusCircle, Sparkles, Wand2 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { useToast } from "@/hooks/use-toast";
 import { generateFlashcards } from "@/app/actions";
-import type { Deck } from "@/lib/types";
+import type { Deck, Card } from "@/lib/types";
 
 interface CreateDeckDialogProps {
     onDeckCreated: (newDeck: Deck) => void;
@@ -70,16 +70,27 @@ export function CreateDeckDialog({ onDeckCreated }: CreateDeckDialogProps) {
     const result = await generateFlashcards({ topic });
     
     if (result.success && result.data) {
+      const newDeckId = `ai-${Date.now()}`;
       const newDeck: Deck = {
-        id: `ai-${Date.now()}`,
+        id: newDeckId,
         name: topic,
         description: `An AI-generated deck about ${topic}.`,
         cardCount: result.data.flashcards.length,
         isCustom: true,
       };
+      
+      const newCards: Card[] = result.data.flashcards.map((fc, index) => ({
+        id: `card-${newDeckId}-${index}`,
+        deckId: newDeckId,
+        front: fc.front,
+        back: fc.back,
+      }));
+
+      // Save the generated cards to localStorage
+      localStorage.setItem(`cards_${newDeckId}`, JSON.stringify(newCards));
+
       onDeckCreated(newDeck);
-      // In a real app, you'd also save the generated cards associated with this deck.
-      console.log("Generated cards:", result.data.flashcards);
+      
       toast({
         title: "Deck Generated Successfully!",
         description: `Your new deck on "${topic}" is ready.`,

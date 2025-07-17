@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -13,6 +14,7 @@ import type { Deck, Card as CardType } from '@/lib/types';
 import { allDecks as initialDecks, cards as initialCards } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { EditCardSheet } from '@/components/edit-card-sheet';
+import { AiGenerateCardsDialog } from '@/components/ai-generate-cards-dialog';
 
 export default function DeckDetailPage() {
   const params = useParams();
@@ -68,6 +70,27 @@ export default function DeckDetailPage() {
     });
   };
 
+  const handleCardsGenerated = (newCards: { front: string; back: string }[]) => {
+    const newCardsWithIds = newCards.map((card, index) => ({
+      id: `card-${Date.now()}-${index}`,
+      deckId,
+      ...card,
+    }));
+
+    const updatedCards = [...cards, ...newCardsWithIds];
+    setCards(updatedCards);
+    localStorage.setItem(`cards_${deckId}`, JSON.stringify(updatedCards));
+
+    // Also update the card count in the deck list
+    const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
+    const updatedDecks = storedDecks.map((d: Deck) =>
+      d.id === deckId ? { ...d, cardCount: updatedCards.length } : d
+    );
+    localStorage.setItem('userDecks', JSON.stringify(updatedDecks));
+    setDeck(prevDeck => prevDeck ? {...prevDeck, cardCount: updatedCards.length} : undefined);
+  };
+
+
   const handleCardUpdated = (updatedCard: CardType) => {
     const updatedCards = cards.map(card => 
       card.id === updatedCard.id ? updatedCard : card
@@ -120,10 +143,7 @@ export default function DeckDetailPage() {
                     </CardDescription>
                 </div>
                  {deck.isCustom && (
-                  <Button variant="outline">
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate with AI
-                  </Button>
+                  <AiGenerateCardsDialog onCardsGenerated={handleCardsGenerated} />
                 )}
             </div>
         </CardHeader>
