@@ -277,6 +277,7 @@ export default function DeckDetailPage() {
                                 value={sessionSize}
                                 onChange={(e) => setSessionSize(e.target.value)}
                                 min="1"
+                                max={deck.cardCount > 0 ? deck.cardCount : undefined}
                              />
                              <p className="text-xs text-muted-foreground">Leave blank to review all due cards in one session.</p>
                            </div>
