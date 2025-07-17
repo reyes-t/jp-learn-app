@@ -80,16 +80,16 @@ export function DeckCard({ deck }: DeckCardProps) {
       </Link>
       <CardFooter className="p-4 pt-0 flex justify-between items-end bg-card">
           <div className="flex flex-col items-start gap-1 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                 <Layers className="w-4 h-4"/>
-                 <span>{deck.cardCount} cards</span>
-              </div>
-               {dueCount > 0 && (
+              {dueCount > 0 && (
                 <div className="flex items-center gap-2 text-primary font-semibold">
                     <BookCheck className="w-4 h-4"/>
                     <span>{dueCount} due</span>
                 </div>
-               )}
+              )}
+              <div className="flex items-center gap-2">
+                 <Layers className="w-4 h-4"/>
+                 <span>{deck.cardCount} cards</span>
+              </div>
           </div>
           <Button asChild size="sm" onClick={(e) => e.stopPropagation()}>
             <Link href={`/decks/${deck.id}/study`}>Study</Link>
