@@ -20,9 +20,8 @@ export function DeckCard({ deck }: DeckCardProps) {
   useEffect(() => {
     const progressData = localStorage.getItem(`studyProgress_${deck.id}`);
     if (progressData) {
-      const { correct, total } = JSON.parse(progressData);
-      if (deck.cardCount > 0) { // check against current card count
-        // Use `correct` for progress calculation, but cap at deck.cardCount
+      const { correct } = JSON.parse(progressData);
+      if (deck.cardCount > 0) {
         const currentProgress = Math.min(correct, deck.cardCount);
         setProgress(Math.round((currentProgress / deck.cardCount) * 100));
         setStudiedCount(currentProgress);
