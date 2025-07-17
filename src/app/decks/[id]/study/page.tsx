@@ -93,6 +93,15 @@ export default function StudyPage() {
     const total = correctAnswers + incorrectAnswers;
     const score = total > 0 ? Math.round((correctAnswers / total) * 100) : 0;
 
+    // Save progress to localStorage
+    const progressData = {
+      correct: correctAnswers,
+      total: cards.length,
+      lastStudied: new Date().toISOString(),
+    };
+    localStorage.setItem(`studyProgress_${deckId}`, JSON.stringify(progressData));
+
+
     return (
         <div className="container mx-auto flex flex-col items-center justify-center h-full">
             <Card className="w-full max-w-md text-center">
