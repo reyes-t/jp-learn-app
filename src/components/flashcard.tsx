@@ -40,7 +40,8 @@ export function Flashcard({ front, back, onFlip }: FlashcardProps) {
           audioRef.current.src = result.data.audioDataUri;
           audioRef.current.play();
         }
-      } else {
+      } 
+      else {
         toast({
           variant: "destructive",
           title: "Error",
