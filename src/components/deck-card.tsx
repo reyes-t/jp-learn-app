@@ -68,23 +68,21 @@ export function DeckCard({ deck }: DeckCardProps) {
           </CardContent>
         </div>
       </Link>
-      <CardFooter className="p-4 pt-0 flex justify-between items-end bg-card">
-          <div className="flex flex-col items-start gap-2 text-sm text-muted-foreground w-full">
-               {progress > 0 && (
-                <div className="w-full">
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-medium text-muted-foreground">Mastery</span>
-                        <span className="text-xs font-bold text-primary">{progress}%</span>
-                    </div>
-                    <Progress value={progress} className="h-2"/>
-                </div>
-              )}
-              {dueCount > 0 && (
-                <div className="flex items-center gap-2 text-primary font-semibold">
-                    <BookCheck className="w-4 h-4"/>
-                    <span>{dueCount} due</span>
-                </div>
-              )}
+      {progress > 0 && (
+        <div className="px-4 pb-2 bg-card">
+          <div className="flex justify-between items-center mb-1">
+              <span className="text-xs font-medium text-muted-foreground">Mastery</span>
+              <span className="text-xs font-bold text-primary">{progress}%</span>
+          </div>
+          <Progress value={progress} className="h-2"/>
+        </div>
+      )}
+      <CardFooter className="p-4 pt-2 flex justify-between items-end bg-card">
+          <div className="flex flex-col items-start gap-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-primary font-semibold">
+                  <BookCheck className="w-4 h-4"/>
+                  <span>{dueCount} due</span>
+              </div>
               <div className="flex items-center gap-2">
                  <Layers className="w-4 h-4"/>
                  <span>{deck.cardCount} cards</span>
