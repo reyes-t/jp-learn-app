@@ -49,12 +49,6 @@ export function Flashcard({ front, back, onFlip }: FlashcardProps) {
           <Card className="w-full h-full flex flex-col justify-center items-center text-center p-6 cursor-pointer">
             <CardContent className="flex-grow flex flex-col justify-center items-center gap-4">
                 <div className="text-3xl md:text-4xl font-semibold font-headline">{back}</div>
-                <div className="flex gap-4 mt-4">
-                     <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Example Sentence
-                    </Button>
-                </div>
             </CardContent>
              <div className="text-sm text-muted-foreground">Click to flip</div>
           </Card>
