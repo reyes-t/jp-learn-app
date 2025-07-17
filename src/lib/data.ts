@@ -248,6 +248,7 @@ export const cards: Card[] = [
 export const grammarPoints: GrammarPoint[] = [
   {
     id: 'g-1',
+    level: 'N5',
     title: 'AはBです (A wa B desu)',
     explanation: 'This is the most basic sentence structure in Japanese. It is used to state that "A is B". 「は」 (wa) is a topic particle, and 「です」 (desu) is a copula, similar to "is" or "am" or "are" in English.',
     examples: [
@@ -257,6 +258,7 @@ export const grammarPoints: GrammarPoint[] = [
   },
   {
     id: 'g-2',
+    level: 'N5',
     title: 'Verb Conjugation (ます-form)',
     explanation: 'The ます (masu) form is the polite, non-past form of a verb. It is commonly used in daily conversation. To form it, you typically change the final "u" sound of the dictionary form verb to an "i" and add ます. For example, "kau" (to buy) becomes "kaimasu".',
     examples: [
@@ -266,6 +268,7 @@ export const grammarPoints: GrammarPoint[] = [
   },
   {
     id: 'g-3',
+    level: 'N5',
     title: 'Possessive Particle 「の」 (no)',
     explanation: 'The particle 「の」 (no) is used to show possession, similar to "apostrophe s" in English. It links two nouns, where the first noun possesses or describes the second noun.',
     examples: [
@@ -275,6 +278,7 @@ export const grammarPoints: GrammarPoint[] = [
   },
     {
     id: 'g-4',
+    level: 'N5',
     title: 'Adjectives (い-Adjectives and な-Adjectives)',
     explanation: 'Japanese has two types of adjectives. い-adjectives end with い (like "ookii" - big). な-adjectives require な (na) when they come before a noun (like "kirei na hana" - beautiful flower).',
     examples: [
@@ -284,13 +288,55 @@ export const grammarPoints: GrammarPoint[] = [
   },
   {
     id: 'g-5',
+    level: 'N5',
     title: 'Question Particle 「か」 (ka)',
     explanation: 'To turn a statement into a question, you simply add the particle 「か」 (ka) to the end of the sentence. The word order does not change, and a question mark is usually not necessary in formal writing.',
     examples: [
       { japanese: 'これはペンですか。', english: 'Is this a pen? (Kore wa pen desu ka.)' },
       { japanese: 'さとうさんはせんせいですか。', english: 'Is Mr. Sato a teacher? (Satou-san wa sensei desu ka.)' },
     ],
-  }
+  },
+  {
+    id: 'g-6',
+    level: 'N5',
+    title: 'Past Tense (ました/でした)',
+    explanation: 'To talk about the past, verbs in ます-form change to ました (mashita). For nouns and な-adjectives, です (desu) becomes でした (deshita). For い-adjectives, the final い becomes かったです (katta desu).',
+    examples: [
+      { japanese: 'きのう、えいがをみました。', english: 'I watched a movie yesterday. (Kinou, eiga o mimashita.)' },
+      { japanese: 'きのうはあつかったです。', english: 'It was hot yesterday. (Kinou wa atsukatta desu.)' },
+    ],
+  },
+  {
+    id: 'g-7',
+    level: 'N4',
+    title: 'Potential Form (~ことができます / ~れる/られる)',
+    explanation: 'This form expresses ability ("can do something"). One way is to use "Dictionary Form Verb + ことができます". Another is to conjugate the verb itself. For る-verbs, change る to られる. For う-verbs, change the final "u" vowel to "e" and add る.',
+    examples: [
+      { japanese: 'わたしはかんじをよむことができます。', english: 'I can read Kanji. (Watashi wa kanji o yomu koto ga dekimasu.)' },
+      { japanese: 'かれはすしがたべられます。', english: 'He can eat sushi. (Kare wa sushi ga taberaremasu.)' },
+    ],
+  },
+  {
+    id: 'g-8',
+    level: 'N4',
+    title: 'Conditional Form (~たら)',
+    explanation: 'The 「たら」 (tara) form is a common way to express "if" or "when". It\'s formed by taking the past tense of a verb or adjective and adding 「ら」 (ra). It can be used for a wide range of conditional situations.',
+    examples: [
+      { japanese: 'にほんにいったら、さくらをみたいです。', english: 'If/When I go to Japan, I want to see the cherry blossoms. (Nihon ni ittara, sakura o mitai desu.)' },
+      { japanese: 'やすかったら、かいます。', english: 'If it\'s cheap, I\'ll buy it. (Yasukattara, kaimasu.)' },
+    ],
+  },
+  {
+    id: 'g-9',
+    level: 'N4',
+    title: 'Giving and Receiving (あげる, くれる, もらう)',
+    explanation: 'These verbs are crucial for social context. 「あげる」(ageru) is for giving to others. 「くれる」(kureru) is for someone giving to you or your in-group. 「もらう」(morau) is for receiving from others.',
+    examples: [
+      { japanese: 'わたしはともだちにはなをあげました。', english: 'I gave flowers to my friend. (Watashi wa tomodachi ni hana o agemashita.)' },
+      { japanese: 'ともだちがわたしにはなをくれました。', english: 'My friend gave flowers to me. (Tomodachi ga watashi ni hana o kuremashita.)' },
+      { japanese: 'わたしはともだちにはなをもらいました。', english: 'I received flowers from my friend. (Watashi wa tomodachi ni hana o moraimashita.)' },
+    ],
+  },
 ];
 
 export const quizzes: Quiz[] = [

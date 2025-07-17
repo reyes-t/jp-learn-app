@@ -18,6 +18,7 @@ export type Card = {
 export type GrammarPoint = {
   id:string;
   title: string;
+  level: 'N5' | 'N4';
   explanation: string;
   examples: {
     japanese: string;
