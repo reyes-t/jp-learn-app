@@ -1,12 +1,14 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { grammarPoints } from "@/lib/data";
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle2, BookCopy } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import type { GrammarPoint } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface GrammarLessonCardProps {
   point: GrammarPoint;
@@ -61,29 +63,26 @@ export default function GrammarPage() {
         </div>
       </div>
       
-      <section id="n5">
-        <h2 className="text-2xl font-semibold font-headline mb-4 flex items-center gap-2">
-            <BookCopy className="text-primary"/>
-            N5 Grammar (Beginner)
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {n5Lessons.map(point => (
-            <GrammarLessonCard key={point.id} point={point} isRead={readLessons.has(point.id)} />
-          ))}
-        </div>
-      </section>
-
-      <section id="n4" className="mt-12">
-        <h2 className="text-2xl font-semibold font-headline mb-4 flex items-center gap-2">
-            <BookCopy className="text-primary"/>
-            N4 Grammar (Lower Intermediate)
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {n4Lessons.map(point => (
-            <GrammarLessonCard key={point.id} point={point} isRead={readLessons.has(point.id)} />
-          ))}
-        </div>
-      </section>
+      <Tabs defaultValue="n5" className="w-full">
+        <TabsList className="mb-4">
+            <TabsTrigger value="n5">N5 (Beginner)</TabsTrigger>
+            <TabsTrigger value="n4">N4 (Lower Intermediate)</TabsTrigger>
+        </TabsList>
+        <TabsContent value="n5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {n5Lessons.map(point => (
+                <GrammarLessonCard key={point.id} point={point} isRead={readLessons.has(point.id)} />
+            ))}
+            </div>
+        </TabsContent>
+        <TabsContent value="n4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {n4Lessons.map(point => (
+                <GrammarLessonCard key={point.id} point={point} isRead={readLessons.has(point.id)} />
+            ))}
+            </div>
+        </TabsContent>
+      </Tabs>
 
     </div>
   )
