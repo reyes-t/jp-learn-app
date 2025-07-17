@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -65,8 +64,8 @@ export default function GrammarPage() {
       
       <Tabs defaultValue="n5" className="w-full">
         <TabsList className="mb-4">
-            <TabsTrigger value="n5">N5 (Beginner)</TabsTrigger>
-            <TabsTrigger value="n4">N4 (Lower Intermediate)</TabsTrigger>
+            <TabsTrigger value="n5">N5</TabsTrigger>
+            <TabsTrigger value="n4">N4</TabsTrigger>
         </TabsList>
         <TabsContent value="n5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
