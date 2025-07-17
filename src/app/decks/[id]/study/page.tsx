@@ -8,20 +8,31 @@ import type { Card as CardType, Deck } from '@/lib/types';
 import { Flashcard } from '@/components/flashcard';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Check, X } from 'lucide-react';
+import { ArrowLeft, Check, X, Info } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+// SRS Intervals in days for each level
+const srsIntervals = [1, 2, 4, 8, 16, 32, 64];
+
+const addDays = (date: Date, days: number): Date => {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+};
 
 export default function StudyPage() {
   const params = useParams();
   const deckId = params.id as string;
   
   const [deck, setDeck] = useState<Deck | undefined>(undefined);
-  const [cards, setCards] = useState<CardType[]>([]);
-
+  const [allCards, setAllCards] = useState<CardType[]>([]);
+  const [studyQueue, setStudyQueue] = useState<CardType[]>([]);
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [correctAnswers, setCorrectAnswers] = useState(0);
-  const [incorrectAnswers, setIncorrectAnswers] = useState(0);
+  const [sessionCorrect, setSessionCorrect] = useState(0);
+  const [sessionIncorrect, setSessionIncorrect] = useState(0);
 
   useEffect(() => {
     // Load all decks from localStorage or fall back to initial data
@@ -31,45 +42,96 @@ export default function StudyPage() {
     setDeck(currentDeck);
 
     if (currentDeck) {
-      if (currentDeck.isCustom) {
-        // Load cards from localStorage for custom decks
-        const storedCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
-        setCards(storedCards);
-      } else {
-        // Load cards from initial data for pre-generated decks
-        const pregenCards = initialCards.filter(card => card.deckId === deckId);
-        setCards(pregenCards);
-      }
+        let loadedCards: CardType[];
+        if (currentDeck.isCustom) {
+            loadedCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
+        } else {
+            // For pre-made decks, check if they've been studied before.
+            // If so, load from localStorage, otherwise use initial data.
+            const storedPregen = localStorage.getItem(`cards_${deckId}`);
+            if (storedPregen) {
+                loadedCards = JSON.parse(storedPregen);
+            } else {
+                loadedCards = initialCards.filter(card => card.deckId === deckId);
+            }
+        }
+        
+        // Initialize SRS data for cards that don't have it
+        const now = new Date();
+        const cardsWithSrs = loadedCards.map(card => ({
+            ...card,
+            srsLevel: card.srsLevel ?? 0,
+            nextReview: card.nextReview ? new Date(card.nextReview) : now,
+        }));
+
+        setAllCards(cardsWithSrs);
+
+        const dueCards = cardsWithSrs
+            .filter(card => card.nextReview <= now)
+            .sort(() => Math.random() - 0.5); // Shuffle due cards
+
+        setStudyQueue(dueCards);
     }
   }, [deckId]);
+
+  const updateCardInStorage = (updatedCard: CardType) => {
+    const cardIndex = allCards.findIndex(c => c.id === updatedCard.id);
+    if (cardIndex > -1) {
+        const updatedAllCards = [...allCards];
+        updatedAllCards[cardIndex] = updatedCard;
+        setAllCards(updatedAllCards);
+        localStorage.setItem(`cards_${deckId}`, JSON.stringify(updatedAllCards));
+    }
+  };
 
   if (!deck) {
     // Still loading or not found
     return null; 
   }
   
-  const isFinished = currentIndex >= cards.length;
-  const progress = cards.length > 0 ? (isFinished ? 100 : (currentIndex / cards.length) * 100) : 100;
-  const currentCard = cards[currentIndex];
+  const isFinished = currentIndex >= studyQueue.length;
+  const progress = studyQueue.length > 0 ? (isFinished ? 100 : (currentIndex / studyQueue.length) * 100) : 100;
+  const currentCard = studyQueue[currentIndex];
 
   const handleNextCard = (knewIt: boolean) => {
+    if (!currentCard) return;
+
+    let updatedCard: CardType;
+    const now = new Date();
+
     if (knewIt) {
-      setCorrectAnswers(c => c + 1);
+      setSessionCorrect(c => c + 1);
+      const newSrsLevel = Math.min(currentCard.srsLevel + 1, srsIntervals.length - 1);
+      const nextReviewDate = addDays(now, srsIntervals[newSrsLevel]);
+      updatedCard = { ...currentCard, srsLevel: newSrsLevel, nextReview: nextReviewDate };
     } else {
-      setIncorrectAnswers(c => c + 1);
+      setSessionIncorrect(c => c + 1);
+      const newSrsLevel = 0;
+      const nextReviewDate = addDays(now, srsIntervals[newSrsLevel]); // Review again tomorrow
+      updatedCard = { ...currentCard, srsLevel: newSrsLevel, nextReview: nextReviewDate };
     }
+    
+    updateCardInStorage(updatedCard);
+    
     setShowAnswer(false);
     setCurrentIndex(i => i + 1);
   };
 
   const resetStudySession = () => {
+    // Re-calculates due cards for a new session
+    const now = new Date();
+    const dueCards = allCards
+        .filter(card => card.nextReview <= now)
+        .sort(() => Math.random() - 0.5);
+
+    setStudyQueue(dueCards);
     setCurrentIndex(0);
-    setCorrectAnswers(0);
-    setIncorrectAnswers(0);
+    setSessionCorrect(0);
+    setSessionIncorrect(0);
     setShowAnswer(false);
   };
   
-  if (cards.length === 0) {
+  if (allCards.length === 0) {
     return (
         <div className="container mx-auto flex flex-col items-center justify-center h-full">
             <Card className="w-full max-w-md text-center">
@@ -88,20 +150,28 @@ export default function StudyPage() {
         </div>
     )
   }
+  
+  if (studyQueue.length === 0) {
+     return (
+        <div className="container mx-auto flex flex-col items-center justify-center h-full">
+            <Card className="w-full max-w-md text-center">
+                <CardHeader>
+                    <CardTitle className="font-headline text-2xl">All Caught Up!</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p>You have no cards due for review in this deck right now. Great job!</p>
+                </CardContent>
+                <CardFooter className="flex-col gap-4">
+                    <Button variant="outline" asChild>
+                        <Link href={`/decks/${deck.id}`}>Back to Deck</Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    )
+  }
 
   if (isFinished) {
-    const total = correctAnswers + incorrectAnswers;
-    const score = total > 0 ? Math.round((correctAnswers / total) * 100) : 0;
-
-    // Save progress to localStorage
-    const progressData = {
-      correct: correctAnswers,
-      total: cards.length,
-      lastStudied: new Date().toISOString(),
-    };
-    localStorage.setItem(`studyProgress_${deckId}`, JSON.stringify(progressData));
-
-
     return (
         <div className="container mx-auto flex flex-col items-center justify-center h-full">
             <Card className="w-full max-w-md text-center">
@@ -109,20 +179,20 @@ export default function StudyPage() {
                     <CardTitle className="font-headline text-2xl">Session Complete!</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-lg">You scored {score}%</p>
+                    <p className="text-lg">You reviewed {sessionCorrect + sessionIncorrect} cards.</p>
                     <div className="flex justify-around mt-4">
                         <div className="text-green-500">
-                            <p className="font-bold text-2xl">{correctAnswers}</p>
+                            <p className="font-bold text-2xl">{sessionCorrect}</p>
                             <p>Correct</p>
                         </div>
                         <div className="text-red-500">
-                            <p className="font-bold text-2xl">{incorrectAnswers}</p>
+                            <p className="font-bold text-2xl">{sessionIncorrect}</p>
                             <p>Incorrect</p>
                         </div>
                     </div>
                 </CardContent>
                 <CardFooter className="flex-col gap-4">
-                    <Button onClick={resetStudySession}>Study Again</Button>
+                    <Button onClick={resetStudySession}>Start Next Session</Button>
                     <Button variant="outline" asChild>
                         <Link href={`/decks/${deck.id}`}>Back to Deck</Link>
                     </Button>
@@ -144,11 +214,18 @@ export default function StudyPage() {
                 Exit
             </Link>
             <div className="text-sm text-muted-foreground">
-                Card {currentIndex + 1} of {cards.length}
+                Card {currentIndex + 1} of {studyQueue.length}
             </div>
         </div>
         <Progress value={progress} />
       </div>
+
+       <Alert className="max-w-lg">
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          There are <strong>{studyQueue.length}</strong> cards due for review in this session.
+        </AlertDescription>
+      </Alert>
 
       <Flashcard 
         key={currentCard.id}

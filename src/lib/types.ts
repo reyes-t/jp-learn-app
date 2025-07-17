@@ -13,6 +13,8 @@ export type Card = {
   deckId: string;
   front: string;
   back: string;
+  srsLevel: number;
+  nextReview: Date;
 };
 
 export type GrammarPoint = {
