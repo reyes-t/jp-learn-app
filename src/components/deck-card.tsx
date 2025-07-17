@@ -21,12 +21,14 @@ export function DeckCard({ deck }: DeckCardProps) {
     const progressData = localStorage.getItem(`studyProgress_${deck.id}`);
     if (progressData) {
       const { correct, total } = JSON.parse(progressData);
-      if (total > 0) {
-        setProgress(Math.round((correct / total) * 100));
-        setStudiedCount(correct);
+      if (deck.cardCount > 0) { // check against current card count
+        // Use `correct` for progress calculation, but cap at deck.cardCount
+        const currentProgress = Math.min(correct, deck.cardCount);
+        setProgress(Math.round((currentProgress / deck.cardCount) * 100));
+        setStudiedCount(currentProgress);
       }
     }
-  }, [deck.id]);
+  }, [deck.id, deck.cardCount]);
 
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
