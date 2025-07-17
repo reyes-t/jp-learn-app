@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetFooter,
@@ -15,7 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { PlusCircle, Sparkles } from "lucide-react"
+import { PlusCircle } from "lucide-react"
 
 interface AddCardSheetProps {
   onCardAdded: (card: { front: string; back: string }) => void;
@@ -77,10 +76,6 @@ export function AddCardSheet({ onCardAdded }: AddCardSheetProps) {
           <SheetFooter>
               <div className="flex flex-col w-full gap-2">
                   <Button type="submit">Save card</Button>
-                   <Button variant="secondary" type="button">
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Generate with AI
-                  </Button>
               </div>
           </SheetFooter>
         </form>

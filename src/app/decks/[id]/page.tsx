@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, PlayCircle, Sparkles, Trash2, Settings, AlertTriangle, Save } from 'lucide-react';
+import { ArrowLeft, PlayCircle, Trash2, Settings, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddCardSheet } from '@/components/add-card-sheet';
@@ -14,7 +14,6 @@ import type { Deck, Card as CardType } from '@/lib/types';
 import { allDecks as initialDecks, cards as initialCards } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { EditCardSheet } from '@/components/edit-card-sheet';
-import { AiGenerateCardsDialog } from '@/components/ai-generate-cards-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
@@ -70,6 +69,8 @@ export default function DeckDetailPage() {
       id: `card-${Date.now()}`,
       deckId: deckId,
       ...newCard,
+      srsLevel: 0,
+      nextReview: new Date(),
     };
     
     const updatedCards = [...cards, newCardWithId];
@@ -81,19 +82,6 @@ export default function DeckDetailPage() {
         title: "Card Added!",
         description: "Your new card has been saved to the deck.",
     });
-  };
-
-  const handleCardsGenerated = (newCards: { front: string; back: string }[]) => {
-    const newCardsWithIds = newCards.map((card, index) => ({
-      id: `card-${Date.now()}-${index}`,
-      deckId,
-      ...card,
-    }));
-
-    const updatedCards = [...cards, ...newCardsWithIds];
-    setCards(updatedCards);
-    localStorage.setItem(`cards_${deckId}`, JSON.stringify(updatedCards));
-    updateCardCountInStorage(deckId, updatedCards.length);
   };
 
   const handleCardUpdated = (updatedCard: CardType) => {
@@ -192,9 +180,6 @@ export default function DeckDetailPage() {
                                 This deck has {cards.length} card{cards.length === 1 ? '' : 's'}.
                             </CardDescription>
                         </div>
-                        {deck.isCustom && (
-                        <AiGenerateCardsDialog onCardsGenerated={handleCardsGenerated} />
-                        )}
                     </div>
                 </CardHeader>
                 <CardContent>

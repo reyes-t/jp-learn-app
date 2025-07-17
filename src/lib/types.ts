@@ -4,8 +4,6 @@ export type Deck = {
   description: string;
   cardCount: number;
   isCustom: boolean;
-  imageUrl?: string;
-  aiHint?: string;
 };
 
 export type Card = {
@@ -13,8 +11,8 @@ export type Card = {
   deckId: string;
   front: string;
   back: string;
-  srsLevel: number;
-  nextReview: Date;
+  srsLevel?: number;
+  nextReview?: Date;
 };
 
 export type GrammarPoint = {
