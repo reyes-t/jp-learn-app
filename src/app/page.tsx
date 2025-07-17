@@ -42,10 +42,12 @@ export default function DashboardPage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {grammarPoints.slice(0, 2).map(point => (
-                <div key={point.id} className="p-6 border rounded-lg bg-card">
-                    <h3 className="font-headline text-xl font-semibold mb-2">{point.title}</h3>
-                    <p className="text-muted-foreground line-clamp-3">{point.explanation}</p>
-                </div>
+                <Link key={point.id} href={`/grammar/${point.id}`} className="no-underline group">
+                    <div className="p-6 border rounded-lg bg-card h-full transition-colors hover:bg-muted/50">
+                        <h3 className="font-headline text-xl font-semibold mb-2 group-hover:text-primary">{point.title}</h3>
+                        <p className="text-muted-foreground line-clamp-3">{point.explanation}</p>
+                    </div>
+                </Link>
             ))}
         </div>
       </section>
@@ -64,10 +66,12 @@ export default function DashboardPage() {
         </div>
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {quizzes.slice(0, 2).map(quiz => (
-                <div key={quiz.id} className="p-6 border rounded-lg bg-card">
-                    <h3 className="font-headline text-xl font-semibold mb-2">{quiz.title}</h3>
-                    <p className="text-muted-foreground">{quiz.description}</p>
-                </div>
+                 <Link key={quiz.id} href={`/quizzes/${quiz.id}`} className="no-underline group">
+                    <div className="p-6 border rounded-lg bg-card h-full transition-colors hover:bg-muted/50">
+                        <h3 className="font-headline text-xl font-semibold mb-2 group-hover:text-primary">{quiz.title}</h3>
+                        <p className="text-muted-foreground">{quiz.description}</p>
+                    </div>
+                </Link>
             ))}
         </div>
       </section>
