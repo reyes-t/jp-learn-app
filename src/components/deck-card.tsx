@@ -78,8 +78,8 @@ export function DeckCard({ deck }: DeckCardProps) {
           </CardContent>
         </div>
       </Link>
-      <CardFooter className="p-4 pt-0 flex justify-between items-center bg-card">
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+      <CardFooter className="p-4 pt-0 flex justify-between items-end bg-card">
+          <div className="flex flex-col items-start gap-1 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                  <Layers className="w-4 h-4"/>
                  <span>{deck.cardCount} cards</span>
