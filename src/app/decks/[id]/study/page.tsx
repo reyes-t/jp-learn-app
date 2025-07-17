@@ -28,6 +28,7 @@ export default function StudyPage() {
   const [deck, setDeck] = useState<Deck | undefined>(undefined);
   const [allCards, setAllCards] = useState<CardType[]>([]);
   const [studyQueue, setStudyQueue] = useState<CardType[]>([]);
+  const [totalDueCount, setTotalDueCount] = useState(0);
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -69,8 +70,17 @@ export default function StudyPage() {
         const dueCards = cardsWithSrs
             .filter(card => card.nextReview <= now)
             .sort(() => Math.random() - 0.5); // Shuffle due cards
+        
+        setTotalDueCount(dueCards.length);
 
-        setStudyQueue(dueCards);
+        const storedSettings = JSON.parse(localStorage.getItem(`deckSettings_${deckId}`) || '{}');
+        const sessionSize = storedSettings.sessionSize;
+
+        if (sessionSize && dueCards.length > sessionSize) {
+            setStudyQueue(dueCards.slice(0, sessionSize));
+        } else {
+            setStudyQueue(dueCards);
+        }
     }
   }, [deckId]);
 
@@ -101,7 +111,7 @@ export default function StudyPage() {
 
     if (knewIt) {
       setSessionCorrect(c => c + 1);
-      const newSrsLevel = Math.min(currentCard.srsLevel + 1, srsIntervals.length - 1);
+      const newSrsLevel = Math.min((currentCard.srsLevel || 0) + 1, srsIntervals.length - 1);
       const nextReviewDate = addDays(now, srsIntervals[newSrsLevel]);
       updatedCard = { ...currentCard, srsLevel: newSrsLevel, nextReview: nextReviewDate };
     } else {
@@ -123,8 +133,18 @@ export default function StudyPage() {
     const dueCards = allCards
         .filter(card => card.nextReview <= now)
         .sort(() => Math.random() - 0.5);
+    
+    setTotalDueCount(dueCards.length);
 
-    setStudyQueue(dueCards);
+    const storedSettings = JSON.parse(localStorage.getItem(`deckSettings_${deckId}`) || '{}');
+    const sessionSize = storedSettings.sessionSize;
+
+    if (sessionSize && dueCards.length > sessionSize) {
+        setStudyQueue(dueCards.slice(0, sessionSize));
+    } else {
+        setStudyQueue(dueCards);
+    }
+
     setCurrentIndex(0);
     setSessionCorrect(0);
     setSessionIncorrect(0);
@@ -151,7 +171,7 @@ export default function StudyPage() {
     )
   }
   
-  if (studyQueue.length === 0) {
+  if (totalDueCount === 0) {
      return (
         <div className="container mx-auto flex flex-col items-center justify-center h-full">
             <Card className="w-full max-w-md text-center">
@@ -172,6 +192,7 @@ export default function StudyPage() {
   }
 
   if (isFinished) {
+    const remainingDue = totalDueCount - studyQueue.length;
     return (
         <div className="container mx-auto flex flex-col items-center justify-center h-full">
             <Card className="w-full max-w-md text-center">
@@ -190,9 +211,16 @@ export default function StudyPage() {
                             <p>Incorrect</p>
                         </div>
                     </div>
+                    {remainingDue > 0 && (
+                        <p className="mt-4 text-sm text-muted-foreground">
+                            You have {remainingDue} more cards due for review in this deck.
+                        </p>
+                    )}
                 </CardContent>
                 <CardFooter className="flex-col gap-4">
-                    <Button onClick={resetStudySession}>Start Next Session</Button>
+                    {remainingDue > 0 && (
+                        <Button onClick={resetStudySession}>Start Next Session</Button>
+                    )}
                     <Button variant="outline" asChild>
                         <Link href={`/decks/${deck.id}`}>Back to Deck</Link>
                     </Button>
@@ -223,7 +251,7 @@ export default function StudyPage() {
        <Alert className="max-w-lg">
         <Info className="h-4 w-4" />
         <AlertDescription>
-          There are <strong>{studyQueue.length}</strong> cards due for review in this session.
+          There are <strong>{totalDueCount}</strong> cards due for review in this deck. This session contains {studyQueue.length}.
         </AlertDescription>
       </Alert>
 

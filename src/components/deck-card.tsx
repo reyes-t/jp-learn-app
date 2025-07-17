@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { Deck } from '@/lib/types';
-import { Layers } from 'lucide-react';
+import type { Deck, Card as CardType } from '@/lib/types';
+import { BookCheck, Layers } from 'lucide-react';
 import { Progress } from './ui/progress';
 import { useState, useEffect } from 'react';
+import { cards as initialCards } from '@/lib/data';
 
 type DeckCardProps = {
   deck: Deck;
@@ -16,18 +17,39 @@ type DeckCardProps = {
 export function DeckCard({ deck }: DeckCardProps) {
   const [progress, setProgress] = useState(0);
   const [studiedCount, setStudiedCount] = useState(0);
+  const [dueCount, setDueCount] = useState(0);
 
   useEffect(() => {
-    const progressData = localStorage.getItem(`studyProgress_${deck.id}`);
-    if (progressData) {
-      const { correct } = JSON.parse(progressData);
-      if (deck.cardCount > 0) {
-        const currentProgress = Math.min(correct, deck.cardCount);
-        setProgress(Math.round((currentProgress / deck.cardCount) * 100));
-        setStudiedCount(currentProgress);
+    let allDeckCards: CardType[];
+    if (deck.isCustom) {
+      allDeckCards = JSON.parse(localStorage.getItem(`cards_${deck.id}`) || '[]');
+    } else {
+      const storedPregen = localStorage.getItem(`cards_${deck.id}`);
+      if (storedPregen) {
+          allDeckCards = JSON.parse(storedPregen);
+      } else {
+          allDeckCards = initialCards.filter(card => card.deckId === deck.id);
       }
     }
-  }, [deck.id, deck.cardCount]);
+    
+    if (allDeckCards.length > 0) {
+      const now = new Date();
+      const srsCards = allDeckCards.map(c => ({
+        ...c,
+        nextReview: c.nextReview ? new Date(c.nextReview) : now,
+      }));
+
+      const due = srsCards.filter(c => c.nextReview <= now).length;
+      setDueCount(due);
+
+      const mastered = srsCards.filter(c => (c.srsLevel || 0) > 0).length;
+      setStudiedCount(mastered);
+      
+      if (deck.cardCount > 0) {
+        setProgress(Math.round((mastered / deck.cardCount) * 100));
+      }
+    }
+  }, [deck.id, deck.cardCount, deck.isCustom]);
 
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
@@ -46,7 +68,7 @@ export function DeckCard({ deck }: DeckCardProps) {
             {progress > 0 && (
               <div className="mt-4">
                   <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs font-medium text-muted-foreground">Progress</span>
+                      <span className="text-xs font-medium text-muted-foreground">Mastery</span>
                       <span className="text-xs font-bold text-primary">{progress}%</span>
                   </div>
                   <Progress value={progress} className="h-2"/>
@@ -57,9 +79,17 @@ export function DeckCard({ deck }: DeckCardProps) {
         </div>
       </Link>
       <CardFooter className="p-4 pt-0 flex justify-between items-center bg-card">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Layers className="w-4 h-4"/>
-              <span>{deck.cardCount} cards</span>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                 <Layers className="w-4 h-4"/>
+                 <span>{deck.cardCount} cards</span>
+              </div>
+               {dueCount > 0 && (
+                <div className="flex items-center gap-2 text-primary font-semibold">
+                    <BookCheck className="w-4 h-4"/>
+                    <span>{dueCount} due</span>
+                </div>
+               )}
           </div>
           <Button asChild size="sm" onClick={(e) => e.stopPropagation()}>
             <Link href={`/decks/${deck.id}/study`}>Study</Link>

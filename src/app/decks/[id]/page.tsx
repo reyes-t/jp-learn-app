@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, PlayCircle, Sparkles, Trash2, Settings, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, PlayCircle, Sparkles, Trash2, Settings, AlertTriangle, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddCardSheet } from '@/components/add-card-sheet';
@@ -17,6 +17,8 @@ import { EditCardSheet } from '@/components/edit-card-sheet';
 import { AiGenerateCardsDialog } from '@/components/ai-generate-cards-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 export default function DeckDetailPage() {
   const params = useParams();
@@ -24,6 +26,7 @@ export default function DeckDetailPage() {
   const deckId = params.id as string;
   const [deck, setDeck] = useState<Deck | undefined>(undefined);
   const [cards, setCards] = useState<CardType[]>([]);
+  const [sessionSize, setSessionSize] = useState<number | string>('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -34,6 +37,10 @@ export default function DeckDetailPage() {
     const allDecks = [...initialDecks, ...storedDecks];
     const currentDeck = allDecks.find((d) => d.id === deckId);
     setDeck(currentDeck);
+
+    // Load session size setting
+    const storedSettings = JSON.parse(localStorage.getItem(`deckSettings_${deckId}`) || '{}');
+    setSessionSize(storedSettings.sessionSize || '');
 
     if (currentDeck) {
       if (currentDeck.isCustom) {
@@ -118,6 +125,7 @@ export default function DeckDetailPage() {
     localStorage.setItem('userDecks', JSON.stringify(updatedDecks));
     localStorage.removeItem(`cards_${deckId}`);
     localStorage.removeItem(`studyProgress_${deckId}`);
+    localStorage.removeItem(`deckSettings_${deckId}`);
     
     toast({
         title: 'Deck Deleted',
@@ -125,6 +133,17 @@ export default function DeckDetailPage() {
     });
 
     router.push('/decks');
+  };
+
+  const handleSaveSettings = () => {
+    const newSettings = {
+        sessionSize: sessionSize === '' ? undefined : Number(sessionSize)
+    };
+    localStorage.setItem(`deckSettings_${deckId}`, JSON.stringify(newSettings));
+    toast({
+        title: "Settings Saved",
+        description: "Your study settings have been updated.",
+    });
   };
 
 
@@ -161,7 +180,7 @@ export default function DeckDetailPage() {
       <Tabs defaultValue="cards" className="w-full">
         <TabsList className="mb-4">
             <TabsTrigger value="cards">Cards</TabsTrigger>
-            {deck.isCustom && <TabsTrigger value="settings">Settings</TabsTrigger>}
+            <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="cards">
             <Card>
@@ -239,50 +258,73 @@ export default function DeckDetailPage() {
                 </CardContent>
             </Card>
         </TabsContent>
-        {deck.isCustom && (
-            <TabsContent value="settings">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Deck Settings</CardTitle>
-                        <CardDescription>Manage your custom deck.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <h3 className="font-semibold text-lg text-destructive">Danger Zone</h3>
-                         <div className="mt-2 p-4 border border-destructive/50 rounded-lg flex items-center justify-between">
-                            <div>
-                                <h4 className="font-medium">Delete this deck</h4>
-                                <p className="text-sm text-muted-foreground">Once you delete this deck, all of its cards and study progress will be lost. This action cannot be undone.</p>
+        <TabsContent value="settings">
+             <Card>
+                <CardHeader>
+                    <CardTitle>Deck Settings</CardTitle>
+                    <CardDescription>Manage your study sessions and deck options.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                    <div>
+                        <h3 className="font-semibold text-lg">Study Settings</h3>
+                        <div className="mt-2 p-4 border rounded-lg">
+                           <div className="max-w-sm space-y-2">
+                             <Label htmlFor="session-size">Max cards per study session</Label>
+                             <Input 
+                                id="session-size" 
+                                type="number" 
+                                placeholder="All due cards"
+                                value={sessionSize}
+                                onChange={(e) => setSessionSize(e.target.value)}
+                                min="1"
+                             />
+                             <p className="text-xs text-muted-foreground">Leave blank to review all due cards in one session.</p>
+                           </div>
+                           <Button className="mt-4" onClick={handleSaveSettings}>
+                             <Save className="mr-2 h-4 w-4"/>
+                             Save Settings
+                           </Button>
+                        </div>
+                    </div>
+                    {deck.isCustom && (
+                        <div>
+                            <h3 className="font-semibold text-lg text-destructive">Danger Zone</h3>
+                            <div className="mt-2 p-4 border border-destructive/50 rounded-lg flex items-center justify-between">
+                                <div>
+                                    <h4 className="font-medium">Delete this deck</h4>
+                                    <p className="text-sm text-muted-foreground">Once you delete this deck, all of its cards and study progress will be lost. This action cannot be undone.</p>
+                                </div>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive">
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Delete Deck
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will permanently delete the <strong>{deck.name}</strong> deck and all of its cards. This action cannot be undone.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={handleDeleteDeck}
+                                                className="bg-destructive hover:bg-destructive/90"
+                                            >
+                                                Yes, delete deck
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </div>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                     <Button variant="destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete Deck
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This will permanently delete the <strong>{deck.name}</strong> deck and all of its cards. This action cannot be undone.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction
-                                            onClick={handleDeleteDeck}
-                                            className="bg-destructive hover:bg-destructive/90"
-                                        >
-                                            Yes, delete deck
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                         </div>
-                    </CardContent>
-                </Card>
-            </TabsContent>
-        )}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
