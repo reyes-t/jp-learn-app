@@ -4,9 +4,7 @@ import { useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from './ui/button';
-import { Volume2, Sparkles, Loader } from 'lucide-react';
-import { generateSpeech } from '@/app/actions';
-import { useToast } from '@/hooks/use-toast';
+import { Sparkles } from 'lucide-react';
 
 interface FlashcardProps {
   front: React.ReactNode;
@@ -16,9 +14,6 @@ interface FlashcardProps {
 
 export function Flashcard({ front, back, onFlip }: FlashcardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
-  const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const { toast } = useToast();
 
   const handleFlip = () => {
     // Only call onFlip the first time the card is flipped
@@ -26,37 +21,6 @@ export function Flashcard({ front, back, onFlip }: FlashcardProps) {
       onFlip?.();
     }
     setIsFlipped(!isFlipped);
-  };
-
-  const handlePronunciation = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (typeof front !== 'string') return;
-    
-    setIsGeneratingSpeech(true);
-    try {
-      const result = await generateSpeech(front);
-      if (result.success && result.data) {
-        if (audioRef.current) {
-          audioRef.current.src = result.data.audioDataUri;
-          audioRef.current.play();
-        }
-      } 
-      else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: result.error,
-        });
-      }
-    } catch (error) {
-      toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to generate speech.",
-        });
-    } finally {
-      setIsGeneratingSpeech(false);
-    }
   };
 
   return (
@@ -86,10 +50,6 @@ export function Flashcard({ front, back, onFlip }: FlashcardProps) {
             <CardContent className="flex-grow flex flex-col justify-center items-center gap-4">
                 <div className="text-3xl md:text-4xl font-semibold font-headline">{back}</div>
                 <div className="flex gap-4 mt-4">
-                    <Button variant="outline" size="icon" onClick={handlePronunciation} disabled={isGeneratingSpeech}>
-                        {isGeneratingSpeech ? <Loader className="w-5 h-5 animate-spin" /> : <Volume2 className="w-5 h-5" />}
-                        <span className="sr-only">Pronunciation</span>
-                    </Button>
                      <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
                         <Sparkles className="w-4 h-4 mr-2" />
                         Example Sentence
@@ -100,7 +60,6 @@ export function Flashcard({ front, back, onFlip }: FlashcardProps) {
           </Card>
         </div>
       </div>
-      <audio ref={audioRef} className="hidden" />
     </div>
   );
 }
