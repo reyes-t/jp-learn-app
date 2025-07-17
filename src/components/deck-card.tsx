@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Deck, Card as CardType } from '@/lib/types';
 import { BookCheck, Layers, Dot } from 'lucide-react';
-import { Progress } from './ui/progress';
 import { useState, useEffect } from 'react';
 import { cards as initialCards } from '@/lib/data';
 
@@ -93,11 +92,11 @@ export function DeckCard({ deck }: DeckCardProps) {
         <div className="mt-2 flex justify-end gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
                 <Dot className="text-primary/50" />
-                <span>Learning</span>
+                <span>Learning ({Math.round(learningPercentage)}%)</span>
             </div>
              <div className="flex items-center gap-1">
                 <Dot className="text-primary" />
-                <span>Mastered</span>
+                <span>Mastered ({Math.round(masteredPercentage)}%)</span>
             </div>
         </div>
       </div>
