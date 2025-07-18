@@ -32,6 +32,7 @@ export type QuizQuestion = {
   options: string[];
   correctAnswer: string;
   explanation: string;
+  isReview?: boolean;
 };
 
 // This is for the metadata of the quiz, not the full quiz itself

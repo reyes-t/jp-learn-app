@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Trophy } from 'lucide-react';
+import { ArrowLeft, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { quizzes, grammarPoints, cards as initialCards, basicDecks } from '@/lib/data';
 import type { Deck, Card as CardType, QuizQuestion, GrammarPoint } from '@/lib/types';
@@ -21,7 +21,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 };
 
 // Generates a grammar question from a grammar point
-const createGrammarQuestion = (point: GrammarPoint): QuizQuestion => {
+const createGrammarQuestion = (point: GrammarPoint, isReview: boolean = false): QuizQuestion => {
     const randomExample = point.examples[Math.floor(Math.random() * point.examples.length)];
     const otherPoints = grammarPoints.filter(p => p.id !== point.id);
     const wrongAnswers = shuffleArray(otherPoints).slice(0, 3).map(p => p.title);
@@ -33,11 +33,12 @@ const createGrammarQuestion = (point: GrammarPoint): QuizQuestion => {
         options,
         correctAnswer: point.title,
         explanation: point.explanation,
+        isReview,
     };
 };
 
 // Generates a vocabulary question from a flashcard
-const createVocabQuestion = (card: CardType, allCards: CardType[]): QuizQuestion => {
+const createVocabQuestion = (card: CardType, allCards: CardType[], isReview: boolean = false): QuizQuestion => {
     const isFrontQuestion = Math.random() > 0.5; // 50% chance to ask for the back, 50% for the front
     const otherCards = allCards.filter(c => c.id !== card.id);
     
@@ -59,6 +60,7 @@ const createVocabQuestion = (card: CardType, allCards: CardType[]): QuizQuestion
         options,
         correctAnswer,
         explanation: `"${card.front}" means "${card.back}".`,
+        isReview,
     };
 };
 
@@ -87,11 +89,11 @@ export default function QuizPage() {
         const storedLastIncorrectId: string | null = localStorage.getItem(lastIncorrectStorageKey);
         
         let potentialQuestions: any[];
-        let questionGenerator: (item: any, allItems: any[]) => QuizQuestion;
+        let questionGenerator: (item: any, allItems: any[], isReview: boolean) => QuizQuestion;
 
         if (quizMeta.id === 'grammar') {
             potentialQuestions = grammarPoints;
-            questionGenerator = (item) => createGrammarQuestion(item);
+            questionGenerator = (item, _, isReview) => createGrammarQuestion(item, isReview);
         } else { // vocabulary
             const userDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
             const vocabDecks = basicDecks.filter(d => d.id !== 'hiragana' && d.id !== 'katakana');
@@ -112,7 +114,7 @@ export default function QuizPage() {
                 }
             });
             potentialQuestions = allCards;
-            questionGenerator = (item, allItems) => createVocabQuestion(item, allItems);
+            questionGenerator = (item, allItems, isReview) => createVocabQuestion(item, allItems, isReview);
         }
 
         if (potentialQuestions.length === 0) {
@@ -127,7 +129,7 @@ export default function QuizPage() {
         if (storedLastIncorrectId) {
             const firstQuestionItem = potentialQuestions.find(item => item.id === storedLastIncorrectId);
             if (firstQuestionItem) {
-                firstQuestion = questionGenerator(firstQuestionItem, potentialQuestions);
+                firstQuestion = questionGenerator(firstQuestionItem, potentialQuestions, true);
             }
         }
 
@@ -135,20 +137,18 @@ export default function QuizPage() {
         const remainingPotentialQuestions = potentialQuestions.filter(item => item.id !== storedLastIncorrectId);
 
         // 3. Prioritize other incorrect questions
-        const incorrectQuestions = shuffleArray(remainingPotentialQuestions.filter(item => storedIncorrectIds.includes(item.id)));
-        const otherQuestions = shuffleArray(remainingPotentialQuestions.filter(item => !storedIncorrectIds.includes(item.id)));
+        const incorrectItems = shuffleArray(remainingPotentialQuestions.filter(item => storedIncorrectIds.includes(item.id)));
+        const otherItems = shuffleArray(remainingPotentialQuestions.filter(item => !storedIncorrectIds.includes(item.id)));
 
         // 4. Build the rest of the quiz
         const remainingQuizLength = firstQuestion ? QUIZ_LENGTH - 1 : QUIZ_LENGTH;
-        const numIncorrect = Math.min(incorrectQuestions.length, Math.ceil(remainingQuizLength / 2));
+        const numIncorrect = Math.min(incorrectItems.length, Math.ceil(remainingQuizLength / 2));
         const numOther = remainingQuizLength - numIncorrect;
         
-        const selectedItems = [
-            ...incorrectQuestions.slice(0, numIncorrect),
-            ...otherQuestions.slice(0, numOther)
-        ];
-        
-        const generatedQuestions = shuffleArray(selectedItems).map(item => questionGenerator(item, potentialQuestions));
+        const incorrectQuestions = incorrectItems.slice(0, numIncorrect).map(item => questionGenerator(item, potentialQuestions, true));
+        const otherQuestions = otherItems.slice(0, numOther).map(item => questionGenerator(item, potentialQuestions, false));
+
+        const generatedQuestions = shuffleArray([...incorrectQuestions, ...otherQuestions]);
         
         // 5. Combine and set the session questions
         if (firstQuestion) {
@@ -159,7 +159,7 @@ export default function QuizPage() {
 
         setSessionQuestions(questions.slice(0, QUIZ_LENGTH));
 
-    }, [quizMeta]);
+    }, [quizMeta, quizId]);
 
     if (!quizMeta) {
         notFound();
@@ -288,7 +288,15 @@ export default function QuizPage() {
 
             <Card>
                 <CardContent className="p-6">
-                    <p className="text-xl font-semibold mb-6">{currentQuestion.question}</p>
+                     <div className="flex items-start gap-4 mb-6">
+                        {currentQuestion.isReview && (
+                            <div className="flex flex-col items-center gap-1 text-muted-foreground" title="You've missed this question before.">
+                                <History className="w-5 h-5" />
+                                <span className="text-xs">Review</span>
+                            </div>
+                        )}
+                        <p className="text-xl font-semibold flex-1">{currentQuestion.question}</p>
+                    </div>
                     <div className="space-y-3">
                         {currentQuestion.options.map((option) => {
                              const isSelected = selectedAnswer === option;
