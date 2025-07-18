@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2, BrainCircuit } from "lucide-react";
+import { Trash2, BrainCircuit, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { basicDecks } from "@/lib/data";
 import type { Deck, Card as CardType } from "@/lib/types";
@@ -61,117 +61,127 @@ export default function AccountPage() {
         <h1 className="text-3xl font-bold font-headline mb-2">Account Settings</h1>
         <p className="text-muted-foreground mb-8">Manage your profile and account settings.</p>
 
-        <Card>
-            <CardHeader>
-                <CardTitle>Profile</CardTitle>
-                <CardDescription>This information will be displayed on your profile.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input id="name" defaultValue="Sakura Chan" />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" defaultValue="sakura@example.com" />
-                </div>
-            </CardContent>
-            <CardFooter>
-                <Button>Save Changes</Button>
-            </CardFooter>
-        </Card>
-
-        <Card className="mt-8">
-            <CardHeader>
-                <CardTitle>Password</CardTitle>
-                <CardDescription>Change your password here.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="current-password">Current Password</Label>
-                    <Input id="current-password" type="password" />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="new-password">New Password</Label>
-                    <Input id="new-password" type="password" />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm New Password</Label>
-                    <Input id="confirm-password" type="password" />
-                </div>
-            </CardContent>
-            <CardFooter>
-                <Button>Change Password</Button>
-            </CardFooter>
-        </Card>
-
-        <div className="mt-8">
-            <h3 className="font-semibold text-lg text-destructive mb-2">Danger Zone</h3>
-            <Card className="border-destructive/50">
-                <CardContent className="p-4 flex items-center justify-between">
-                     <div>
-                        <h4 className="font-medium">Reset All Study Progress</h4>
-                        <p className="text-sm text-muted-foreground">This will reset all Spaced Repetition progress on every deck. Your decks and cards will not be deleted. This action cannot be undone.</p>
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Profile</CardTitle>
+                    <CardDescription>This information will be displayed on your profile.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Name</Label>
+                        <Input id="name" defaultValue="Sakura Chan" />
                     </div>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Reset Progress
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will permanently reset all study progress for every deck. You will start over from the beginning. This action cannot be undone.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={handleResetProgress}
-                                    className="bg-destructive hover:bg-destructive/90"
-                                >
-                                    Yes, reset all progress
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" type="email" defaultValue="sakura@example.com" />
+                    </div>
                 </CardContent>
-                 <hr className="border-destructive/20"/>
-                 <CardContent className="p-4 flex items-center justify-between">
-                     <div>
-                        <h4 className="font-medium">Reset Quiz History</h4>
-                        <p className="text-sm text-muted-foreground">This will clear the history of incorrect answers for all adaptive quizzes. This action cannot be undone.</p>
+                <CardFooter>
+                    <Button>Save Changes</Button>
+                </CardFooter>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Password</CardTitle>
+                    <CardDescription>Change your password here.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="current-password">Current Password</Label>
+                        <Input id="current-password" type="password" />
                     </div>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                             <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                <BrainCircuit className="mr-2 h-4 w-4" />
-                                Reset Quiz History
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will permanently clear your quiz performance history. The quizzes will no longer adapt to your incorrect answers until you take them again. This action cannot be undone.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={handleResetQuizHistory}
-                                    className="bg-destructive hover:bg-destructive/90"
-                                >
-                                    Yes, reset quiz history
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    <div className="space-y-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <Input id="new-password" type="password" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirm New Password</Label>
+                        <Input id="confirm-password" type="password" />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button>Change Password</Button>
+                </CardFooter>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Quiz Settings</CardTitle>
+                    <CardDescription>Manage your adaptive quiz settings.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="p-4 border rounded-lg flex items-center justify-between">
+                         <div>
+                            <h4 className="font-medium">Reset Adaptive Quiz Data</h4>
+                            <p className="text-sm text-muted-foreground">This clears your quiz performance history. Quizzes will no longer adapt to your previous answers.</p>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                 <Button variant="outline">
+                                    <BrainCircuit className="mr-2 h-4 w-4" />
+                                    Reset Quiz Data
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will permanently clear your quiz performance history. The quizzes will no longer adapt to your incorrect answers until you take them again. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={handleResetQuizHistory}
+                                        className="bg-destructive hover:bg-destructive/90"
+                                    >
+                                        Yes, reset quiz history
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
                 </CardContent>
             </Card>
+
+            <div>
+                <h3 className="font-semibold text-lg text-destructive mb-2">Danger Zone</h3>
+                <Card className="border-destructive/50">
+                    <CardContent className="p-4 flex items-center justify-between">
+                         <div>
+                            <h4 className="font-medium">Reset All Study Progress</h4>
+                            <p className="text-sm text-muted-foreground">This will reset all Spaced Repetition progress on every deck. Your decks and cards will not be deleted. This action cannot be undone.</p>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Reset Progress
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will permanently reset all study progress for every deck. You will start over from the beginning. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={handleResetProgress}
+                                        className="bg-destructive hover:bg-destructive/90"
+                                    >
+                                        Yes, reset all progress
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     </div>
   );
