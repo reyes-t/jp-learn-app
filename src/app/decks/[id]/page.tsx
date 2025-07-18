@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, PlayCircle, Trash2, Settings, Save } from 'lucide-react';
+import { ArrowLeft, PlayCircle, Trash2, Settings, Save, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddCardSheet } from '@/components/add-card-sheet';
@@ -47,8 +47,11 @@ export default function DeckDetailPage() {
         const storedCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
         setCards(storedCards);
       } else {
-        // Load cards from initial data for pre-generated decks
-        const pregenCards = initialCards.filter(card => card.deckId === deckId);
+        // Load cards from initial data for pre-generated decks, but check for stored progress
+        const storedPregenCards = localStorage.getItem(`cards_${deckId}`);
+        const pregenCards = storedPregenCards 
+          ? JSON.parse(storedPregenCards)
+          : initialCards.filter(card => card.deckId === deckId);
         setCards(pregenCards);
       }
     }
@@ -132,6 +135,34 @@ export default function DeckDetailPage() {
         title: "Settings Saved",
         description: "Your study settings have been updated.",
     });
+  };
+
+  const handleResetDeckProgress = () => {
+    if (!deck) return;
+
+    let deckCards: CardType[];
+    if (deck.isCustom) {
+        deckCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
+    } else {
+        const storedCards = localStorage.getItem(`cards_${deckId}`);
+        deckCards = storedCards ? JSON.parse(storedCards) : initialCards.filter(c => c.deckId === deckId);
+    }
+    
+    const updatedCards = deckCards.map(card => {
+        const { srsLevel, nextReview, ...rest } = card;
+        return { ...rest, srsLevel: 0, nextReview: new Date() };
+    });
+
+    localStorage.setItem(`cards_${deckId}`, JSON.stringify(updatedCards));
+    setCards(updatedCards); // Refresh the state on the page if needed
+
+    toast({
+        title: "Progress Reset",
+        description: `Study progress for "${deck.name}" has been reset.`,
+    });
+    // Force reload of other components that rely on this data, like DeckCard on other pages.
+    // A more sophisticated state management solution would be better, but for now this is simple.
+    window.dispatchEvent(new Event('storage'));
   };
 
 
@@ -272,42 +303,81 @@ export default function DeckDetailPage() {
                            </Button>
                         </div>
                     </div>
-                    {deck.isCustom && (
-                        <div>
-                            <h3 className="font-semibold text-lg text-destructive">Danger Zone</h3>
-                            <div className="mt-2 p-4 border border-destructive/50 rounded-lg flex items-center justify-between">
+                    
+                    <div>
+                        <h3 className="font-semibold text-lg text-destructive">Danger Zone</h3>
+                         <div className="mt-2 p-4 border border-destructive/50 rounded-lg flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
                                 <div>
-                                    <h4 className="font-medium">Delete this deck</h4>
-                                    <p className="text-sm text-muted-foreground">Once you delete this deck, all of its cards and study progress will be lost. This action cannot be undone.</p>
+                                    <h4 className="font-medium">Reset Study Progress</h4>
+                                    <p className="text-sm text-muted-foreground">This will reset all SRS progress for this deck. This action cannot be undone.</p>
                                 </div>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <Button variant="destructive">
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Delete Deck
+                                        <Button variant="destructive" outline>
+                                            <RefreshCw className="mr-2 h-4 w-4" />
+                                            Reset Progress
                                         </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader>
                                             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                                This will permanently delete the <strong>{deck.name}</strong> deck and all of its cards. This action cannot be undone.
+                                                This will permanently reset study progress for the <strong>{deck.name}</strong> deck.
+                                                Your cards will not be deleted, but you will start over from the beginning. This action cannot be undone.
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                                             <AlertDialogAction
-                                                onClick={handleDeleteDeck}
+                                                onClick={handleResetDeckProgress}
                                                 className="bg-destructive hover:bg-destructive/90"
                                             >
-                                                Yes, delete deck
+                                                Yes, reset progress
                                             </AlertDialogAction>
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>
                             </div>
+
+                            {deck.isCustom && (
+                                <>
+                                <hr className="border-destructive/20"/>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h4 className="font-medium">Delete this deck</h4>
+                                        <p className="text-sm text-muted-foreground">This will permanently delete the deck and all of its cards. This action cannot be undone.</p>
+                                    </div>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete Deck
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This will permanently delete the <strong>{deck.name}</strong> deck and all of its cards. This action cannot be undone.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                    onClick={handleDeleteDeck}
+                                                    className="bg-destructive hover:bg-destructive/90"
+                                                >
+                                                    Yes, delete deck
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                                </>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </CardContent>
             </Card>
         </TabsContent>
