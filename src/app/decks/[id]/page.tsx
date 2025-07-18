@@ -2,11 +2,11 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, PlayCircle, Trash2, Settings, Save, RefreshCw } from 'lucide-react';
+import { ArrowLeft, PlayCircle, Trash2, Settings, Save, RefreshCw, BookCheck, Layers, Dot } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddCardSheet } from '@/components/add-card-sheet';
@@ -18,6 +18,78 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+
+const MASTERY_THRESHOLD = 5; // SRS level 5+ is considered "mastered"
+
+function ProgressCard({ cards: deckCards, cardCount }: { cards: CardType[], cardCount: number }) {
+  const [learningCount, setLearningCount] = useState(0);
+  const [masteredCount, setMasteredCount] = useState(0);
+  const [dueCount, setDueCount] = useState(0);
+
+  useEffect(() => {
+    if (deckCards.length > 0) {
+      const now = new Date();
+      const srsCards = deckCards.map(c => ({
+        ...c,
+        srsLevel: c.srsLevel ?? 0,
+        nextReview: c.nextReview ? new Date(c.nextReview) : now,
+      }));
+
+      const due = srsCards.filter(c => c.nextReview <= now).length;
+      setDueCount(due);
+
+      const learning = srsCards.filter(c => (c.srsLevel || 0) > 0 && (c.srsLevel || 0) < MASTERY_THRESHOLD).length;
+      setLearningCount(learning);
+      
+      const mastered = srsCards.filter(c => (c.srsLevel || 0) >= MASTERY_THRESHOLD).length;
+      setMasteredCount(mastered);
+      
+    } else {
+      setDueCount(0);
+      setLearningCount(0);
+      setMasteredCount(0);
+    }
+  }, [deckCards]);
+
+  const learningPercentage = cardCount > 0 ? (learningCount / cardCount) * 100 : 0;
+  const masteredPercentage = cardCount > 0 ? (masteredCount / cardCount) * 100 : 0;
+
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>Deck Progress</CardTitle>
+      </CardHeader>
+      <CardContent>
+          <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
+            <div
+              className="absolute h-full bg-primary/50 transition-all"
+              style={{ width: `${learningPercentage + masteredPercentage}%` }}
+            />
+            <div
+              className="absolute h-full bg-primary transition-all"
+              style={{ width: `${masteredPercentage}%` }}
+            />
+          </div>
+          <div className="mt-3 flex justify-between text-sm text-muted-foreground">
+              <div className="flex gap-4">
+                  <div className="flex items-center gap-2">
+                      <Dot className="text-primary/50" />
+                      <span>Learning ({Math.round(learningPercentage)}%)</span>
+                  </div>
+                   <div className="flex items-center gap-2">
+                      <Dot className="text-primary" />
+                      <span>Mastered ({Math.round(masteredPercentage)}%)</span>
+                  </div>
+              </div>
+              <div className="flex items-center gap-2 text-primary font-semibold">
+                  <BookCheck className="w-4 h-4"/>
+                  <span>{dueCount} due</span>
+              </div>
+          </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function DeckDetailPage() {
   const params = useParams();
@@ -195,6 +267,8 @@ export default function DeckDetailPage() {
           {deck.isCustom && <AddCardSheet onCardAdded={handleCardAdded} />}
         </div>
       </div>
+
+      <ProgressCard cards={cards} cardCount={deck.cardCount} />
       
       <Tabs defaultValue="cards" className="w-full">
         <TabsList className="mb-4">
