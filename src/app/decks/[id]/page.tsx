@@ -18,6 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 const MASTERY_THRESHOLD = 5; // SRS level 5+ is considered "mastered"
 
@@ -97,6 +98,10 @@ export default function DeckDetailPage() {
   const deckId = params.id as string;
   const [deck, setDeck] = useState<Deck | undefined>(undefined);
   const [cards, setCards] = useState<CardType[]>([]);
+  
+  // State for editable deck details
+  const [deckName, setDeckName] = useState('');
+  const [deckDescription, setDeckDescription] = useState('');
   const [sessionSize, setSessionSize] = useState<number | string>('');
   const { toast } = useToast();
 
@@ -108,6 +113,11 @@ export default function DeckDetailPage() {
     const allDecks = [...initialDecks, ...storedDecks];
     const currentDeck = allDecks.find((d) => d.id === deckId);
     setDeck(currentDeck);
+
+    if (currentDeck) {
+      setDeckName(currentDeck.name);
+      setDeckDescription(currentDeck.description);
+    }
 
     // Load session size setting
     const storedSettings = JSON.parse(localStorage.getItem(`deckSettings_${deckId}`) || '{}');
@@ -197,6 +207,26 @@ export default function DeckDetailPage() {
 
     router.push('/decks');
   };
+  
+  const handleSaveDeckDetails = () => {
+    if (!deck?.isCustom) return;
+    
+    const storedDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
+    const updatedDecks = storedDecks.map(d => {
+      if (d.id === deckId) {
+        return { ...d, name: deckName, description: deckDescription };
+      }
+      return d;
+    });
+    localStorage.setItem('userDecks', JSON.stringify(updatedDecks));
+    setDeck(prevDeck => prevDeck ? {...prevDeck, name: deckName, description: deckDescription} : undefined);
+    
+    toast({
+        title: "Deck Updated",
+        description: "Your deck details have been saved.",
+    });
+  };
+
 
   const handleSaveSettings = () => {
     const newSettings = {
@@ -355,6 +385,35 @@ export default function DeckDetailPage() {
                     <CardDescription>Manage your study sessions and deck options.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
+                    {deck.isCustom && (
+                        <div>
+                            <h3 className="font-semibold text-lg">Deck Details</h3>
+                            <div className="mt-2 p-4 border rounded-lg space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="deck-name">Deck Name</Label>
+                                    <Input 
+                                        id="deck-name" 
+                                        value={deckName}
+                                        onChange={(e) => setDeckName(e.target.value)}
+                                        placeholder="e.g. Japanese Food"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="deck-description">Description</Label>
+                                    <Textarea
+                                        id="deck-description"
+                                        value={deckDescription}
+                                        onChange={(e) => setDeckDescription(e.target.value)}
+                                        placeholder="What's this deck about?"
+                                    />
+                                </div>
+                                <Button onClick={handleSaveDeckDetails}>
+                                    <Save className="mr-2 h-4 w-4"/>
+                                    Save Deck Details
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                     <div>
                         <h3 className="font-semibold text-lg">Study Settings</h3>
                         <div className="mt-2 p-4 border rounded-lg">
@@ -388,7 +447,7 @@ export default function DeckDetailPage() {
                                 </div>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <Button variant="destructive" outline>
+                                        <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
                                             <RefreshCw className="mr-2 h-4 w-4" />
                                             Reset Progress
                                         </Button>
@@ -459,3 +518,4 @@ export default function DeckDetailPage() {
     </div>
   );
 }
+
