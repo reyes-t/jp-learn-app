@@ -243,6 +243,9 @@ export default function StudyPage() {
                 <ArrowLeft className="w-4 h-4" />
                 Exit
             </Link>
+            <div className="text-sm font-medium text-muted-foreground">
+                {cardsCompletedThisSession}/{initialSessionSize}
+            </div>
         </div>
         <Progress value={progress} />
       </div>
