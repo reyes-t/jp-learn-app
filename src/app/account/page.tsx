@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { Trash2, BrainCircuit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { basicDecks } from "@/lib/data";
 import type { Deck, Card as CardType } from "@/lib/types";
@@ -17,7 +17,6 @@ export default function AccountPage() {
   const { toast } = useToast();
 
   const handleResetProgress = () => {
-    // Combine basic decks and user-created decks
     const userDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
     const allDecks: Deck[] = [...basicDecks, ...userDecks];
 
@@ -28,7 +27,6 @@ export default function AccountPage() {
         if (storedCards) {
             try {
                 const cards: CardType[] = JSON.parse(storedCards);
-                // Reset progress for each card
                 const updatedCards = cards.map((card) => {
                     const { srsLevel, nextReview, ...rest } = card;
                     return { ...rest, srsLevel: 0, nextReview: new Date() };
@@ -37,10 +35,6 @@ export default function AccountPage() {
             } catch (error) {
                 console.error(`Failed to parse or update cards for deck ${deck.id}`, error);
             }
-        } else if (!deck.isCustom) {
-            // For basic decks that might not have been touched yet, 
-            // there won't be an entry in localStorage. We can ignore them
-            // as they have no progress to reset.
         }
     });
 
@@ -48,9 +42,18 @@ export default function AccountPage() {
         title: "Progress Reset",
         description: "All your study progress has been successfully reset.",
     });
+  };
 
-    // Optional: force a reload to reflect changes everywhere
-    // window.location.reload();
+  const handleResetQuizHistory = () => {
+    localStorage.removeItem('quiz_incorrect_grammar');
+    localStorage.removeItem('quiz_last_incorrect_grammar');
+    localStorage.removeItem('quiz_incorrect_vocabulary');
+    localStorage.removeItem('quiz_last_incorrect_vocabulary');
+
+    toast({
+        title: "Quiz History Reset",
+        description: "Your adaptive quiz data has been cleared.",
+    });
   };
 
   return (
@@ -108,7 +111,7 @@ export default function AccountPage() {
                 <CardContent className="p-4 flex items-center justify-between">
                      <div>
                         <h4 className="font-medium">Reset All Study Progress</h4>
-                        <p className="text-sm text-muted-foreground">This will reset all your Spaced Repetition progress on every deck. Your decks and cards will not be deleted. This action cannot be undone.</p>
+                        <p className="text-sm text-muted-foreground">This will reset all Spaced Repetition progress on every deck. Your decks and cards will not be deleted. This action cannot be undone.</p>
                     </div>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -131,6 +134,38 @@ export default function AccountPage() {
                                     className="bg-destructive hover:bg-destructive/90"
                                 >
                                     Yes, reset all progress
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </CardContent>
+                 <hr className="border-destructive/20"/>
+                 <CardContent className="p-4 flex items-center justify-between">
+                     <div>
+                        <h4 className="font-medium">Reset Quiz History</h4>
+                        <p className="text-sm text-muted-foreground">This will clear the history of incorrect answers for all adaptive quizzes. This action cannot be undone.</p>
+                    </div>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                             <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                <BrainCircuit className="mr-2 h-4 w-4" />
+                                Reset Quiz History
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will permanently clear your quiz performance history. The quizzes will no longer adapt to your incorrect answers until you take them again. This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={handleResetQuizHistory}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                >
+                                    Yes, reset quiz history
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
