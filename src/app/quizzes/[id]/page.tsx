@@ -91,7 +91,8 @@ export default function QuizPage() {
             questionGenerator = (item) => createGrammarQuestion(item);
         } else { // vocabulary
             const userDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
-            const allDeckIds = [...basicDecks.map(d => d.id), ...userDecks.map(d => d.id)];
+            const vocabDecks = basicDecks.filter(d => d.id !== 'hiragana' && d.id !== 'katakana');
+            const allDeckIds = [...vocabDecks.map(d => d.id), ...userDecks.map(d => d.id)];
             
             let allCards: CardType[] = [];
             allDeckIds.forEach(deckId => {
