@@ -74,14 +74,17 @@ export default function QuizPage() {
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
     const [sessionQuestions, setSessionQuestions] = useState<QuizQuestion[]>([]);
-    const [incorrectlyAnsweredIds, setIncorrectlyAnsweredIds] = useState<string[]>([]);
+    const [lastIncorrectId, setLastIncorrectId] = useState<string | null>(null);
 
 
     useEffect(() => {
         if (!quizMeta) return;
 
         const incorrectStorageKey = `quiz_incorrect_${quizMeta.id}`;
+        const lastIncorrectStorageKey = `quiz_last_incorrect_${quizMeta.id}`;
+
         const storedIncorrectIds: string[] = JSON.parse(localStorage.getItem(incorrectStorageKey) || '[]');
+        const storedLastIncorrectId: string | null = localStorage.getItem(lastIncorrectStorageKey);
         
         let potentialQuestions: any[];
         let questionGenerator: (item: any, allItems: any[]) => QuizQuestion;
@@ -117,13 +120,28 @@ export default function QuizPage() {
             return;
         }
 
-        // Prioritize incorrect questions
-        const incorrectQuestions = shuffleArray(potentialQuestions.filter(item => storedIncorrectIds.includes(item.id)));
-        const otherQuestions = shuffleArray(potentialQuestions.filter(item => !storedIncorrectIds.includes(item.id)));
+        let questions: QuizQuestion[] = [];
+        let firstQuestion: QuizQuestion | undefined;
 
-        // Take up to half the quiz from incorrect questions, fill rest with others
-        const numIncorrect = Math.min(incorrectQuestions.length, Math.ceil(QUIZ_LENGTH / 2));
-        const numOther = QUIZ_LENGTH - numIncorrect;
+        // 1. Find and create the guaranteed first question if it exists
+        if (storedLastIncorrectId) {
+            const firstQuestionItem = potentialQuestions.find(item => item.id === storedLastIncorrectId);
+            if (firstQuestionItem) {
+                firstQuestion = questionGenerator(firstQuestionItem, potentialQuestions);
+            }
+        }
+
+        // 2. Filter out the first question item from the pool of other questions
+        const remainingPotentialQuestions = potentialQuestions.filter(item => item.id !== storedLastIncorrectId);
+
+        // 3. Prioritize other incorrect questions
+        const incorrectQuestions = shuffleArray(remainingPotentialQuestions.filter(item => storedIncorrectIds.includes(item.id)));
+        const otherQuestions = shuffleArray(remainingPotentialQuestions.filter(item => !storedIncorrectIds.includes(item.id)));
+
+        // 4. Build the rest of the quiz
+        const remainingQuizLength = firstQuestion ? QUIZ_LENGTH - 1 : QUIZ_LENGTH;
+        const numIncorrect = Math.min(incorrectQuestions.length, Math.ceil(remainingQuizLength / 2));
+        const numOther = remainingQuizLength - numIncorrect;
         
         const selectedItems = [
             ...incorrectQuestions.slice(0, numIncorrect),
@@ -131,7 +149,15 @@ export default function QuizPage() {
         ];
         
         const generatedQuestions = shuffleArray(selectedItems).map(item => questionGenerator(item, potentialQuestions));
-        setSessionQuestions(generatedQuestions);
+        
+        // 5. Combine and set the session questions
+        if (firstQuestion) {
+            questions = [firstQuestion, ...generatedQuestions];
+        } else {
+            questions = generatedQuestions;
+        }
+
+        setSessionQuestions(questions.slice(0, QUIZ_LENGTH));
 
     }, [quizMeta]);
 
@@ -152,7 +178,7 @@ export default function QuizPage() {
             setCorrectAnswersCount(c => c + 1);
         } else {
             setAnswerStatus('incorrect');
-            setIncorrectlyAnsweredIds(prev => [...new Set([...prev, currentQuestion.id])]);
+            setLastIncorrectId(currentQuestion.id);
         }
     };
 
@@ -169,9 +195,19 @@ export default function QuizPage() {
     
     const handleFinish = () => {
          const incorrectStorageKey = `quiz_incorrect_${quizMeta.id}`;
-         const storedIncorrectIds: string[] = JSON.parse(localStorage.getItem(incorrectStorageKey) || '[]');
-         const updatedIncorrectIds = [...new Set([...storedIncorrectIds, ...incorrectlyAnsweredIds])];
-         localStorage.setItem(incorrectStorageKey, JSON.stringify(updatedIncorrectIds));
+         const lastIncorrectStorageKey = `quiz_last_incorrect_${quizMeta.id}`;
+         
+         // Remove last incorrect ID from main incorrect list if it's there, to avoid duplication.
+         const storedIncorrectIds: string[] = JSON.parse(localStorage.getItem(incorrectStorageKey) || '[]').filter(id => id !== lastIncorrectId);
+
+         if (lastIncorrectId) {
+            const updatedIncorrectIds = [...new Set([lastIncorrectId, ...storedIncorrectIds])];
+            localStorage.setItem(incorrectStorageKey, JSON.stringify(updatedIncorrectIds));
+            localStorage.setItem(lastIncorrectStorageKey, lastIncorrectId);
+         } else {
+            // If they finished without any new incorrect answers, clear the "last incorrect" flag.
+            localStorage.removeItem(lastIncorrectStorageKey);
+         }
     }
 
     if (sessionQuestions.length === 0 && quizMeta) {
