@@ -5,7 +5,7 @@ import { ArrowRight, BookOpen, FileQuestion, Layers3 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const featuredDecks = basicDecks.slice(0, 3);
+  const featuredDecks = basicDecks.slice(0, 2);
 
   return (
     <div className="container mx-auto">
@@ -21,7 +21,7 @@ export default function DashboardPage() {
                 </Link>
             </Button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {featuredDecks.map((deck) => (
             <DeckCard key={deck.id} deck={deck} />
           ))}
@@ -65,7 +65,7 @@ export default function DashboardPage() {
             </Button>
         </div>
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {quizzes.slice(0, 2).map(quiz => (
+            {quizzes.map(quiz => (
                  <Link key={quiz.id} href={`/quizzes/${quiz.id}`} className="no-underline group">
                     <div className="p-6 border rounded-lg bg-card h-full transition-colors hover:bg-muted/50">
                         <h3 className="font-headline text-xl font-semibold mb-2 group-hover:text-primary">{quiz.title}</h3>

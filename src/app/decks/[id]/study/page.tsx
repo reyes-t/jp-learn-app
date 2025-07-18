@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { allDecks as initialDecks, cards as initialCards } from '@/lib/data';
+import { basicDecks as initialDecks, cards as initialCards } from '@/lib/data';
 import type { Card as CardType, Deck } from '@/lib/types';
 import { Flashcard } from '@/components/flashcard';
 import { Button } from '@/components/ui/button';

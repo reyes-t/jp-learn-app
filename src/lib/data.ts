@@ -1,4 +1,4 @@
-import type { Deck, Card, GrammarPoint, Quiz } from './types';
+import type { Deck, Card, GrammarPoint, QuizMeta } from './types';
 
 export const basicDecks: Deck[] = [
   {
@@ -7,7 +7,6 @@ export const basicDecks: Deck[] = [
     description: 'Master the fundamental Japanese syllabary.',
     cardCount: 46,
     isCustom: false,
-    aiHint: 'hiragana chart'
   },
   {
     id: 'katakana',
@@ -15,7 +14,6 @@ export const basicDecks: Deck[] = [
     description: 'Learn the script used for foreign words.',
     cardCount: 46,
     isCustom: false,
-    aiHint: 'katakana chart'
   },
   {
     id: 'n5-vocab',
@@ -23,22 +21,8 @@ export const basicDecks: Deck[] = [
     description: 'Essential words for beginner proficiency.',
     cardCount: 100,
     isCustom: false,
-    aiHint: 'japanese vocabulary'
   },
 ];
-
-export const userDecks: Deck[] = [
-  {
-    id: 'travel-phrases',
-    name: 'Travel Phrases',
-    description: 'Useful phrases for your trip to Japan.',
-    cardCount: 3,
-    isCustom: true,
-    aiHint: 'japan travel'
-  },
-];
-
-export const allDecks = [...basicDecks, ...userDecks];
 
 export const cards: Card[] = [
   // Hiragana (46 cards)
@@ -238,11 +222,6 @@ export const cards: Card[] = [
   { id: 'v-98', deckId: 'n5-vocab', front: '店', back: 'Store, shop (mise)' },
   { id: 'v-99', deckId: 'n5-vocab', front: '駅', back: 'Station (eki)' },
   { id: 'v-100', deckId: 'n5-vocab', front: '飛行機', back: 'Airplane (hikouki)' },
-
-  // Travel (3 cards)
-  { id: 't-1', deckId: 'travel-phrases', front: 'こんにちは', back: 'Hello (konnichiwa)' },
-  { id: 't-2', deckId: 'travel-phrases', front: 'ありがとうございます', back: 'Thank you (arigatou gozaimasu)' },
-  { id: 't-3', deckId: 'travel-phrases', front: 'これはいくらですか？', back: 'How much is this? (kore wa ikura desu ka?)' },
 ];
 
 export const grammarPoints: GrammarPoint[] = [
@@ -339,27 +318,15 @@ export const grammarPoints: GrammarPoint[] = [
   },
 ];
 
-export const quizzes: Quiz[] = [
+export const quizzes: QuizMeta[] = [
     {
-        id: 'q-1',
-        title: 'Beginner Grammar Quiz',
-        description: 'Test your knowledge of basic Japanese sentence structure.',
-        questions: [
-            { id: 'q1-1', question: 'Which particle is used to mark the topic of a sentence?', options: ['を (o)', 'が (ga)', 'は (wa)', 'に (ni)'], correctAnswer: 'は (wa)', explanation: '「は」 (wa) is the topic marker particle, indicating what the sentence is about.' },
-            { id: 'q1-2', question: 'How do you say "I am a student" in polite Japanese?', options: ['Watashi wa gakusei da', 'Watashi wa gakusei desu', 'Watashi ga gakusei desu', 'Gakusei desu watashi wa'], correctAnswer: 'Watashi wa gakusei desu', explanation: '「です」 (desu) is the polite copula used at the end of a sentence to state what something is.' },
-            { id: 'q1-3', question: 'What does「これ」 (kore) mean?', options: ['That (near you)', 'That (over there)', 'This', 'Where'], correctAnswer: 'This', explanation: '「これ」 (kore) means "this," referring to something close to the speaker.' },
-            { id: 'q1-4', question: 'Which of the following is an い-adjective?', options: ['きれい (kirei)', 'しずか (shizuka)', 'げんき (genki)', 'おいしい (oishii)'], correctAnswer: 'おいしい (oishii)', explanation: 'い-adjectives end with the hiragana character い, like おいしい (delicious).' },
-            { id: 'q1-5', question: 'How do you turn a statement into a question?', options: ['Add 「か」 (ka) to the end', 'Add 「ね」 (ne) to the end', 'Change the verb form', 'Reverse the word order'], correctAnswer: 'Add 「か」 (ka) to the end', explanation: 'Adding the particle 「か」 (ka) to the end of a declarative sentence turns it into a question.' },
-        ]
+        id: 'grammar',
+        title: 'Comprehensive Grammar Quiz',
+        description: 'Test your knowledge of all grammar points.',
     },
     {
-        id: 'q-2',
-        title: 'N5 Vocabulary Quiz',
-        description: 'How well do you know the essential N5 words?',
-        questions: [
-            { id: 'q2-1', question: 'What is the Japanese word for "teacher"?', options: ['医者 (isha)', '学生 (gakusei)', '会社員 (kaishain)', '先生 (sensei)'], correctAnswer: '先生 (sensei)', explanation: '「先生」 (sensei) is the word for teacher. It can also be used as a title of respect for doctors, lawyers, and other professionals.' },
-            { id: 'q2-2', question: 'The word 「ともだち」 (tomodachi) means:', options: ['Family', 'Friend', 'Coworker', 'Sibling'], correctAnswer: 'Friend', explanation: '「ともだち」 (tomodachi) is the common word for "friend".' },
-            { id: 'q2-3', question: 'Which word means "to eat"?', options: ['のむ (nomu)', 'たべる (taberu)', 'かう (kau)', 'みる (miru)'], correctAnswer: 'たべる (taberu)', explanation: '「たべる」 (taberu) is the dictionary form of the verb "to eat".' },
-        ]
-    },
+        id: 'vocabulary',
+        title: 'Full Vocabulary Quiz',
+        description: 'A quiz on all the flashcards you have available.',
+    }
 ];

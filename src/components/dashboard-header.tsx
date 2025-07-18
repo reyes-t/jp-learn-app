@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { CircleUser, Home, Search } from "lucide-react"
 import React, { useState, useEffect } from "react"
-import { allDecks as initialDecks } from "@/lib/data"
+import { basicDecks as initialDecks } from "@/lib/data"
 import type { Deck } from "@/lib/types"
 
 // A helper function to capitalize the first letter of a string
@@ -66,10 +66,47 @@ const HeaderBreadcrumb = () => {
               let segmentTitle: string;
               if (index === 1 && pathSegments[0] === 'decks' && deckTitle) {
                 segmentTitle = deckTitle;
-              } else {
+              } else if (index === 2 && pathSegments[0] === 'decks' && deckTitle) {
+                segmentTitle = capitalize(segment);
+              }
+              else {
                 segmentTitle = capitalize(segment);
               }
               
+              if (isLast) {
+                 if (index > 0 && pathSegments[index-1] === 'decks' && deckTitle) {
+                    segmentTitle = deckTitle;
+                 }
+              }
+
+              // Special handling for study page
+              if (segment === 'study' && deckTitle) {
+                  segmentTitle = deckTitle;
+              }
+
+
+              // Create a breadcrumb structure that makes sense
+              const breadcrumbItems = [];
+              if (pathSegments[0]) {
+                  breadcrumbItems.push({
+                      href: `/${pathSegments[0]}`,
+                      title: capitalize(pathSegments[0])
+                  });
+              }
+              if (pathSegments[0] === 'decks' && deckTitle && pathSegments[1]) {
+                   breadcrumbItems.push({
+                      href: `/decks/${pathSegments[1]}`,
+                      title: deckTitle
+                  });
+              }
+               if (pathSegments[2]) {
+                   breadcrumbItems.push({
+                      href: `/decks/${pathSegments[1]}/${pathSegments[2]}`,
+                      title: capitalize(pathSegments[2])
+                  });
+              }
+
+
               return (
                 <React.Fragment key={href}>
                   <BreadcrumbSeparator />

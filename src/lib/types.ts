@@ -34,9 +34,9 @@ export type QuizQuestion = {
   explanation: string;
 };
 
-export type Quiz = {
-  id: string;
+// This is for the metadata of the quiz, not the full quiz itself
+export type QuizMeta = {
+  id: 'grammar' | 'vocabulary';
   title: string;
   description: string;
-  questions: QuizQuestion[];
 };

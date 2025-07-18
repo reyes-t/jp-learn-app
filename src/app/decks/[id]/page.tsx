@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddCardSheet } from '@/components/add-card-sheet';
 import type { Deck, Card as CardType } from '@/lib/types';
-import { allDecks as initialDecks, cards as initialCards } from '@/lib/data';
+import { basicDecks as initialDecks, cards as initialCards } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { EditCardSheet } from '@/components/edit-card-sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -518,4 +518,3 @@ export default function DeckDetailPage() {
     </div>
   );
 }
-
