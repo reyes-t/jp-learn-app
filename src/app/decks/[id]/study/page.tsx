@@ -243,19 +243,9 @@ export default function StudyPage() {
                 <ArrowLeft className="w-4 h-4" />
                 Exit
             </Link>
-            <div className="text-sm text-muted-foreground">
-                {cardsCompletedThisSession} / {initialSessionSize} cards completed
-            </div>
         </div>
         <Progress value={progress} />
       </div>
-
-       <Alert className="max-w-lg">
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          There are <strong>{totalDueCount}</strong> total cards due. This session contains <strong>{initialSessionSize}</strong> cards.
-        </AlertDescription>
-      </Alert>
 
       {currentCard ? (
         <>
