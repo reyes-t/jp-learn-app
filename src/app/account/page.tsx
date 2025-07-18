@@ -10,14 +10,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { basicDecks } from "@/lib/data";
-import type { Deck } from "@/lib/types";
+import type { Deck, Card as CardType } from "@/lib/types";
 
 
 export default function AccountPage() {
   const { toast } = useToast();
 
   const handleResetProgress = () => {
-    // Get all user-created decks
+    // Combine basic decks and user-created decks
     const userDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
     const allDecks: Deck[] = [...basicDecks, ...userDecks];
 
@@ -27,17 +27,20 @@ export default function AccountPage() {
         
         if (storedCards) {
             try {
-                const cards = JSON.parse(storedCards);
+                const cards: CardType[] = JSON.parse(storedCards);
                 // Reset progress for each card
-                const updatedCards = cards.map((card: any) => ({
-                    ...card,
-                    srsLevel: 0,
-                    nextReview: new Date(),
-                }));
+                const updatedCards = cards.map((card) => {
+                    const { srsLevel, nextReview, ...rest } = card;
+                    return { ...rest, srsLevel: 0, nextReview: new Date() };
+                });
                 localStorage.setItem(cardKey, JSON.stringify(updatedCards));
             } catch (error) {
                 console.error(`Failed to parse or update cards for deck ${deck.id}`, error);
             }
+        } else if (!deck.isCustom) {
+            // For basic decks that might not have been touched yet, 
+            // there won't be an entry in localStorage. We can ignore them
+            // as they have no progress to reset.
         }
     });
 
