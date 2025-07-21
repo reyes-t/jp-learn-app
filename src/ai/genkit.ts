@@ -4,5 +4,6 @@ import {googleAI} from '@genkit-ai/googleai';
 
 export const ai = genkit({
   plugins: [googleAI(),],
-  // model: 'googleai/gemini-2.0-flash',
+  // By setting a default model, we don't have to specify it on every call.
+  model: 'googleai/gemini-2.0-flash',
 });
