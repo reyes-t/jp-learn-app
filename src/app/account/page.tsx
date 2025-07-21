@@ -115,7 +115,7 @@ export default function AccountPage() {
                 <CardContent>
                     <div className="p-4 border rounded-lg flex items-center justify-between">
                          <div>
-                            <h4 className="font-medium">Reset Adaptive Quiz Data</h4>
+                            <h4 className="font-medium">Reset Quiz Data</h4>
                             <p className="text-sm text-muted-foreground">This clears your quiz performance history. Quizzes will no longer adapt to your previous answers.</p>
                         </div>
                         <AlertDialog>
