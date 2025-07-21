@@ -47,6 +47,8 @@ export default function AccountPage() {
   const handleResetQuizHistory = () => {
     localStorage.removeItem('quiz_weights_grammar');
     localStorage.removeItem('quiz_weights_vocabulary');
+    localStorage.removeItem('quiz_best_score_grammar');
+    localStorage.removeItem('quiz_best_score_vocabulary');
 
     toast({
         title: "Quiz History Reset",

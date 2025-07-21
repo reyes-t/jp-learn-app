@@ -224,6 +224,16 @@ export default function QuizPage() {
     if (isQuizFinished) {
         const score = Math.round((correctAnswersCount / sessionQuestions.length) * 100);
         
+        useEffect(() => {
+            if (isQuizFinished && quizMeta) {
+                const bestScoreKey = `quiz_best_score_${quizMeta.id}`;
+                const bestScore = JSON.parse(localStorage.getItem(bestScoreKey) || '0');
+                if (score > bestScore) {
+                    localStorage.setItem(bestScoreKey, JSON.stringify(score));
+                }
+            }
+        }, [isQuizFinished, score, quizMeta]);
+
         return (
             <div className="container mx-auto flex flex-col items-center justify-center h-full">
                 <Card className="w-full max-w-md text-center">
@@ -363,7 +373,3 @@ export default function QuizPage() {
         </div>
     );
 }
-
-    
-
-    
