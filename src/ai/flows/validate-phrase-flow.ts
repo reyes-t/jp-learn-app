@@ -4,24 +4,15 @@
  * @fileOverview An AI flow to validate a user-provided Japanese phrase against a set of conditions.
  *
  * - validatePhrase - A function that validates the phrase.
- * - ValidatePhraseInput - The input type for the validatePhrase function.
- * - PhraseValidationResult - The return type for the validatePhrase function.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-export const ValidatePhraseInputSchema = z.object({
-  conditions: z.array(z.string()).describe('A list of conditions or topics the phrase must satisfy (e.g., "Greetings", "Politeness", "Asking for directions").'),
-  phrase: z.string().describe('The Japanese phrase submitted by the user.'),
-});
-export type ValidatePhraseInput = z.infer<typeof ValidatePhraseInputSchema>;
-
-export const PhraseValidationResultSchema = z.object({
-  isValid: z.boolean().describe('Whether the phrase is a correct and valid answer for the given conditions.'),
-  reason: z.string().describe('A brief explanation of why the phrase is valid or invalid. Provide constructive feedback if invalid.'),
-});
-export type PhraseValidationResult = z.infer<typeof PhraseValidationResultSchema>;
+import {
+  ValidatePhraseInputSchema,
+  PhraseValidationResultSchema,
+  type ValidatePhraseInput,
+  type PhraseValidationResult,
+} from '@/lib/types';
 
 
 const validatePhrasePrompt = ai.definePrompt({

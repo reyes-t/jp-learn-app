@@ -1,4 +1,5 @@
 
+import { z } from 'zod';
 
 export type Deck = {
   id: string;
@@ -57,12 +58,16 @@ export type GeneratedPhrase = {
   english: string;
 };
 
-export type PhraseValidationResult = {
-  isValid: boolean;
-  reason: string;
-};
 
-export type ValidatePhraseInput = {
-    conditions: string[];
-    phrase: string;
-};
+// Types for Creative Practice Quiz (validatePhraseFlow)
+export const ValidatePhraseInputSchema = z.object({
+  conditions: z.array(z.string()).describe('A list of conditions or topics the phrase must satisfy (e.g., "Greetings", "Politeness", "Asking for directions").'),
+  phrase: z.string().describe('The Japanese phrase submitted by the user.'),
+});
+export type ValidatePhraseInput = z.infer<typeof ValidatePhraseInputSchema>;
+
+export const PhraseValidationResultSchema = z.object({
+  isValid: z.boolean().describe('Whether the phrase is a correct and valid answer for the given conditions.'),
+  reason: z.string().describe('A brief explanation of why the phrase is valid or invalid. Provide constructive feedback if invalid.'),
+});
+export type PhraseValidationResult = z.infer<typeof PhraseValidationResultSchema>;
