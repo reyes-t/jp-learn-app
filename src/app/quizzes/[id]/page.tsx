@@ -74,7 +74,7 @@ export default function QuizPage() {
     const quizId = params.id as string;
 
     const quizMeta = useMemo(() => quizzes.find((q) => q.id === quizId), [quizId]);
-
+    const [isLoading, setIsLoading] = useState(true);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
@@ -121,6 +121,7 @@ export default function QuizPage() {
 
         if (potentialQuestionItems.length === 0) {
             setSessionQuestions([]);
+            setIsLoading(false);
             return;
         }
 
@@ -145,6 +146,7 @@ export default function QuizPage() {
             }));
         
         setSessionQuestions(generatedQuestions);
+        setIsLoading(false);
 
     }, [quizMeta, quizId]);
 
@@ -152,7 +154,6 @@ export default function QuizPage() {
     const progress = sessionQuestions.length > 0 ? (currentQuestionIndex / sessionQuestions.length) * 100 : 0;
     const currentQuestion = sessionQuestions[currentQuestionIndex];
     
-    // Moved from inside the `isQuizFinished` block to fix hook order violation
     useEffect(() => {
         if (isQuizFinished && quizMeta) {
             const score = Math.round((correctAnswersCount / sessionQuestions.length) * 100);
@@ -212,11 +213,15 @@ export default function QuizPage() {
         setCurrentQuestionIndex(prev => prev + 1); // Move to finished screen
     }
 
-    if (!quizMeta) {
-        return <div className="container mx-auto max-w-2xl">Loading...</div>; // Return loading state
+    if (isLoading) {
+        return <div className="container mx-auto max-w-2xl text-center p-8">Loading quiz...</div>;
     }
 
-    if (sessionQuestions.length === 0 && quizMeta) {
+    if (!quizMeta) {
+        return <div className="container mx-auto max-w-2xl">Something went wrong.</div>; 
+    }
+
+    if (sessionQuestions.length === 0) {
          return (
              <div className="container mx-auto flex flex-col items-center justify-center h-full">
                 <Card className="w-full max-w-md text-center">
