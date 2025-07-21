@@ -76,17 +76,17 @@ export default function QuizPage() {
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
     const [sessionQuestions, setSessionQuestions] = useState<QuizQuestion[]>([]);
-    const [lastIncorrectId, setLastIncorrectId] = useState<string | null>(null);
+    const [incorrectQuestionsDuringSession, setIncorrectQuestionsDuringSession] = useState<Record<string, number>>({});
 
 
     useEffect(() => {
         if (!quizMeta) return;
 
-        const incorrectStorageKey = `quiz_incorrect_${quizMeta.id}`;
+        const incorrectStorageKey = `quiz_incorrect_counts_${quizMeta.id}`;
         const lastIncorrectStorageKey = `quiz_last_incorrect_${quizMeta.id}`;
-
-        const storedIncorrectIds: string[] = JSON.parse(localStorage.getItem(incorrectStorageKey) || '[]');
-        const storedLastIncorrectId: string | null = localStorage.getItem(lastIncorrectStorageKey);
+        
+        const incorrectCounts: Record<string, number> = JSON.parse(localStorage.getItem(incorrectStorageKey) || '{}');
+        const lastIncorrectId: string | null = localStorage.getItem(lastIncorrectStorageKey);
         
         let potentialQuestions: any[];
         let questionGenerator: (item: any, allItems: any[], isReview: boolean) => QuizQuestion;
@@ -125,32 +125,34 @@ export default function QuizPage() {
         let questions: QuizQuestion[] = [];
         let firstQuestion: QuizQuestion | undefined;
 
-        // 1. Find and create the guaranteed first question if it exists
-        if (storedLastIncorrectId) {
-            const firstQuestionItem = potentialQuestions.find(item => item.id === storedLastIncorrectId);
+        // 1. Guaranteed first question is the last one they got wrong
+        if (lastIncorrectId) {
+            const firstQuestionItem = potentialQuestions.find(item => item.id === lastIncorrectId);
             if (firstQuestionItem) {
                 firstQuestion = questionGenerator(firstQuestionItem, potentialQuestions, true);
             }
         }
-
-        // 2. Filter out the first question item from the pool of other questions
-        const remainingPotentialQuestions = potentialQuestions.filter(item => item.id !== storedLastIncorrectId);
-
-        // 3. Prioritize other incorrect questions
-        const incorrectItems = shuffleArray(remainingPotentialQuestions.filter(item => storedIncorrectIds.includes(item.id)));
-        const otherItems = shuffleArray(remainingPotentialQuestions.filter(item => !storedIncorrectIds.includes(item.id)));
-
-        // 4. Build the rest of the quiz
-        const remainingQuizLength = firstQuestion ? QUIZ_LENGTH - 1 : QUIZ_LENGTH;
-        const numIncorrect = Math.min(incorrectItems.length, Math.ceil(remainingQuizLength / 2));
-        const numOther = remainingQuizLength - numIncorrect;
         
+        // 2. Separate remaining items into incorrect and other
+        const remainingPotentialQuestions = potentialQuestions.filter(item => item.id !== lastIncorrectId);
+        
+        const incorrectItems = remainingPotentialQuestions
+            .filter(item => incorrectCounts[item.id] > 0)
+            .sort((a, b) => (incorrectCounts[b.id] || 0) - (incorrectCounts[a.id] || 0)); // Sort by count desc
+
+        const otherItems = shuffleArray(remainingPotentialQuestions.filter(item => !incorrectCounts[item.id]));
+
+        // 3. Build the rest of the quiz, prioritizing incorrect items
+        const remainingQuizLength = firstQuestion ? QUIZ_LENGTH - 1 : QUIZ_LENGTH;
+        const numIncorrect = Math.min(incorrectItems.length, Math.ceil(remainingQuizLength * 0.7)); // ~70% incorrect
+        const numOther = remainingQuizLength - numIncorrect;
+
         const incorrectQuestions = incorrectItems.slice(0, numIncorrect).map(item => questionGenerator(item, potentialQuestions, true));
         const otherQuestions = otherItems.slice(0, numOther).map(item => questionGenerator(item, potentialQuestions, false));
 
         const generatedQuestions = shuffleArray([...incorrectQuestions, ...otherQuestions]);
         
-        // 5. Combine and set the session questions
+        // 4. Combine and set the session questions
         if (firstQuestion) {
             questions = [firstQuestion, ...generatedQuestions];
         } else {
@@ -178,7 +180,10 @@ export default function QuizPage() {
             setCorrectAnswersCount(c => c + 1);
         } else {
             setAnswerStatus('incorrect');
-            setLastIncorrectId(currentQuestion.id);
+            setIncorrectQuestionsDuringSession(prev => ({
+                ...prev,
+                [currentQuestion.id]: (prev[currentQuestion.id] || 0) + 1
+            }));
         }
     };
 
@@ -194,16 +199,21 @@ export default function QuizPage() {
     }
     
     const handleFinish = () => {
-         const incorrectStorageKey = `quiz_incorrect_${quizMeta.id}`;
+         const incorrectStorageKey = `quiz_incorrect_counts_${quizMeta.id}`;
          const lastIncorrectStorageKey = `quiz_last_incorrect_${quizMeta.id}`;
-         
-         // Remove last incorrect ID from main incorrect list if it's there, to avoid duplication.
-         const storedIncorrectIds: string[] = JSON.parse(localStorage.getItem(incorrectStorageKey) || '[]').filter(id => id !== lastIncorrectId);
 
-         if (lastIncorrectId) {
-            const updatedIncorrectIds = [...new Set([lastIncorrectId, ...storedIncorrectIds])];
-            localStorage.setItem(incorrectStorageKey, JSON.stringify(updatedIncorrectIds));
+         const incorrectIdsThisSession = Object.keys(incorrectQuestionsDuringSession);
+         if (incorrectIdsThisSession.length > 0) {
+            const lastIncorrectId = incorrectIdsThisSession[incorrectIdsThisSession.length - 1];
             localStorage.setItem(lastIncorrectStorageKey, lastIncorrectId);
+
+            const allIncorrectCounts: Record<string, number> = JSON.parse(localStorage.getItem(incorrectStorageKey) || '{}');
+            
+            incorrectIdsThisSession.forEach(id => {
+                allIncorrectCounts[id] = (allIncorrectCounts[id] || 0) + 1;
+            });
+            localStorage.setItem(incorrectStorageKey, JSON.stringify(allIncorrectCounts));
+
          } else {
             // If they finished without any new incorrect answers, clear the "last incorrect" flag.
             localStorage.removeItem(lastIncorrectStorageKey);

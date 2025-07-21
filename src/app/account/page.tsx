@@ -45,9 +45,9 @@ export default function AccountPage() {
   };
 
   const handleResetQuizHistory = () => {
-    localStorage.removeItem('quiz_incorrect_grammar');
+    localStorage.removeItem('quiz_incorrect_counts_grammar');
     localStorage.removeItem('quiz_last_incorrect_grammar');
-    localStorage.removeItem('quiz_incorrect_vocabulary');
+    localStorage.removeItem('quiz_incorrect_counts_vocabulary');
     localStorage.removeItem('quiz_last_incorrect_vocabulary');
 
     toast({
