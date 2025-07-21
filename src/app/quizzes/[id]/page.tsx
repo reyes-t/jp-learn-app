@@ -148,13 +148,22 @@ export default function QuizPage() {
 
     }, [quizMeta, quizId]);
 
-    if (!quizMeta) {
-        notFound();
-    }
-
     const isQuizFinished = sessionQuestions.length > 0 && currentQuestionIndex >= sessionQuestions.length;
     const progress = sessionQuestions.length > 0 ? (currentQuestionIndex / sessionQuestions.length) * 100 : 0;
     const currentQuestion = sessionQuestions[currentQuestionIndex];
+    
+    // Moved from inside the `isQuizFinished` block to fix hook order violation
+    useEffect(() => {
+        if (isQuizFinished && quizMeta) {
+            const score = Math.round((correctAnswersCount / sessionQuestions.length) * 100);
+            const bestScoreKey = `quiz_best_score_${quizMeta.id}`;
+            const bestScore = JSON.parse(localStorage.getItem(bestScoreKey) || '0');
+            if (score > bestScore) {
+                localStorage.setItem(bestScoreKey, JSON.stringify(score));
+            }
+        }
+    }, [isQuizFinished, quizMeta, correctAnswersCount, sessionQuestions.length]);
+
 
     const handleAnswerSelect = (option: string) => {
         if (answerStatus !== 'unanswered' || !currentQuestion) return;
@@ -203,6 +212,10 @@ export default function QuizPage() {
         setCurrentQuestionIndex(prev => prev + 1); // Move to finished screen
     }
 
+    if (!quizMeta) {
+        return <div className="container mx-auto max-w-2xl">Loading...</div>; // Return loading state
+    }
+
     if (sessionQuestions.length === 0 && quizMeta) {
          return (
              <div className="container mx-auto flex flex-col items-center justify-center h-full">
@@ -223,16 +236,6 @@ export default function QuizPage() {
 
     if (isQuizFinished) {
         const score = Math.round((correctAnswersCount / sessionQuestions.length) * 100);
-        
-        useEffect(() => {
-            if (isQuizFinished && quizMeta) {
-                const bestScoreKey = `quiz_best_score_${quizMeta.id}`;
-                const bestScore = JSON.parse(localStorage.getItem(bestScoreKey) || '0');
-                if (score > bestScore) {
-                    localStorage.setItem(bestScoreKey, JSON.stringify(score));
-                }
-            }
-        }, [isQuizFinished, score, quizMeta]);
 
         return (
             <div className="container mx-auto flex flex-col items-center justify-center h-full">
