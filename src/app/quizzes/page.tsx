@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react';
 import { quizzes } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileQuestion, PlayCircle, BrainCircuit, Sparkles, Trophy, Ear, Wand2, Loader2, Mic } from "lucide-react";
+import { FileQuestion, PlayCircle, BrainCircuit, Sparkles, Trophy, Ear, Wand2, Loader2, Mic, Speaker } from "lucide-react";
 import Link from "next/link";
 import type { QuizMeta, GeneratedPhrase } from '@/lib/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { generatePhrase } from '@/ai/flows/generate-phrase-flow';
-import { generateSpeech } from '@/ai/flows/text-to-speech';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ICONS: Record<QuizMeta['id'], React.ReactNode> = {
     grammar: <BrainCircuit className="text-primary"/>,
@@ -27,7 +27,7 @@ const QuizCard = ({ quiz }: QuizCardProps) => {
   const [bestScore, setBestScore] = useState<number | null>(null);
 
   useEffect(() => {
-    if (quiz.id === 'listening') return; // No score for listening quiz yet
+    if (quiz.id === 'listening') return; 
     const score = localStorage.getItem(`quiz_best_score_${quiz.id}`);
     if (score) {
       setBestScore(JSON.parse(score));
@@ -67,11 +67,31 @@ export default function QuizzesPage() {
   const [isGeneratingPhrase, setIsGeneratingPhrase] = useState(false);
   const [generatedPhrase, setGeneratedPhrase] = useState<GeneratedPhrase | null>(null);
   const [isPhraseDialogOpen, setIsPhraseDialogOpen] = useState(false);
-
-  const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
-  const [generatedAudio, setGeneratedAudio] = useState<string | null>(null);
+  
   const [isTtsDialogOpen, setIsTtsDialogOpen] = useState(false);
-  const [ttsText, setTtsText] = useState("こんにちは");
+  const [ttsText, setTtsText] = useState("こんにちは、世界！");
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string | undefined>();
+
+
+  useEffect(() => {
+    const handleVoicesChanged = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      const japaneseVoices = availableVoices.filter(voice => voice.lang.startsWith('ja'));
+      setVoices(japaneseVoices);
+      if (japaneseVoices.length > 0 && !selectedVoiceURI) {
+        setSelectedVoiceURI(japaneseVoices[0].voiceURI);
+      }
+    };
+    
+    // Voices load asynchronously.
+    handleVoicesChanged(); // Initial check
+    window.speechSynthesis.onvoiceschanged = handleVoicesChanged;
+
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, [selectedVoiceURI]);
 
 
   const handleGeneratePhraseClick = async () => {
@@ -88,24 +108,23 @@ export default function QuizzesPage() {
     }
   };
 
-  const handleGenerateSpeechClick = async () => {
-    if (!ttsText) return;
-    setGeneratedAudio(null);
-    setIsGeneratingSpeech(true);
-    try {
-        const audioDataUri = await generateSpeech(ttsText);
-        setGeneratedAudio(audioDataUri);
-    } catch (error) {
-        console.error("Failed to generate speech:", error);
-    } finally {
-        setIsGeneratingSpeech(false);
+  const handleSpeak = () => {
+    if (!ttsText || typeof window === 'undefined') return;
+    
+    window.speechSynthesis.cancel(); // Cancel any previous speech
+
+    const utterance = new SpeechSynthesisUtterance(ttsText);
+    const selectedVoice = voices.find(v => v.voiceURI === selectedVoiceURI);
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    } else if (voices.length > 0) {
+        utterance.voice = voices[0]; // Fallback to the first available Japanese voice
     }
+    
+    window.speechSynthesis.speak(utterance);
   };
 
-  const openTtsDialog = () => {
-    setGeneratedAudio(null);
-    setIsTtsDialogOpen(true);
-  }
 
   return (
     <div className="container mx-auto">
@@ -119,9 +138,9 @@ export default function QuizzesPage() {
                 <Wand2 className="mr-2 h-4 w-4" />
                 Generate a Phrase
             </Button>
-            <Button variant="outline" onClick={openTtsDialog}>
-                <Mic className="mr-2 h-4 w-4" />
-                Text to Speech
+            <Button variant="outline" onClick={() => setIsTtsDialogOpen(true)}>
+                <Speaker className="mr-2 h-4 w-4" />
+                Practice Speaking
             </Button>
         </div>
       </div>
@@ -164,36 +183,42 @@ export default function QuizzesPage() {
       <Dialog open={isTtsDialogOpen} onOpenChange={setIsTtsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Text to Speech</DialogTitle>
+            <DialogTitle>Practice Speaking</DialogTitle>
             <DialogDescription>
-              Type some Japanese text and hear it spoken aloud.
+              Type some Japanese text and hear it spoken aloud using your browser's speech synthesis.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="tts-input">Japanese Text</Label>
-              <Input 
+              <Textarea 
                 id="tts-input"
                 value={ttsText}
                 onChange={(e) => setTtsText(e.target.value)}
                 placeholder="e.g. こんにちは"
+                rows={4}
               />
             </div>
-            {isGeneratingSpeech && (
-              <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Generating audio...</span>
-              </div>
-            )}
-            {generatedAudio && (
-                <audio controls autoPlay src={generatedAudio} className="w-full">
-                    Your browser does not support the audio element.
-                </audio>
-            )}
+            <div className="space-y-2">
+                <Label htmlFor="voice-select">Voice</Label>
+                <Select value={selectedVoiceURI} onValueChange={setSelectedVoiceURI}>
+                    <SelectTrigger id="voice-select" className="w-full">
+                        <SelectValue placeholder="Select a voice" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {voices.length > 0 ? voices.map(voice => (
+                            <SelectItem key={voice.voiceURI} value={voice.voiceURI}>
+                                {voice.name} ({voice.lang})
+                            </SelectItem>
+                        )) : <SelectItem value="no-voice" disabled>No Japanese voices found</SelectItem>}
+                    </SelectContent>
+                </Select>
+            </div>
           </div>
            <DialogFooter>
-            <Button onClick={handleGenerateSpeechClick} disabled={isGeneratingSpeech || !ttsText}>
-              {isGeneratingSpeech ? 'Generating...' : 'Generate Audio'}
+            <Button onClick={handleSpeak} disabled={!ttsText || voices.length === 0}>
+                <Speaker className="mr-2 h-4 w-4" />
+                Speak
             </Button>
           </DialogFooter>
         </DialogContent>
