@@ -71,3 +71,8 @@ export const PhraseValidationResultSchema = z.object({
   reason: z.string().describe('A brief explanation of why the phrase is valid or invalid. Provide constructive feedback if invalid.'),
 });
 export type PhraseValidationResult = z.infer<typeof PhraseValidationResultSchema>;
+
+export type CreativeChallenge = {
+    id: string;
+    conditions: string[];
+};

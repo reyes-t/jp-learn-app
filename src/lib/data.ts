@@ -1,4 +1,4 @@
-import type { Deck, Card, GrammarPoint, QuizMeta, ListeningQuizQuestion } from './types';
+import type { Deck, Card, GrammarPoint, QuizMeta, ListeningQuizQuestion, CreativeChallenge } from './types';
 
 export const basicDecks: Deck[] = [
   {
@@ -355,4 +355,12 @@ export const listeningSentences: Omit<ListeningQuizQuestion, 'audioDataUri'>[] =
     },
     { id: 'l-9', kana: 'おなまえはなんですか', romaji: 'O-namae wa nan desu ka' },
     { id: 'l-10', kana: 'にほんごがすこしわかります', romaji: 'Nihongo ga sukoshi wakarimasu' },
+];
+
+export const creativeChallenges: CreativeChallenge[] = [
+    { id: 'cc-1', conditions: ['Greetings', 'Politeness'] },
+    { id: 'cc-2', conditions: ['Ask for price', 'A drink'] },
+    { id: 'cc-3', conditions: ['Express gratitude', 'Receiving a gift'] },
+    { id: 'cc-4', conditions: ['Introduce yourself', 'Mention your nationality'] },
+    { id: 'cc-5', conditions: ['Ask for directions', 'Train station'] },
 ];
