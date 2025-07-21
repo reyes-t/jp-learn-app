@@ -45,10 +45,8 @@ export default function AccountPage() {
   };
 
   const handleResetQuizHistory = () => {
-    localStorage.removeItem('quiz_incorrect_counts_grammar');
-    localStorage.removeItem('quiz_last_incorrect_grammar');
-    localStorage.removeItem('quiz_incorrect_counts_vocabulary');
-    localStorage.removeItem('quiz_last_incorrect_vocabulary');
+    localStorage.removeItem('quiz_weights_grammar');
+    localStorage.removeItem('quiz_weights_vocabulary');
 
     toast({
         title: "Quiz History Reset",

@@ -7,13 +7,14 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, History } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { quizzes, grammarPoints, cards as initialCards, basicDecks } from '@/lib/data';
 import type { Deck, Card as CardType, QuizQuestion, GrammarPoint } from '@/lib/types';
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
-const QUIZ_LENGTH = 10;
+const GRAMMAR_QUIZ_LENGTH = 5;
+const VOCAB_QUIZ_LENGTH = 10;
 
 // Helper to shuffle an array
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -21,7 +22,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 };
 
 // Generates a grammar question from a grammar point
-const createGrammarQuestion = (point: GrammarPoint, isReview: boolean = false): QuizQuestion => {
+const createGrammarQuestion = (point: GrammarPoint): QuizQuestion => {
     const randomExample = point.examples[Math.floor(Math.random() * point.examples.length)];
     const otherPoints = grammarPoints.filter(p => p.id !== point.id);
     const wrongAnswers = shuffleArray(otherPoints).slice(0, 3).map(p => p.title);
@@ -33,12 +34,11 @@ const createGrammarQuestion = (point: GrammarPoint, isReview: boolean = false): 
         options,
         correctAnswer: point.title,
         explanation: point.explanation,
-        isReview,
     };
 };
 
 // Generates a vocabulary question from a flashcard
-const createVocabQuestion = (card: CardType, allCards: CardType[], isReview: boolean = false): QuizQuestion => {
+const createVocabQuestion = (card: CardType, allCards: CardType[]): QuizQuestion => {
     const isFrontQuestion = Math.random() > 0.5; // 50% chance to ask for the back, 50% for the front
     const otherCards = allCards.filter(c => c.id !== card.id);
     
@@ -60,7 +60,6 @@ const createVocabQuestion = (card: CardType, allCards: CardType[], isReview: boo
         options,
         correctAnswer,
         explanation: `"${card.front}" means "${card.back}".`,
-        isReview,
     };
 };
 
@@ -76,24 +75,22 @@ export default function QuizPage() {
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
     const [sessionQuestions, setSessionQuestions] = useState<QuizQuestion[]>([]);
-    const [incorrectQuestionsDuringSession, setIncorrectQuestionsDuringSession] = useState<Record<string, number>>({});
+    const [sessionQuestionUpdates, setSessionQuestionUpdates] = useState<Record<string, number>>({});
 
 
     useEffect(() => {
         if (!quizMeta) return;
 
-        const incorrectStorageKey = `quiz_incorrect_counts_${quizMeta.id}`;
-        const lastIncorrectStorageKey = `quiz_last_incorrect_${quizMeta.id}`;
+        const weightsStorageKey = `quiz_weights_${quizMeta.id}`;
+        const questionWeights: Record<string, number> = JSON.parse(localStorage.getItem(weightsStorageKey) || '{}');
         
-        const incorrectCounts: Record<string, number> = JSON.parse(localStorage.getItem(incorrectStorageKey) || '{}');
-        const lastIncorrectId: string | null = localStorage.getItem(lastIncorrectStorageKey);
-        
-        let potentialQuestions: any[];
-        let questionGenerator: (item: any, allItems: any[], isReview: boolean) => QuizQuestion;
+        let potentialQuestionItems: any[];
+        let questionGenerator: (item: any, allItems: any[]) => QuizQuestion;
+        const quizLength = quizMeta.id === 'grammar' ? GRAMMAR_QUIZ_LENGTH : VOCAB_QUIZ_LENGTH;
 
         if (quizMeta.id === 'grammar') {
-            potentialQuestions = grammarPoints;
-            questionGenerator = (item, _, isReview) => createGrammarQuestion(item, isReview);
+            potentialQuestionItems = grammarPoints;
+            questionGenerator = (item, _) => createGrammarQuestion(item);
         } else { // vocabulary
             const userDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
             const vocabDecks = basicDecks.filter(d => d.id !== 'hiragana' && d.id !== 'katakana');
@@ -113,53 +110,33 @@ export default function QuizPage() {
                     }
                 }
             });
-            potentialQuestions = allCards;
-            questionGenerator = (item, allItems, isReview) => createVocabQuestion(item, allItems, isReview);
+            potentialQuestionItems = allCards;
+            questionGenerator = (item, allItems) => createVocabQuestion(item, allItems);
         }
 
-        if (potentialQuestions.length === 0) {
+        if (potentialQuestionItems.length === 0) {
             setSessionQuestions([]);
             return;
         }
 
-        let questions: QuizQuestion[] = [];
-        let firstQuestion: QuizQuestion | undefined;
+        const weightedQuestions = potentialQuestionItems.map(item => ({
+            item,
+            weight: questionWeights[item.id] || 0
+        }));
 
-        // 1. Guaranteed first question is the last one they got wrong
-        if (lastIncorrectId) {
-            const firstQuestionItem = potentialQuestions.find(item => item.id === lastIncorrectId);
-            if (firstQuestionItem) {
-                firstQuestion = questionGenerator(firstQuestionItem, potentialQuestions, true);
+        // Sort by weight descending, then shuffle items with the same weight
+        weightedQuestions.sort((a, b) => {
+            if (b.weight !== a.weight) {
+                return b.weight - a.weight;
             }
-        }
+            return Math.random() - 0.5;
+        });
         
-        // 2. Separate remaining items into incorrect and other
-        const remainingPotentialQuestions = potentialQuestions.filter(item => item.id !== lastIncorrectId);
+        const generatedQuestions = weightedQuestions
+            .slice(0, quizLength)
+            .map(wq => questionGenerator(wq.item, potentialQuestionItems));
         
-        const incorrectItems = remainingPotentialQuestions
-            .filter(item => incorrectCounts[item.id] > 0)
-            .sort((a, b) => (incorrectCounts[b.id] || 0) - (incorrectCounts[a.id] || 0)); // Sort by count desc
-
-        const otherItems = shuffleArray(remainingPotentialQuestions.filter(item => !incorrectCounts[item.id]));
-
-        // 3. Build the rest of the quiz, prioritizing incorrect items
-        const remainingQuizLength = firstQuestion ? QUIZ_LENGTH - 1 : QUIZ_LENGTH;
-        const numIncorrect = Math.min(incorrectItems.length, Math.ceil(remainingQuizLength * 0.7)); // ~70% incorrect
-        const numOther = remainingQuizLength - numIncorrect;
-
-        const incorrectQuestions = incorrectItems.slice(0, numIncorrect).map(item => questionGenerator(item, potentialQuestions, true));
-        const otherQuestions = otherItems.slice(0, numOther).map(item => questionGenerator(item, potentialQuestions, false));
-
-        const generatedQuestions = shuffleArray([...incorrectQuestions, ...otherQuestions]);
-        
-        // 4. Combine and set the session questions
-        if (firstQuestion) {
-            questions = [firstQuestion, ...generatedQuestions];
-        } else {
-            questions = generatedQuestions;
-        }
-
-        setSessionQuestions(questions.slice(0, QUIZ_LENGTH));
+        setSessionQuestions(generatedQuestions);
 
     }, [quizMeta, quizId]);
 
@@ -178,11 +155,17 @@ export default function QuizPage() {
         if (option === currentQuestion.correctAnswer) {
             setAnswerStatus('correct');
             setCorrectAnswersCount(c => c + 1);
+            // Decrement weight for correct answer
+            setSessionQuestionUpdates(prev => ({
+                ...prev,
+                [currentQuestion.id]: (prev[currentQuestion.id] || 0) - 1,
+            }));
         } else {
             setAnswerStatus('incorrect');
-            setIncorrectQuestionsDuringSession(prev => ({
+            // Increment weight for incorrect answer
+            setSessionQuestionUpdates(prev => ({
                 ...prev,
-                [currentQuestion.id]: (prev[currentQuestion.id] || 0) + 1
+                [currentQuestion.id]: (prev[currentQuestion.id] || 0) + 1,
             }));
         }
     };
@@ -199,25 +182,20 @@ export default function QuizPage() {
     }
     
     const handleFinish = () => {
-         const incorrectStorageKey = `quiz_incorrect_counts_${quizMeta.id}`;
-         const lastIncorrectStorageKey = `quiz_last_incorrect_${quizMeta.id}`;
+         const weightsStorageKey = `quiz_weights_${quizMeta.id}`;
+         const allWeights: Record<string, number> = JSON.parse(localStorage.getItem(weightsStorageKey) || '{}');
+        
+        Object.entries(sessionQuestionUpdates).forEach(([id, change]) => {
+            const currentWeight = allWeights[id] || 0;
+            const newWeight = Math.max(0, currentWeight + change); // Ensure weight doesn't go below 0
+            if (newWeight > 0) {
+                allWeights[id] = newWeight;
+            } else {
+                delete allWeights[id]; // Remove if weight is 0
+            }
+        });
 
-         const incorrectIdsThisSession = Object.keys(incorrectQuestionsDuringSession);
-         if (incorrectIdsThisSession.length > 0) {
-            const lastIncorrectId = incorrectIdsThisSession[incorrectIdsThisSession.length - 1];
-            localStorage.setItem(lastIncorrectStorageKey, lastIncorrectId);
-
-            const allIncorrectCounts: Record<string, number> = JSON.parse(localStorage.getItem(incorrectStorageKey) || '{}');
-            
-            incorrectIdsThisSession.forEach(id => {
-                allIncorrectCounts[id] = (allIncorrectCounts[id] || 0) + 1;
-            });
-            localStorage.setItem(incorrectStorageKey, JSON.stringify(allIncorrectCounts));
-
-         } else {
-            // If they finished without any new incorrect answers, clear the "last incorrect" flag.
-            localStorage.removeItem(lastIncorrectStorageKey);
-         }
+        localStorage.setItem(weightsStorageKey, JSON.stringify(allWeights));
     }
 
     if (sessionQuestions.length === 0 && quizMeta) {
@@ -298,15 +276,7 @@ export default function QuizPage() {
 
             <Card>
                 <CardContent className="p-6">
-                     <div className="flex items-start gap-4 mb-6">
-                        {currentQuestion.isReview && (
-                            <div className="flex flex-col items-center gap-1 text-muted-foreground" title="You've missed this question before.">
-                                <History className="w-5 h-5" />
-                                <span className="text-xs">Review</span>
-                            </div>
-                        )}
-                        <p className="text-xl font-semibold flex-1">{currentQuestion.question}</p>
-                    </div>
+                    <p className="text-xl font-semibold mb-6">{currentQuestion.question}</p>
                     <div className="space-y-3">
                         {currentQuestion.options.map((option) => {
                              const isSelected = selectedAnswer === option;
