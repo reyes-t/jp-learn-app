@@ -1,4 +1,5 @@
 
+
 export type Deck = {
   id: string;
   name: string;
@@ -47,7 +48,7 @@ export type ListeningQuizQuestion = {
   id: string;
   kana: string;
   romaji: string;
-  audioDataUri: string;
+  audioDataUri?: string;
 };
 
 export type GeneratedPhrase = {

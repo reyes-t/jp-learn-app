@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, CheckCircle2, Volume2, XCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Volume2, XCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { listeningSentences } from '@/lib/data';
 import type { ListeningQuizQuestion } from '@/lib/types';
@@ -17,47 +17,48 @@ const QUIZ_LENGTH = 5;
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
 
-// Helper function to add a delay
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export default function ListeningQuizPage() {
-    const [isLoading, setIsLoading] = useState(true);
-    const [loadingProgress, setLoadingProgress] = useState(0);
     const [questions, setQuestions] = useState<ListeningQuizQuestion[]>([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [userAnswer, setUserAnswer] = useState('');
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
 
-    useEffect(() => {
-        const loadQuestions = async () => {
-            setIsLoading(true);
-            const shuffled = [...listeningSentences].sort(() => 0.5 - Math.random());
-            const selectedSentences = shuffled.slice(0, QUIZ_LENGTH);
-            const generatedQuestions: ListeningQuizQuestion[] = [];
-            
-            for (let i = 0; i < selectedSentences.length; i++) {
-                const sentence = selectedSentences[i];
-                setLoadingProgress(i + 1);
-                try {
-                    const audioDataUri = await generateSpeech(sentence.kana);
-                    generatedQuestions.push({ ...sentence, audioDataUri });
-                    // Wait for 1 second to avoid hitting rate limits
-                    await sleep(1000); 
-                } catch (error) {
-                    console.error("Failed to generate speech for:", sentence.kana, error);
-                }
-            }
+    const [isAudioLoading, setIsAudioLoading] = useState(true);
+    const [currentAudioUri, setCurrentAudioUri] = useState<string | null>(null);
 
-            setQuestions(generatedQuestions);
-            setIsLoading(false);
-        };
-        loadQuestions();
+    useEffect(() => {
+        const shuffled = [...listeningSentences].sort(() => 0.5 - Math.random());
+        const selectedSentences = shuffled.slice(0, QUIZ_LENGTH);
+        setQuestions(selectedSentences);
     }, []);
 
+    const currentQuestion = questions[currentQuestionIndex];
+
+    useEffect(() => {
+        if (currentQuestion) {
+            setIsAudioLoading(true);
+            setCurrentAudioUri(null);
+            generateSpeech(currentQuestion.kana)
+                .then(audioDataUri => {
+                    setCurrentAudioUri(audioDataUri);
+                    const audio = new Audio(audioDataUri);
+                    audio.play().catch(e => console.error("Error auto-playing audio:", e));
+                })
+                .catch(error => {
+                    console.error("Failed to generate speech for:", currentQuestion.kana, error);
+                    // Optionally, set an error state to inform the user
+                })
+                .finally(() => {
+                    setIsAudioLoading(false);
+                });
+        }
+    }, [currentQuestion]);
+
+
     const playAudio = () => {
-        if (questions[currentQuestionIndex]?.audioDataUri) {
-            const audio = new Audio(questions[currentQuestionIndex].audioDataUri);
+        if (currentAudioUri) {
+            const audio = new Audio(currentAudioUri);
             audio.play().catch(e => console.error("Error playing audio:", e));
         }
     };
@@ -65,7 +66,6 @@ export default function ListeningQuizPage() {
     const handleCheckAnswer = () => {
         if (answerStatus !== 'unanswered') return;
 
-        const currentQuestion = questions[currentQuestionIndex];
         const formattedUserAnswer = userAnswer.trim().toLowerCase();
         const isCorrect = 
             formattedUserAnswer === currentQuestion.kana || 
@@ -88,44 +88,22 @@ export default function ListeningQuizPage() {
     const handleRestart = () => {
         window.location.reload();
     };
-
-    const isQuizFinished = currentQuestionIndex >= questions.length;
-    const progress = (currentQuestionIndex / questions.length) * 100;
-    const currentQuestion = questions[currentQuestionIndex];
-
-    if (isLoading) {
-        return (
-            <div className="container mx-auto max-w-2xl flex flex-col items-center justify-center h-full">
-                <Card className="w-full max-w-md text-center">
-                    <CardHeader>
-                        <CardTitle>Preparing Your Quiz...</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p>Generating audio {loadingProgress} of {QUIZ_LENGTH}...</p>
-                        <Progress value={(loadingProgress / QUIZ_LENGTH) * 100} className="mt-4" />
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
     
-    if (questions.length === 0 && !isLoading) {
+    if (questions.length === 0) {
         return (
              <div className="container mx-auto flex flex-col items-center justify-center h-full">
                 <Card className="w-full max-w-md text-center">
-                    <CardHeader><CardTitle>Error</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>Loading Quiz</CardTitle></CardHeader>
                     <CardContent>
-                        <p>Could not load the listening quiz questions. The API may be busy. Please try again later.</p>
+                        <p>Preparing the quiz questions...</p>
                     </CardContent>
-                    <CardFooter>
-                         <Button variant="outline" asChild>
-                            <Link href="/quizzes">Back to Quizzes</Link>
-                        </Button>
-                    </CardFooter>
                 </Card>
             </div>
          )
     }
+
+    const isQuizFinished = currentQuestionIndex >= questions.length;
+    const progress = (currentQuestionIndex / questions.length) * 100;
 
     if (isQuizFinished) {
         const score = Math.round((correctAnswersCount / questions.length) * 100);
@@ -183,9 +161,18 @@ export default function ListeningQuizPage() {
                 <CardContent className="p-6">
                     <p className="text-lg font-semibold mb-4">Listen to the audio and type what you hear.</p>
                     <div className="flex flex-col items-center gap-6">
-                        <Button onClick={playAudio} size="lg" variant="outline">
-                            <Volume2 className="mr-2 h-6 w-6" />
-                            Play Audio
+                        <Button onClick={playAudio} size="lg" variant="outline" disabled={isAudioLoading || !currentAudioUri}>
+                            {isAudioLoading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                                    Generating...
+                                </>
+                            ) : (
+                                <>
+                                    <Volume2 className="mr-2 h-6 w-6" />
+                                    Play Audio
+                                </>
+                            )}
                         </Button>
                         <Input
                             type="text"
