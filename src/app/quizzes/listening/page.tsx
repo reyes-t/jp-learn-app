@@ -6,11 +6,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, CheckCircle2, Volume2, XCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Volume2, XCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { listeningSentences } from '@/lib/data';
 import type { ListeningQuizQuestion } from '@/lib/types';
-import { generateSpeech } from '@/ai/flows/text-to-speech';
 import { Input } from '@/components/ui/input';
 
 const QUIZ_LENGTH = 5;
@@ -23,48 +22,52 @@ export default function ListeningQuizPage() {
     const [userAnswer, setUserAnswer] = useState('');
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
-
-    const [isAudioLoading, setIsAudioLoading] = useState(true);
-    const [currentAudioUri, setCurrentAudioUri] = useState<string | null>(null);
+    const [isSpeaking, setIsSpeaking] = useState(false);
 
     useEffect(() => {
         const shuffled = [...listeningSentences].sort(() => 0.5 - Math.random());
         const selectedSentences = shuffled.slice(0, QUIZ_LENGTH);
         setQuestions(selectedSentences);
+
+        // Clean up any lingering speech synthesis on component unmount
+        return () => {
+            if (typeof window !== 'undefined' && window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+        };
     }, []);
 
     const currentQuestion = questions[currentQuestionIndex];
+    
+    const playAudio = () => {
+        if (!currentQuestion || typeof window === 'undefined' || !window.speechSynthesis || isSpeaking) {
+            return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(currentQuestion.kana);
+        utterance.lang = 'ja-JP'; // Specify the language
+        
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        window.speechSynthesis.cancel(); // Cancel previous speech
+        window.speechSynthesis.speak(utterance);
+    };
 
     useEffect(() => {
         if (currentQuestion) {
-            setIsAudioLoading(true);
-            setCurrentAudioUri(null);
-            generateSpeech(currentQuestion.kana)
-                .then(audioDataUri => {
-                    setCurrentAudioUri(audioDataUri);
-                    const audio = new Audio(audioDataUri);
-                    audio.play().catch(e => console.error("Error auto-playing audio:", e));
-                })
-                .catch(error => {
-                    console.error("Failed to generate speech for:", currentQuestion.kana, error);
-                    // Optionally, set an error state to inform the user
-                })
-                .finally(() => {
-                    setIsAudioLoading(false);
-                });
+            // Use a short timeout to ensure the UI has updated before speaking
+            const timer = setTimeout(() => {
+                playAudio();
+            }, 100); 
+            return () => clearTimeout(timer);
         }
     }, [currentQuestion]);
 
 
-    const playAudio = () => {
-        if (currentAudioUri) {
-            const audio = new Audio(currentAudioUri);
-            audio.play().catch(e => console.error("Error playing audio:", e));
-        }
-    };
-
     const handleCheckAnswer = () => {
-        if (answerStatus !== 'unanswered') return;
+        if (answerStatus !== 'unanswered' || !currentQuestion) return;
 
         const formattedUserAnswer = userAnswer.trim().toLowerCase();
         const isCorrect = 
@@ -161,18 +164,9 @@ export default function ListeningQuizPage() {
                 <CardContent className="p-6">
                     <p className="text-lg font-semibold mb-4">Listen to the audio and type what you hear.</p>
                     <div className="flex flex-col items-center gap-6">
-                        <Button onClick={playAudio} size="lg" variant="outline" disabled={isAudioLoading || !currentAudioUri}>
-                            {isAudioLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                                    Generating...
-                                </>
-                            ) : (
-                                <>
-                                    <Volume2 className="mr-2 h-6 w-6" />
-                                    Play Audio
-                                </>
-                            )}
+                        <Button onClick={playAudio} size="lg" variant="outline" disabled={isSpeaking}>
+                            <Volume2 className="mr-2 h-6 w-6" />
+                            {isSpeaking ? 'Speaking...' : 'Play Audio'}
                         </Button>
                         <Input
                             type="text"
@@ -181,6 +175,11 @@ export default function ListeningQuizPage() {
                             onChange={(e) => setUserAnswer(e.target.value)}
                             disabled={answerStatus !== 'unanswered'}
                             className="text-center text-lg h-12"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && answerStatus === 'unanswered' && userAnswer) {
+                                    handleCheckAnswer();
+                                }
+                            }}
                         />
                     </div>
                 </CardContent>
