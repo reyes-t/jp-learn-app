@@ -39,14 +39,8 @@ const QuizCard = ({ quiz }: QuizCardProps) => {
           <CardDescription>{quiz.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-           <div className="text-sm text-muted-foreground">
-              {quiz.id !== 'listening' 
-                ? `This quiz pulls questions from all available ${quiz.id === 'grammar' ? 'lessons' : 'flashcards'} and adapts to your performance.`
-                : 'Listen to sentences and write what you hear.'
-              }
-           </div>
            {bestScore !== null && (
-            <div className="mt-4 flex items-center gap-2 text-amber-500 font-medium">
+            <div className="flex items-center gap-2 text-amber-500 font-medium">
               <Trophy className="w-4 h-4" />
               <span>Best Score: {bestScore}%</span>
             </div>
