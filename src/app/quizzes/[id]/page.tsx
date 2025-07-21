@@ -7,10 +7,13 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { quizzes, grammarPoints, cards as initialCards, basicDecks } from '@/lib/data';
 import type { Deck, Card as CardType, QuizQuestion, GrammarPoint } from '@/lib/types';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
+
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
 const GRAMMAR_QUIZ_LENGTH = 5;
@@ -22,7 +25,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 };
 
 // Generates a grammar question from a grammar point
-const createGrammarQuestion = (point: GrammarPoint): QuizQuestion => {
+const createGrammarQuestion = (point: GrammarPoint, isReview: boolean): QuizQuestion => {
     const randomExample = point.examples[Math.floor(Math.random() * point.examples.length)];
     const otherPoints = grammarPoints.filter(p => p.id !== point.id);
     const wrongAnswers = shuffleArray(otherPoints).slice(0, 3).map(p => p.title);
@@ -34,11 +37,12 @@ const createGrammarQuestion = (point: GrammarPoint): QuizQuestion => {
         options,
         correctAnswer: point.title,
         explanation: point.explanation,
+        isReview,
     };
 };
 
 // Generates a vocabulary question from a flashcard
-const createVocabQuestion = (card: CardType, allCards: CardType[]): QuizQuestion => {
+const createVocabQuestion = (card: CardType, allCards: CardType[], isReview: boolean): QuizQuestion => {
     const isFrontQuestion = Math.random() > 0.5; // 50% chance to ask for the back, 50% for the front
     const otherCards = allCards.filter(c => c.id !== card.id);
     
@@ -60,6 +64,7 @@ const createVocabQuestion = (card: CardType, allCards: CardType[]): QuizQuestion
         options,
         correctAnswer,
         explanation: `"${card.front}" means "${card.back}".`,
+        isReview,
     };
 };
 
@@ -74,7 +79,7 @@ export default function QuizPage() {
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
-    const [sessionQuestions, setSessionQuestions] = useState<QuizQuestion[]>([]);
+    const [sessionQuestions, setSessionQuestions] = useState<(QuizQuestion & { weight: number })[]>([]);
     const [sessionQuestionUpdates, setSessionQuestionUpdates] = useState<Record<string, number>>({});
 
 
@@ -85,12 +90,12 @@ export default function QuizPage() {
         const questionWeights: Record<string, number> = JSON.parse(localStorage.getItem(weightsStorageKey) || '{}');
         
         let potentialQuestionItems: any[];
-        let questionGenerator: (item: any, allItems: any[]) => QuizQuestion;
+        let questionGenerator: (item: any, allItems: any[], isReview: boolean) => QuizQuestion;
         const quizLength = quizMeta.id === 'grammar' ? GRAMMAR_QUIZ_LENGTH : VOCAB_QUIZ_LENGTH;
 
         if (quizMeta.id === 'grammar') {
             potentialQuestionItems = grammarPoints;
-            questionGenerator = (item, _) => createGrammarQuestion(item);
+            questionGenerator = (item, _, isReview) => createGrammarQuestion(item, isReview);
         } else { // vocabulary
             const userDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
             const vocabDecks = basicDecks.filter(d => d.id !== 'hiragana' && d.id !== 'katakana');
@@ -111,7 +116,7 @@ export default function QuizPage() {
                 }
             });
             potentialQuestionItems = allCards;
-            questionGenerator = (item, allItems) => createVocabQuestion(item, allItems);
+            questionGenerator = (item, allItems, isReview) => createVocabQuestion(item, allItems, isReview);
         }
 
         if (potentialQuestionItems.length === 0) {
@@ -124,7 +129,7 @@ export default function QuizPage() {
             weight: questionWeights[item.id] || 0
         }));
 
-        // Sort by weight descending, then shuffle items with the same weight
+        // Sort by weight descending, then shuffle items with the same weight to add variety
         weightedQuestions.sort((a, b) => {
             if (b.weight !== a.weight) {
                 return b.weight - a.weight;
@@ -134,7 +139,10 @@ export default function QuizPage() {
         
         const generatedQuestions = weightedQuestions
             .slice(0, quizLength)
-            .map(wq => questionGenerator(wq.item, potentialQuestionItems));
+            .map(wq => ({
+                ...questionGenerator(wq.item, potentialQuestionItems, wq.weight > 0),
+                weight: wq.weight,
+            }));
         
         setSessionQuestions(generatedQuestions);
 
@@ -196,6 +204,7 @@ export default function QuizPage() {
         });
 
         localStorage.setItem(weightsStorageKey, JSON.stringify(allWeights));
+        setCurrentQuestionIndex(prev => prev + 1); // Move to finished screen
     }
 
     if (sessionQuestions.length === 0 && quizMeta) {
@@ -243,7 +252,7 @@ export default function QuizPage() {
                     <CardFooter className="flex-col gap-4">
                         <Button onClick={handleRestart}>Try Again</Button>
                         <Button variant="outline" asChild>
-                            <Link href="/quizzes" onClick={handleFinish}>Back to Quizzes</Link>
+                            <Link href="/quizzes">Back to Quizzes</Link>
                         </Button>
                     </CardFooter>
                 </Card>
@@ -276,7 +285,13 @@ export default function QuizPage() {
 
             <Card>
                 <CardContent className="p-6">
-                    <p className="text-xl font-semibold mb-6">{currentQuestion.question}</p>
+                    <p className="text-xl font-semibold mb-2 flex items-center gap-2">
+                        {currentQuestion.isReview && <History className="w-5 h-5 text-primary" title="You've missed this before"/>}
+                        {currentQuestion.question}
+                    </p>
+                     <p className="text-xs text-muted-foreground font-mono mb-6">
+                        Weight: {currentQuestion.weight}
+                    </p>
                     <div className="space-y-3">
                         {currentQuestion.options.map((option) => {
                              const isSelected = selectedAnswer === option;
@@ -318,11 +333,39 @@ export default function QuizPage() {
                 </Card>
             )}
 
-            {answerStatus !== 'unanswered' && (
-                <div className="mt-6 text-right">
-                    <Button onClick={handleNextQuestion}>Next Question</Button>
-                </div>
-            )}
+            <div className="mt-6">
+                {answerStatus !== 'unanswered' && (
+                     <div className="text-right">
+                         <Button onClick={currentQuestionIndex === sessionQuestions.length - 1 ? handleFinish : handleNextQuestion}>
+                           {currentQuestionIndex === sessionQuestions.length - 1 ? 'Finish' : 'Next Question'}
+                         </Button>
+                     </div>
+                )}
+            </div>
+             <Collapsible className="mt-8 border-t pt-4">
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground group">
+                    Debug Info
+                    <ChevronDown className="w-4 h-4 group-data-[state=open]:rotate-180 transition-transform"/>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <Card className="mt-2">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Session Question Weights</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="text-sm font-mono space-y-2">
+                                {sessionQuestions.map((q, index) => (
+                                    <li key={q.id} className={cn("p-2 rounded", index === currentQuestionIndex && "bg-muted")}>
+                                       <span className="font-bold">W: {q.weight}</span> - {q.question}
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
+                </CollapsibleContent>
+            </Collapsible>
         </div>
     );
 }
+
+    
