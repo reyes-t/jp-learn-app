@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,18 @@ export default function CreativePracticePage() {
   const challenges = creativeChallenges;
   const currentChallenge = challenges[currentQuestionIndex];
   const isQuizFinished = currentQuestionIndex >= challenges.length;
+  
+  useEffect(() => {
+    if (isQuizFinished && challenges.length > 0) {
+        const score = Math.round((correctAnswersCount / challenges.length) * 100);
+        const bestScoreKey = 'quiz_best_score_creative-practice';
+        const bestScore = JSON.parse(localStorage.getItem(bestScoreKey) || '0');
+        if (score > bestScore) {
+            localStorage.setItem(bestScoreKey, JSON.stringify(score));
+        }
+    }
+  }, [isQuizFinished, correctAnswersCount, challenges.length]);
+
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

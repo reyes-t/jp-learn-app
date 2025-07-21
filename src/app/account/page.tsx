@@ -50,6 +50,7 @@ export default function AccountPage() {
     localStorage.removeItem('quiz_best_score_grammar');
     localStorage.removeItem('quiz_best_score_vocabulary');
     localStorage.removeItem('quiz_best_score_listening');
+    localStorage.removeItem('quiz_best_score_creative-practice');
 
     toast({
         title: "Quiz History Reset",
