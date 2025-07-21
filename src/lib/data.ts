@@ -321,12 +321,12 @@ export const grammarPoints: GrammarPoint[] = [
 export const quizzes: QuizMeta[] = [
     {
         id: 'grammar',
-        title: 'Comprehensive Grammar Quiz',
+        title: 'Grammar Quiz',
         description: 'Test your knowledge of all grammar points.',
     },
     {
         id: 'vocabulary',
-        title: 'Full Vocabulary Quiz',
+        title: 'Vocabulary Quiz',
         description: 'A quiz on all the flashcards you have available.',
     },
     {
