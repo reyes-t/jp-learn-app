@@ -37,7 +37,14 @@ export type QuizQuestion = {
 
 // This is for the metadata of the quiz, not the full quiz itself
 export type QuizMeta = {
-  id: 'grammar' | 'vocabulary';
+  id: 'grammar' | 'vocabulary' | 'listening';
   title: string;
   description: string;
+};
+
+export type ListeningQuizQuestion = {
+  id: string;
+  kana: string;
+  romaji: string;
+  audioDataUri: string;
 };

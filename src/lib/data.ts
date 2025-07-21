@@ -1,4 +1,4 @@
-import type { Deck, Card, GrammarPoint, QuizMeta } from './types';
+import type { Deck, Card, GrammarPoint, QuizMeta, ListeningQuizQuestion } from './types';
 
 export const basicDecks: Deck[] = [
   {
@@ -328,5 +328,31 @@ export const quizzes: QuizMeta[] = [
         id: 'vocabulary',
         title: 'Full Vocabulary Quiz',
         description: 'A quiz on all the flashcards you have available.',
+    },
+    {
+        id: 'listening',
+        title: 'Listening Comprehension',
+        description: 'Listen to a sentence and write what you hear.',
     }
+];
+
+export const listeningSentences: Omit<ListeningQuizQuestion, 'audioDataUri'>[] = [
+    { id: 'l-1', kana: 'こんにちは', romaji: 'Konnichiwa' },
+    { id: 'l-2', kana: 'ありがとうございます', romaji: 'Arigatou gozaimasu' },
+    { id: 'l-3', kana: 'すみません', romaji: 'Sumimasen' },
+    { id: 'l-4', kana: 'はい、そうです', romaji: 'Hai, sou desu' },
+    {
+      id: 'l-5',
+      kana: 'これはいくらですか',
+      romaji: 'Kore wa ikura desu ka',
+    },
+    { id: 'l-6', kana: 'えきはどこですか', romaji: 'Eki wa doko desu ka' },
+    { id: 'l-7', kana: 'はじめまして', romaji: 'Hajimemashite' },
+    {
+      id: 'l-8',
+      kana: 'どうぞよろしくおねがいします',
+      romaji: 'Douzo yoroshiku onegaishimasu',
+    },
+    { id: 'l-9', kana: 'おなまえはなんですか', romaji: 'O-namae wa nan desu ka' },
+    { id: 'l-10', kana: 'にほんごがすこしわかります', romaji: 'Nihongo ga sukoshi wakarimasu' },
 ];
