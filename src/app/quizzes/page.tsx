@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react';
 import { quizzes } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileQuestion, PlayCircle, BrainCircuit, Sparkles, Trophy, Ear, Wand2, Loader2 } from "lucide-react";
+import { FileQuestion, PlayCircle, BrainCircuit, Sparkles, Trophy, Ear, Wand2, Loader2, Mic } from "lucide-react";
 import Link from "next/link";
 import type { QuizMeta, GeneratedPhrase } from '@/lib/types';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { generatePhrase } from '@/ai/flows/generate-phrase-flow';
+import { generateSpeech } from '@/ai/flows/text-to-speech';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const ICONS: Record<QuizMeta['id'], React.ReactNode> = {
     grammar: <BrainCircuit className="text-primary"/>,
@@ -61,23 +64,48 @@ const QuizCard = ({ quiz }: QuizCardProps) => {
 };
 
 export default function QuizzesPage() {
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingPhrase, setIsGeneratingPhrase] = useState(false);
   const [generatedPhrase, setGeneratedPhrase] = useState<GeneratedPhrase | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPhraseDialogOpen, setIsPhraseDialogOpen] = useState(false);
 
-  const handleGenerateClick = async () => {
-    setIsDialogOpen(true);
-    setIsGenerating(true);
+  const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
+  const [generatedAudio, setGeneratedAudio] = useState<string | null>(null);
+  const [isTtsDialogOpen, setIsTtsDialogOpen] = useState(false);
+  const [ttsText, setTtsText] = useState("こんにちは");
+
+
+  const handleGeneratePhraseClick = async () => {
+    setIsPhraseDialogOpen(true);
+    setGeneratedPhrase(null);
+    setIsGeneratingPhrase(true);
     try {
       const phrase = await generatePhrase();
       setGeneratedPhrase(phrase);
     } catch (error) {
       console.error("Failed to generate phrase:", error);
-      // Optionally, show a toast notification for the error
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingPhrase(false);
     }
   };
+
+  const handleGenerateSpeechClick = async () => {
+    if (!ttsText) return;
+    setGeneratedAudio(null);
+    setIsGeneratingSpeech(true);
+    try {
+        const audioDataUri = await generateSpeech(ttsText);
+        setGeneratedAudio(audioDataUri);
+    } catch (error) {
+        console.error("Failed to generate speech:", error);
+    } finally {
+        setIsGeneratingSpeech(false);
+    }
+  };
+
+  const openTtsDialog = () => {
+    setGeneratedAudio(null);
+    setIsTtsDialogOpen(true);
+  }
 
   return (
     <div className="container mx-auto">
@@ -86,10 +114,16 @@ export default function QuizzesPage() {
           <h1 className="text-3xl font-bold font-headline">Quizzes</h1>
           <p className="text-muted-foreground">Test your knowledge with adaptive and listening quizzes.</p>
         </div>
-        <Button variant="outline" onClick={handleGenerateClick} disabled={isGenerating}>
-            <Wand2 className="mr-2 h-4 w-4" />
-            Generate a Phrase
-        </Button>
+        <div className="flex gap-2">
+            <Button variant="outline" onClick={handleGeneratePhraseClick} disabled={isGeneratingPhrase}>
+                <Wand2 className="mr-2 h-4 w-4" />
+                Generate a Phrase
+            </Button>
+            <Button variant="outline" onClick={openTtsDialog}>
+                <Mic className="mr-2 h-4 w-4" />
+                Text to Speech
+            </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -98,7 +132,7 @@ export default function QuizzesPage() {
         ))}
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isPhraseDialogOpen} onOpenChange={setIsPhraseDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>AI Generated Phrase</DialogTitle>
@@ -107,7 +141,7 @@ export default function QuizzesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            {isGenerating ? (
+            {isGeneratingPhrase ? (
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span>Generating...</span>
@@ -124,6 +158,44 @@ export default function QuizzesPage() {
               <p>Could not generate a phrase. Please try again.</p>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isTtsDialogOpen} onOpenChange={setIsTtsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Text to Speech</DialogTitle>
+            <DialogDescription>
+              Type some Japanese text and hear it spoken aloud.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="tts-input">Japanese Text</Label>
+              <Input 
+                id="tts-input"
+                value={ttsText}
+                onChange={(e) => setTtsText(e.target.value)}
+                placeholder="e.g. こんにちは"
+              />
+            </div>
+            {isGeneratingSpeech && (
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Generating audio...</span>
+              </div>
+            )}
+            {generatedAudio && (
+                <audio controls autoPlay src={generatedAudio} className="w-full">
+                    Your browser does not support the audio element.
+                </audio>
+            )}
+          </div>
+           <DialogFooter>
+            <Button onClick={handleGenerateSpeechClick} disabled={isGeneratingSpeech || !ttsText}>
+              {isGeneratingSpeech ? 'Generating...' : 'Generate Audio'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
