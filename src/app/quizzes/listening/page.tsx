@@ -17,8 +17,12 @@ const QUIZ_LENGTH = 5;
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
 
+// Helper function to add a delay
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export default function ListeningQuizPage() {
     const [isLoading, setIsLoading] = useState(true);
+    const [loadingProgress, setLoadingProgress] = useState(0);
     const [questions, setQuestions] = useState<ListeningQuizQuestion[]>([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [userAnswer, setUserAnswer] = useState('');
@@ -31,14 +35,20 @@ export default function ListeningQuizPage() {
             const shuffled = [...listeningSentences].sort(() => 0.5 - Math.random());
             const selectedSentences = shuffled.slice(0, QUIZ_LENGTH);
             const generatedQuestions: ListeningQuizQuestion[] = [];
-            for (const sentence of selectedSentences) {
+            
+            for (let i = 0; i < selectedSentences.length; i++) {
+                const sentence = selectedSentences[i];
+                setLoadingProgress(i + 1);
                 try {
                     const audioDataUri = await generateSpeech(sentence.kana);
                     generatedQuestions.push({ ...sentence, audioDataUri });
+                    // Wait for 1 second to avoid hitting rate limits
+                    await sleep(1000); 
                 } catch (error) {
                     console.error("Failed to generate speech for:", sentence.kana, error);
                 }
             }
+
             setQuestions(generatedQuestions);
             setIsLoading(false);
         };
@@ -46,8 +56,10 @@ export default function ListeningQuizPage() {
     }, []);
 
     const playAudio = () => {
-        const audio = new Audio(questions[currentQuestionIndex].audioDataUri);
-        audio.play();
+        if (questions[currentQuestionIndex]?.audioDataUri) {
+            const audio = new Audio(questions[currentQuestionIndex].audioDataUri);
+            audio.play().catch(e => console.error("Error playing audio:", e));
+        }
     };
 
     const handleCheckAnswer = () => {
@@ -89,8 +101,8 @@ export default function ListeningQuizPage() {
                         <CardTitle>Preparing Your Quiz...</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p>Generating audio, please wait a moment.</p>
-                        <Progress value={undefined} className="mt-4 animate-pulse" />
+                        <p>Generating audio {loadingProgress} of {QUIZ_LENGTH}...</p>
+                        <Progress value={(loadingProgress / QUIZ_LENGTH) * 100} className="mt-4" />
                     </CardContent>
                 </Card>
             </div>
@@ -103,7 +115,7 @@ export default function ListeningQuizPage() {
                 <Card className="w-full max-w-md text-center">
                     <CardHeader><CardTitle>Error</CardTitle></CardHeader>
                     <CardContent>
-                        <p>Could not load the listening quiz questions. Please try again later.</p>
+                        <p>Could not load the listening quiz questions. The API may be busy. Please try again later.</p>
                     </CardContent>
                     <CardFooter>
                          <Button variant="outline" asChild>
