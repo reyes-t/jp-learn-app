@@ -27,7 +27,6 @@ const QuizCard = ({ quiz }: QuizCardProps) => {
   const [bestScore, setBestScore] = useState<number | null>(null);
 
   useEffect(() => {
-    if (quiz.id === 'listening') return; 
     const score = localStorage.getItem(`quiz_best_score_${quiz.id}`);
     if (score) {
       setBestScore(JSON.parse(score));

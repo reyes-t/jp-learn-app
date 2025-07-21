@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, CheckCircle2, Volume2, XCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Volume2, XCircle, RefreshCw, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { listeningSentences } from '@/lib/data';
 import type { ListeningQuizQuestion } from '@/lib/types';
@@ -36,6 +36,20 @@ export default function ListeningQuizPage() {
             }
         };
     }, []);
+
+    const isQuizFinished = currentQuestionIndex >= questions.length;
+    
+    useEffect(() => {
+        if (isQuizFinished) {
+            const score = Math.round((correctAnswersCount / questions.length) * 100);
+            const bestScoreKey = 'quiz_best_score_listening';
+            const bestScore = JSON.parse(localStorage.getItem(bestScoreKey) || '0');
+            if (score > bestScore) {
+                localStorage.setItem(bestScoreKey, JSON.stringify(score));
+            }
+        }
+    }, [isQuizFinished, correctAnswersCount, questions.length]);
+
 
     const currentQuestion = questions[currentQuestionIndex];
     
@@ -105,7 +119,6 @@ export default function ListeningQuizPage() {
          )
     }
 
-    const isQuizFinished = currentQuestionIndex >= questions.length;
     const progress = (currentQuestionIndex / questions.length) * 100;
 
     if (isQuizFinished) {
