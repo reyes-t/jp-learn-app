@@ -196,11 +196,7 @@ export default function QuizPage() {
         Object.entries(sessionQuestionUpdates).forEach(([id, change]) => {
             const currentWeight = allWeights[id] || 0;
             const newWeight = Math.max(0, currentWeight + change); // Ensure weight doesn't go below 0
-            if (newWeight > 0) {
-                allWeights[id] = newWeight;
-            } else {
-                delete allWeights[id]; // Remove if weight is 0
-            }
+            allWeights[id] = newWeight;
         });
 
         localStorage.setItem(weightsStorageKey, JSON.stringify(allWeights));
@@ -367,5 +363,7 @@ export default function QuizPage() {
         </div>
     );
 }
+
+    
 
     
