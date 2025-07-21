@@ -37,8 +37,8 @@ const validatePhrasePrompt = ai.definePrompt({
 
     Analyze the student's answer and determine if it meets the criteria.
     Provide your response in the requested JSON format.
-    - If the answer is valid, set 'isValid' to true and provide a brief, encouraging reason.
-    - If the answer is invalid (either grammatically incorrect or doesn't fit the conditions), set 'isValid' to false and provide a clear, helpful explanation for the student to learn from. Be specific about what is wrong.
+    - If the answer is valid, set 'isValid' to true and provide a brief, encouraging reason in English.
+    - If the answer is invalid (either grammatically incorrect or doesn't fit the conditions), set 'isValid' to false and provide a clear, helpful explanation in English for the student to learn from. Be specific about what is wrong.
   `,
 });
 
