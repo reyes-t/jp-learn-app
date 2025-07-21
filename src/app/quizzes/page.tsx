@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { quizzes } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileQuestion, PlayCircle, BrainCircuit, Sparkles, Trophy, Ear, Wand2, Loader2, Mic, Speaker } from "lucide-react";
+import { FileQuestion, PlayCircle, BrainCircuit, Sparkles, Trophy, Ear, Wand2, Loader2, Mic, Speaker, Lightbulb } from "lucide-react";
 import Link from "next/link";
 import type { QuizMeta, GeneratedPhrase } from '@/lib/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -13,10 +13,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const ICONS: Record<QuizMeta['id'], React.ReactNode> = {
+const ICONS: Record<string, React.ReactNode> = {
     grammar: <BrainCircuit className="text-primary"/>,
     vocabulary: <Sparkles className="text-primary"/>,
     listening: <Ear className="text-primary"/>,
+    'creative-practice': <Lightbulb className="text-primary"/>,
 }
 
 interface QuizCardProps {
@@ -27,6 +28,7 @@ const QuizCard = ({ quiz }: QuizCardProps) => {
   const [bestScore, setBestScore] = useState<number | null>(null);
 
   useEffect(() => {
+    if (quiz.id === 'creative-practice') return; // No score for creative practice
     const score = localStorage.getItem(`quiz_best_score_${quiz.id}`);
     if (score) {
       setBestScore(JSON.parse(score));
@@ -124,6 +126,12 @@ export default function QuizzesPage() {
     window.speechSynthesis.speak(utterance);
   };
 
+  const allQuizzes = [...quizzes, {
+      id: 'creative-practice',
+      title: 'Creative Practice',
+      description: 'Test your skills by creating sentences that fit certain conditions, validated by AI.',
+  }];
+
 
   return (
     <div className="container mx-auto">
@@ -145,7 +153,7 @@ export default function QuizzesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {quizzes.map((quiz) => (
+        {allQuizzes.map((quiz) => (
           <QuizCard key={quiz.id} quiz={quiz} />
         ))}
       </div>

@@ -39,7 +39,7 @@ export type QuizQuestion = {
 
 // This is for the metadata of the quiz, not the full quiz itself
 export type QuizMeta = {
-  id: 'grammar' | 'vocabulary' | 'listening';
+  id: 'grammar' | 'vocabulary' | 'listening' | 'creative-practice';
   title: string;
   description: string;
 };
@@ -55,4 +55,14 @@ export type GeneratedPhrase = {
   japanese: string;
   romaji: string;
   english: string;
+};
+
+export type PhraseValidationResult = {
+  isValid: boolean;
+  reason: string;
+};
+
+export type ValidatePhraseInput = {
+    conditions: string[];
+    phrase: string;
 };
