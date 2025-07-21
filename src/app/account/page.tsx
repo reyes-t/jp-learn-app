@@ -49,6 +49,7 @@ export default function AccountPage() {
     localStorage.removeItem('quiz_weights_vocabulary');
     localStorage.removeItem('quiz_best_score_grammar');
     localStorage.removeItem('quiz_best_score_vocabulary');
+    localStorage.removeItem('quiz_best_score_listening');
 
     toast({
         title: "Quiz History Reset",
