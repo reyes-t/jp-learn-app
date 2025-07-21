@@ -151,7 +151,6 @@ export default function CreativePracticePage() {
             <div className="space-y-2">
               <Textarea
                 id="user-answer"
-                placeholder="e.g. おはようございます"
                 value={userAnswer}
                 onChange={(e) => setUserAnswer(e.target.value)}
                 required
