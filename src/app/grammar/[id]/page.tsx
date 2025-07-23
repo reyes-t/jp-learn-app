@@ -43,8 +43,8 @@ export default function GrammarLessonPage() {
           <ul className="space-y-4">
             {lesson.examples.map((ex, index) => (
               <li key={index} className="pl-4 border-l-4 border-primary">
-                <p className="font-medium text-xl">{ex.japanese}</p>
-                <p className="text-muted-foreground">{ex.english}</p>
+                <p className="font-medium text-xl">{ex.sentence}</p>
+                <p className="text-muted-foreground">{ex.translation}</p>
               </li>
             ))}
           </ul>

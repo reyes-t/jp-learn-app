@@ -1,4 +1,4 @@
-import type { Deck, Card, GrammarPoint, QuizMeta, ListeningQuizQuestion, CreativeChallenge } from './types';
+import type { Deck, Card, GrammarPoint, QuizMeta, ListeningQuizQuestion, CreativeChallenge, GrammarPointExample } from './types';
 
 export const basicDecks: Deck[] = [
   {
@@ -238,8 +238,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'AはBです (A wa B desu)',
     explanation: 'This is the most basic sentence structure in Japanese. It is used to state that "A is B". 「は」 (wa) is a topic particle, and 「です」 (desu) is a copula, similar to "is" or "am" or "are" in English.',
     examples: [
-      { japanese: 'わたしはがくせいです。', english: 'I am a student. (Watashi wa gakusei desu.)' },
-      { japanese: 'これはほんです。', english: 'This is a book. (Kore wa hon desu.)' },
+      { question: 'わたし___がくせいです。', answer: 'は', options: ['が', 'を', 'も'], sentence: 'わたしはがくせいです。', translation: 'I am a student.' },
+      { question: 'これ___ほんです。', answer: 'は', options: ['に', 'で', 'と'], sentence: 'これはほんです。', translation: 'This is a book.' },
     ],
   },
   {
@@ -248,8 +248,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Verb Conjugation (ます-form)',
     explanation: 'The ます (masu) form is the polite, non-past form of a verb. It is commonly used in daily conversation. To form it, you typically change the final "u" sound of the dictionary form verb to an "i" and add ます. For example, "kau" (to buy) becomes "kaimasu".',
     examples: [
-      { japanese: 'わたしはほんをかいます。', english: 'I buy a book. (Watashi wa hon o kaimasu.)' },
-      { japanese: 'かれはすしをたべます。', english: 'He eats sushi. (Kare wa sushi o tabemasu.)' },
+      { question: 'わたしはほんを___。', answer: 'かいます', options: ['かう', 'かって', 'かった'], sentence: 'わたしはほんをかいます。', translation: 'I buy a book.' },
+      { question: 'かれはすしを___。', answer: 'たべます', options: ['たべる', 'たべて', 'たべた'], sentence: 'かれはすしをたべます。', translation: 'He eats sushi.' },
     ],
   },
   {
@@ -258,18 +258,18 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Possessive Particle 「の」 (no)',
     explanation: 'The particle 「の」 (no) is used to show possession, similar to "apostrophe s" in English. It links two nouns, where the first noun possesses or describes the second noun.',
     examples: [
-      { japanese: 'これはわたしのペンです。', english: 'This is my pen. (Kore wa watashi no pen desu.)' },
-      { japanese: 'さくらさんのかばんは大きいです。', english: 'Sakura\'s bag is big. (Sakura-san no kaban wa ookii desu.)' },
+      { question: 'これはわたし___ペンです。', answer: 'の', options: ['が', 'を', 'は'], sentence: 'これはわたしのペンです。', translation: 'This is my pen.' },
+      { question: 'さくらさん___かばんは大きいです。', answer: 'の', options: ['と', 'も', 'や'], sentence: 'さくらさんのかばんは大きいです。', translation: "Sakura's bag is big." },
     ],
   },
-    {
+  {
     id: 'g-4',
     level: 'N5',
     title: 'Adjectives (い-Adjectives and な-Adjectives)',
     explanation: 'Japanese has two types of adjectives. い-adjectives end with い (like "ookii" - big). な-adjectives require な (na) when they come before a noun (like "kirei na hana" - beautiful flower).',
     examples: [
-      { japanese: 'このラーメンはおいしいです。', english: 'This ramen is delicious. (Kono raamen wa oishii desu.)' },
-      { japanese: 'しずかなへやがすきです。', english: 'I like quiet rooms. (Shizuka na heya ga suki desu.)' },
+      { question: 'このラーメンは___です。', answer: 'おいしい', options: ['おいしく', 'おいしいな', 'おいし'], sentence: 'このラーメンはおいしいです。', translation: 'This ramen is delicious.' },
+      { question: '___へやがすきです。', answer: 'しずかな', options: ['しずか', 'しずかで', 'しずかに'], sentence: 'しずかなへやがすきです。', translation: 'I like quiet rooms.' },
     ],
   },
   {
@@ -278,8 +278,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Question Particle 「か」 (ka)',
     explanation: 'To turn a statement into a question, you simply add the particle 「か」 (ka) to the end of the sentence. The word order does not change, and a question mark is usually not necessary in formal writing.',
     examples: [
-      { japanese: 'これはペンですか。', english: 'Is this a pen? (Kore wa pen desu ka.)' },
-      { japanese: 'さとうさんはせんせいですか。', english: 'Is Mr. Sato a teacher? (Satou-san wa sensei desu ka.)' },
+      { question: 'これはペンです___。', answer: 'か', options: ['ね', 'よ', 'の'], sentence: 'これはペンですか。', translation: 'Is this a pen?' },
+      { question: 'さとうさんはせんせいです___。', answer: 'か', options: ['よ', 'ね', 'さ'], sentence: 'さとうさんはせんせいですか。', translation: 'Is Mr. Sato a teacher?' },
     ],
   },
   {
@@ -288,8 +288,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Past Tense (ました/でした)',
     explanation: 'To talk about the past, verbs in ます-form change to ました (mashita). For nouns and な-adjectives, です (desu) becomes でした (deshita). For い-adjectives, the final い becomes かったです (katta desu).',
     examples: [
-      { japanese: 'きのう、えいがをみました。', english: 'I watched a movie yesterday. (Kinou, eiga o mimashita.)' },
-      { japanese: 'きのうはあつかったです。', english: 'It was hot yesterday. (Kinou wa atsukatta desu.)' },
+      { question: 'きのう、えいがを___。', answer: 'みました', options: ['みます', 'みて', 'みる'], sentence: 'きのう、えいがをみました。', translation: 'I watched a movie yesterday.' },
+      { question: 'きのうは___。', answer: 'あつかったです', options: ['あついです', 'あつかった', 'あついでした'], sentence: 'きのうはあつかったです。', translation: 'It was hot yesterday.' },
     ],
   },
   {
@@ -298,8 +298,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Particles 「に」 and 「へ」 (Direction)',
     explanation: 'Both 「に」 (ni) and 「へ」 (e) can mark the direction of movement towards a place. 「へ」 emphasizes the direction itself, while 「に」 focuses more on the destination/arrival point. In many cases, they are interchangeable.',
     examples: [
-      { japanese: 'がっこうにいきます。', english: 'I am going to school. (Gakkou ni ikimasu.)' },
-      { japanese: 'とうきょうへようこそ。', english: 'Welcome to Tokyo. (Tokyo e youkoso.)' },
+      { question: 'がっこう___いきます。', answer: 'に', options: ['で', 'を', 'が'], sentence: 'がっこうにいきます。', translation: 'I am going to school.' },
+      { question: 'とうきょう___ようこそ。', answer: 'へ', options: ['で', 'の', 'から'], sentence: 'とうきょうへようこそ。', translation: 'Welcome to Tokyo.' },
     ],
   },
   {
@@ -308,8 +308,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Particle 「で」 (Location of Action)',
     explanation: 'The particle 「で」 (de) is used to indicate the location where an action takes place. It answers the question "where did the action happen?". Don\'t confuse it with 「に」 which indicates existence in a place.',
     examples: [
-      { japanese: 'レストランでひるごはんをたべます。', english: 'I eat lunch at the restaurant. (Resutoran de hirugohan o tabemasu.)' },
-      { japanese: 'としょかんでべんきょうします。', english: 'I study at the library. (Toshokan de benkyou shimasu.)' },
+      { question: 'レストラン___ひるごはんをたべます。', answer: 'で', options: ['に', 'へ', 'を'], sentence: 'レストランでひるごはんをたべます。', translation: 'I eat lunch at the restaurant.' },
+      { question: 'としょかん___べんきょうします。', answer: 'で', options: ['に', 'を', 'と'], sentence: 'としょかんでべんきょうします。', translation: 'I study at the library.' },
     ],
   },
   {
@@ -318,8 +318,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Particle 「を」 (Direct Object)',
     explanation: 'The particle 「を」 (o/wo) marks the direct object of a verb. It indicates what is being acted upon.',
     examples: [
-      { japanese: 'わたしはほんをよみます。', english: 'I read a book. (Watashi wa hon o yomimasu.)' },
-      { japanese: 'かれはジュースをのみます。', english: 'He drinks juice. (Kare wa juusu o nomimasu.)' },
+      { question: 'わたしはほん___よみます。', answer: 'を', options: ['が', 'は', 'で'], sentence: 'わたしはほんをよみます。', translation: 'I read a book.' },
+      { question: 'かれはジュース___のみます。', answer: 'を', options: ['が', 'に', 'も'], sentence: 'かれはジュースをのみます。', translation: 'He drinks juice.' },
     ],
   },
   {
@@ -328,8 +328,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Potential Form (~ことができます / ~れる/られる)',
     explanation: 'This form expresses ability ("can do something"). One way is to use "Dictionary Form Verb + ことができます". Another is to conjugate the verb itself. For る-verbs, change る to られる. For う-verbs, change the final "u" vowel to "e" and add る.',
     examples: [
-      { japanese: 'わたしはかんじをよむことができます。', english: 'I can read Kanji. (Watashi wa kanji o yomu koto ga dekimasu.)' },
-      { japanese: 'かれはすしがたべられます。', english: 'He can eat sushi. (Kare wa sushi ga taberaremasu.)' },
+      { question: 'わたしはかんじをよむ___ができます。', answer: 'こと', options: ['の', 'もの', 'とき'], sentence: 'わたしはかんじをよむことができます。', translation: 'I can read Kanji.' },
+      { question: 'かれはすしが___。', answer: 'たべられます', options: ['たべます', 'たべたい', 'たべる'], sentence: 'かれはすしがたべられます。', translation: 'He can eat sushi.' },
     ],
   },
   {
@@ -338,8 +338,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Conditional Form (~たら)',
     explanation: 'The 「たら」 (tara) form is a common way to express "if" or "when". It\'s formed by taking the past tense of a verb or adjective and adding 「ら」 (ra). It can be used for a wide range of conditional situations.',
     examples: [
-      { japanese: 'にほんにいったら、さくらをみたいです。', english: 'If/When I go to Japan, I want to see the cherry blossoms. (Nihon ni ittara, sakura o mitai desu.)' },
-      { japanese: 'やすかったら、かいます。', english: 'If it\'s cheap, I\'ll buy it. (Yasukattara, kaimasu.)' },
+      { question: 'にほんに___、さくらをみたいです。', answer: 'いったら', options: ['いくと', 'いけば', 'いくなら'], sentence: 'にほんにいったら、さくらをみたいです。', translation: 'If/When I go to Japan, I want to see the cherry blossoms.' },
+      { question: 'やす___、かいます。', answer: 'かったら', options: ['ければ', 'いと', 'く'], sentence: 'やすかったら、かいます。', translation: "If it's cheap, I'll buy it." },
     ],
   },
   {
@@ -348,9 +348,9 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Giving and Receiving (あげる, くれる, もらう)',
     explanation: 'These verbs are crucial for social context. 「あげる」(ageru) is for giving to others. 「くれる」(kureru) is for someone giving to you or your in-group. 「もらう」(morau) is for receiving from others.',
     examples: [
-      { japanese: 'わたしはともだちにはなをあげました。', english: 'I gave flowers to my friend. (Watashi wa tomodachi ni hana o agemashita.)' },
-      { japanese: 'ともだちがわたしにはなをくれました。', english: 'My friend gave flowers to me. (Tomodachi ga watashi ni hana o kuremashita.)' },
-      { japanese: 'わたしはともだちにはなをもらいました。', english: 'I received flowers from my friend. (Watashi wa tomodachi ni hana o moraimashita.)' },
+      { question: 'わたしはともだちにプレゼントを___。', answer: 'あげました', options: ['くれました', 'もらいました', 'ありました'], sentence: 'わたしはともだちにプレゼントをあげました。', translation: 'I gave a present to my friend.' },
+      { question: 'ともだちがわたしにプレゼントを___。', answer: 'くれました', options: ['あげました', 'もらいました', 'いきました'], sentence: 'ともだちがわたしにプレゼントをくれました。', translation: 'My friend gave a present to me.' },
+      { question: 'わたしはともだちにプレゼントを___。', answer: 'もらいました', options: ['あげました', 'くれました', 'ありました'], sentence: 'わたしはともだちにプレゼントをもらいました。', translation: 'I received a present from my friend.' },
     ],
   },
   {
@@ -359,8 +359,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Verb Stem + ~やすい / ~にくい',
     explanation: 'Attach 「やすい」(yasui) to a verb stem to indicate that something is "easy to do". Attach 「にくい」(nikui) to indicate that something is "hard to do". The verb stem is the ます-form without the ます.',
     examples: [
-      { japanese: 'このパソコンはつかいやすいです。', english: 'This computer is easy to use. (Kono pasokon wa tsukaiyasui desu.)' },
-      { japanese: 'このかんじはわかりにくいです。', english: 'This kanji is hard to understand. (Kono kanji wa wakarinikui desu.)' },
+      { question: 'このパソコンは___です。', answer: 'つかいやすい', options: ['つかうやすい', 'つかいやすいな', 'つかいやすくて'], sentence: 'このパソコンはつかいやすいです。', translation: 'This computer is easy to use.' },
+      { question: 'このかんじは___です。', answer: 'わかりにくい', options: ['わかるにくい', 'わかりにくくて', 'わかりにくいな'], sentence: 'このかんじはわかりにくいです。', translation: 'This kanji is hard to understand.' },
     ],
   },
   {
@@ -369,8 +369,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: '「~そうです」 (Looks like)',
     explanation: 'Used to express your impression or guess based on what you see. For い-adjectives, drop the final い and add そうです. For な-adjectives, add そうです directly to the adjective stem.',
     examples: [
-      { japanese: 'このケーキはおいしそうです。', english: 'This cake looks delicious. (Kono keeki wa oishisou desu.)' },
-      { japanese: 'きょうはあめがふりそうです。', english: 'It looks like it\'s going to rain today. (Kyou wa ame ga furisou desu.)' },
+      { question: 'このケーキは___です。', answer: 'おいしそう', options: ['おいしいそう', 'おいしいそうです', 'おいしそうに'], sentence: 'このケーキはおいしそうです。', translation: 'This cake looks delicious.' },
+      { question: 'きょうはあめが___です。', answer: 'ふりそう', options: ['ふるそう', 'ふりそうです', 'ふりそうで'], sentence: 'きょうはあめがふりそうです。', translation: "It looks like it's going to rain today." },
     ],
   },
   {
@@ -379,8 +379,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Volitional Form (しよう/ましょう)',
     explanation: 'This form expresses intention ("let\'s do" or "I will do"). The formal version is the ます-stem + ましょう (e.g., ikimashou - let\'s go). The informal version is formed by changing the final verb vowel to "o" and adding う (e.g., ikou - let\'s go).',
     examples: [
-      { japanese: 'いっしょにえいがをみましょう。', english: 'Let\'s watch a movie together. (Issho ni eiga o mimashou.)' },
-      { japanese: 'こーひーをのもう。', english: 'Let\'s drink coffee. (Koohii o nomou.)' },
+      { question: 'いっしょにえいがを___。', answer: 'みましょう', options: ['みます', 'みよう', 'みたい'], sentence: 'いっしょにえいがをみましょう。', translation: "Let's watch a movie together." },
+      { question: 'こーひーを___。', answer: 'のもう', options: ['のみましょう', 'のむ', 'のみたい'], sentence: 'こーひーをのもう。', translation: "Let's drink coffee." },
     ],
   },
 ];
@@ -389,42 +389,42 @@ export const quizzes: QuizMeta[] = [
     {
         id: 'grammar-n5',
         type: 'grammar',
-        title: 'N5 Grammar Quiz',
+        title: 'Grammar Quiz',
         description: 'Test your knowledge of N5 grammar points.',
         level: 'N5',
     },
     {
         id: 'grammar-n4',
         type: 'grammar',
-        title: 'N4 Grammar Quiz',
+        title: 'Grammar Quiz',
         description: 'Test your knowledge of N4 grammar points.',
         level: 'N4',
     },
     {
         id: 'vocabulary-n5',
         type: 'vocabulary',
-        title: 'N5 Vocabulary Quiz',
+        title: 'Vocabulary Quiz',
         description: 'A quiz on essential N5 flashcards.',
         level: 'N5',
     },
     {
         id: 'vocabulary-n4',
         type: 'vocabulary',
-        title: 'N4 Vocabulary Quiz',
+        title: 'Vocabulary Quiz',
         description: 'A quiz on intermediate N4 flashcards.',
         level: 'N4',
     },
     {
         id: 'listening-n5',
         type: 'listening',
-        title: 'N5 Listening Comprehension',
+        title: 'Listening Comprehension',
         description: 'Listen to basic sentences and write what you hear.',
         level: 'N5',
     },
     {
         id: 'listening-n4',
         type: 'listening',
-        title: 'N4 Listening Comprehension',
+        title: 'Listening Comprehension',
         description: 'Listen to intermediate sentences and write what you hear.',
         level: 'N4',
     },
@@ -476,5 +476,3 @@ export const creativeChallenges: CreativeChallenge[] = [
     { id: 'cc-19', conditions: ['Refuse politely', 'An invitation'] },
     { id: 'cc-20', conditions: ['Talk about future plans', 'Study Japanese tomorrow'] },
 ];
-
-    

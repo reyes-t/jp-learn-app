@@ -10,7 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { quizzes, grammarPoints, cards as initialCards, basicDecks, listeningSentences } from '@/lib/data';
-import type { Deck, Card as CardType, QuizQuestion, GrammarPoint, ListeningQuizQuestion } from '@/lib/types';
+import type { Deck, Card as CardType, QuizQuestion, GrammarPoint, ListeningQuizQuestion, GrammarPointExample } from '@/lib/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { ListeningQuiz } from '@/components/listening-quiz';
@@ -27,18 +27,26 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 };
 
 // Generates a grammar question from a grammar point
-const createGrammarQuestion = (point: GrammarPoint, isReview: boolean): QuizQuestion => {
+const createGrammarQuestion = (point: GrammarPoint, allPoints: GrammarPoint[], isReview: boolean): QuizQuestion => {
     const randomExample = point.examples[Math.floor(Math.random() * point.examples.length)];
-    const otherPoints = grammarPoints.filter(p => p.id !== point.id);
-    const wrongAnswers = shuffleArray(otherPoints).slice(0, 3).map(p => p.title);
-    const options = shuffleArray([point.title, ...wrongAnswers]);
+    
+    // Get wrong options from other grammar points, ensuring they are unique and not the correct answer
+    const otherOptions = allPoints
+        .filter(p => p.id !== point.id)
+        .flatMap(p => p.examples.map(ex => ex.answer))
+        .filter(opt => opt !== randomExample.answer);
+
+    const wrongAnswers = shuffleArray([...new Set(otherOptions)]).slice(0, 3);
+    const options = shuffleArray([randomExample.answer, ...wrongAnswers]);
+    const explanation = `${point.title}: ${point.explanation}\nExample: ${randomExample.sentence} (${randomExample.translation})`;
+
 
     return {
-        id: point.id,
-        question: `Which grammar point is used in the sentence: "${randomExample.japanese}"?`,
+        id: `${point.id}-${randomExample.answer}`, // More specific ID
+        question: `Fill in the blank: ${randomExample.question}`,
         options,
-        correctAnswer: point.title,
-        explanation: point.explanation,
+        correctAnswer: randomExample.answer,
+        explanation,
         isReview,
     };
 };
@@ -95,10 +103,12 @@ export default function QuizPage() {
         let potentialQuestionItems: any[];
         let questionGenerator: (item: any, allItems: any[], isReview: boolean) => QuizQuestion;
         let quizLength: number;
+        let allItemsForGenerator: any[] = [];
 
         if (quizMeta.type === 'grammar') {
             potentialQuestionItems = grammarPoints.filter(p => p.level === quizMeta.level);
-            questionGenerator = (item, _, isReview) => createGrammarQuestion(item, isReview);
+            allItemsForGenerator = grammarPoints;
+            questionGenerator = (item, allItems, isReview) => createGrammarQuestion(item, allItems, isReview);
             quizLength = GRAMMAR_QUIZ_LENGTH;
         } else if (quizMeta.type === 'vocabulary') { 
             const userDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
@@ -118,6 +128,7 @@ export default function QuizPage() {
             }
             
             potentialQuestionItems = allCards;
+            allItemsForGenerator = allCards;
             questionGenerator = (item, allItems, isReview) => createVocabQuestion(item, allItems, isReview);
             quizLength = VOCAB_QUIZ_LENGTH;
         } else if (quizMeta.type === 'listening') {
@@ -174,7 +185,7 @@ export default function QuizPage() {
         const generatedQuestions = weightedQuestions
             .slice(0, quizLength)
             .map(wq => ({
-                ...questionGenerator(wq.item, potentialQuestionItems, wq.weight > 0),
+                ...questionGenerator(wq.item, allItemsForGenerator, wq.weight > 0),
                 weight: wq.weight,
             }));
         
@@ -326,7 +337,7 @@ export default function QuizPage() {
                     Back to all quizzes
                 </Link>
                 <div className="flex justify-between items-center mb-2">
-                    <h1 className="text-2xl font-bold font-headline">{quizMeta.title}</h1>
+                    <h1 className="text-2xl font-bold font-headline">{quizMeta.title} {quizMeta.level}</h1>
                     <div className="text-sm text-muted-foreground">
                         Question {currentQuestionIndex + 1} of {sessionQuestions.length}
                     </div>
@@ -380,7 +391,7 @@ export default function QuizPage() {
                     <h3 className={cn("font-bold", answerStatus === 'correct' ? 'text-green-600' : 'text-destructive')}>
                         {answerStatus === 'correct' ? 'Correct!' : `Incorrect. The answer is: ${currentQuestion.correctAnswer}`}
                     </h3>
-                    <p className="text-muted-foreground text-sm mt-2">{currentQuestion.explanation}</p>
+                    <p className="text-muted-foreground text-sm mt-2 whitespace-pre-wrap">{currentQuestion.explanation}</p>
                 </Card>
             )}
 
@@ -418,7 +429,3 @@ export default function QuizPage() {
         </div>
     );
 }
-
-    
-
-    

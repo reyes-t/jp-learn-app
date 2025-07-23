@@ -18,15 +18,20 @@ export type Card = {
   nextReview?: Date;
 };
 
+export type GrammarPointExample = {
+  question: string; // "わたし___がくせいです。"
+  answer: string; // "は"
+  options: string[]; // ["が", "を", "も"]
+  sentence: string; // "わたしはがくせいです。"
+  translation: string; // "I am a student."
+};
+
 export type GrammarPoint = {
   id:string;
   title: string;
   level: 'N5' | 'N4';
   explanation: string;
-  examples: {
-    japanese: string;
-    english: string;
-  }[];
+  examples: GrammarPointExample[];
 };
 
 export type QuizQuestion = {
