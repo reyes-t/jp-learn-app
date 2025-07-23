@@ -42,7 +42,7 @@ const createGrammarQuestion = (point: GrammarPoint, allPoints: GrammarPoint[], i
 
 
     return {
-        id: `${point.id}-${randomExample.answer}`, // More specific ID
+        id: point.id, // Use the grammar point ID for consistent weighting
         question: `Fill in the blank: ${randomExample.question}`,
         options,
         correctAnswer: randomExample.answer,
@@ -417,8 +417,8 @@ export default function QuizPage() {
                         <CardContent>
                             <ul className="text-sm font-mono space-y-2">
                                 {sessionQuestions.map((q, index) => (
-                                    <li key={q.id} className={cn("p-2 rounded", index === currentQuestionIndex && "bg-muted")}>
-                                       <span className="font-bold">W: {q.weight}</span> - {q.question}
+                                    <li key={q.id + index} className={cn("p-2 rounded", index === currentQuestionIndex && "bg-muted")}>
+                                       <span className="font-bold">W: {q.weight} ({q.id})</span> - {q.question}
                                     </li>
                                 ))}
                             </ul>
@@ -429,3 +429,5 @@ export default function QuizPage() {
         </div>
     );
 }
+
+    
