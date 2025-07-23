@@ -40,9 +40,11 @@ export type QuizQuestion = {
 
 // This is for the metadata of the quiz, not the full quiz itself
 export type QuizMeta = {
-  id: 'grammar' | 'vocabulary' | 'listening' | 'creative-practice';
+  id: string;
+  type: 'grammar' | 'vocabulary' | 'listening' | 'creative-practice';
   title: string;
   description: string;
+  level?: 'N5' | 'N4';
 };
 
 export type ListeningQuizQuestion = {

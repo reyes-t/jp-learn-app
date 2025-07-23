@@ -1,12 +1,13 @@
 
 "use client"
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { quizzes } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlayCircle, BrainCircuit, Sparkles, Trophy, Ear, Lightbulb } from "lucide-react";
 import Link from "next/link";
 import type { QuizMeta } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
 
 const ICONS: Record<string, React.ReactNode> = {
     grammar: <BrainCircuit className="text-primary"/>,
@@ -29,12 +30,16 @@ const QuizCard = ({ quiz }: QuizCardProps) => {
     }
   }, [quiz.id]);
 
+  const href = quiz.type === 'creative-practice' || quiz.type === 'listening' 
+      ? `/quizzes/${quiz.type}`
+      : `/quizzes/${quiz.id}`;
+
   return (
     <Card className="flex flex-col">
       <CardHeader>
           <div className="flex items-start justify-between">
               <CardTitle className="font-headline">{quiz.title}</CardTitle>
-              {ICONS[quiz.id]}
+              {quiz.level && <Badge variant="secondary">{quiz.level}</Badge>}
           </div>
           <CardDescription>{quiz.description}</CardDescription>
       </CardHeader>
@@ -48,7 +53,7 @@ const QuizCard = ({ quiz }: QuizCardProps) => {
       </CardContent>
       <CardFooter>
           <Button className="w-full" asChild>
-              <Link href={`/quizzes/${quiz.id}`}>
+              <Link href={href}>
                   <PlayCircle className="mr-2 h-4 w-4" />
                   Start Quiz
               </Link>
@@ -59,12 +64,24 @@ const QuizCard = ({ quiz }: QuizCardProps) => {
 };
 
 export default function QuizzesPage() {
-  const allQuizzes = [...quizzes, {
-      id: 'creative-practice',
-      title: 'Creative Practice',
-      description: 'Test your skills by creating sentences that fit certain conditions, validated by AI.',
-  }];
+  
+  const quizGroups = useMemo(() => {
+    return quizzes.reduce((acc, quiz) => {
+        const type = quiz.type;
+        if (!acc[type]) {
+            acc[type] = [];
+        }
+        acc[type].push(quiz);
+        return acc;
+    }, {} as Record<string, QuizMeta[]>);
+  }, []);
 
+  const groupTitles = {
+      grammar: "Grammar Quizzes",
+      vocabulary: "Vocabulary Quizzes",
+      listening: "Listening Quizzes",
+      'creative-practice': "Creative Practice"
+  };
 
   return (
     <div className="container mx-auto">
@@ -75,9 +92,19 @@ export default function QuizzesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {allQuizzes.map((quiz) => (
-          <QuizCard key={quiz.id} quiz={quiz} />
+      <div className="space-y-12">
+        {Object.entries(quizGroups).map(([type, quizzesInGroup]) => (
+            <section key={type}>
+                <h2 className="text-2xl font-semibold font-headline mb-4 flex items-center gap-3">
+                    {ICONS[type]}
+                    {groupTitles[type as keyof typeof groupTitles]}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {quizzesInGroup.map((quiz) => (
+                      <QuizCard key={quiz.id} quiz={quiz} />
+                    ))}
+                </div>
+            </section>
         ))}
       </div>
     </div>

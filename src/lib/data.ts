@@ -22,6 +22,13 @@ export const basicDecks: Deck[] = [
     cardCount: 100,
     isCustom: false,
   },
+   {
+    id: 'n4-vocab',
+    name: 'JLPT N4 Vocabulary',
+    description: 'Intermediate words for expanding your vocabulary.',
+    cardCount: 150,
+    isCustom: false,
+  },
 ];
 
 export const cards: Card[] = [
@@ -320,19 +327,44 @@ export const grammarPoints: GrammarPoint[] = [
 
 export const quizzes: QuizMeta[] = [
     {
-        id: 'grammar',
-        title: 'Grammar Quiz',
-        description: 'Test your knowledge of all grammar points.',
+        id: 'grammar-n5',
+        type: 'grammar',
+        title: 'N5 Grammar Quiz',
+        description: 'Test your knowledge of N5 grammar points.',
+        level: 'N5',
     },
     {
-        id: 'vocabulary',
-        title: 'Vocabulary Quiz',
-        description: 'A quiz on all the flashcards you have available.',
+        id: 'grammar-n4',
+        type: 'grammar',
+        title: 'N4 Grammar Quiz',
+        description: 'Test your knowledge of N4 grammar points.',
+        level: 'N4',
+    },
+    {
+        id: 'vocabulary-n5',
+        type: 'vocabulary',
+        title: 'N5 Vocabulary Quiz',
+        description: 'A quiz on essential N5 flashcards.',
+        level: 'N5',
+    },
+    {
+        id: 'vocabulary-n4',
+        type: 'vocabulary',
+        title: 'N4 Vocabulary Quiz',
+        description: 'A quiz on intermediate N4 flashcards.',
+        level: 'N4',
     },
     {
         id: 'listening',
+        type: 'listening',
         title: 'Listening Comprehension',
         description: 'Listen to a sentence and write what you hear.',
+    },
+    {
+        id: 'creative-practice',
+        type: 'creative-practice',
+        title: 'Creative Practice',
+        description: 'Test your skills by creating sentences that fit certain conditions, validated by AI.',
     }
 ];
 

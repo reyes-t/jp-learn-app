@@ -16,8 +16,8 @@ import { ChevronDown } from 'lucide-react';
 
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
-const GRAMMAR_QUIZ_LENGTH = 5;
-const VOCAB_QUIZ_LENGTH = 10;
+const GRAMMAR_QUIZ_LENGTH = 10;
+const VOCAB_QUIZ_LENGTH = 20;
 
 // Helper to shuffle an array
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -91,32 +91,37 @@ export default function QuizPage() {
         
         let potentialQuestionItems: any[];
         let questionGenerator: (item: any, allItems: any[], isReview: boolean) => QuizQuestion;
-        const quizLength = quizMeta.id === 'grammar' ? GRAMMAR_QUIZ_LENGTH : VOCAB_QUIZ_LENGTH;
+        let quizLength: number;
 
-        if (quizMeta.id === 'grammar') {
-            potentialQuestionItems = grammarPoints;
+        if (quizMeta.type === 'grammar') {
+            potentialQuestionItems = grammarPoints.filter(p => p.level === quizMeta.level);
             questionGenerator = (item, _, isReview) => createGrammarQuestion(item, isReview);
-        } else { // vocabulary
+            quizLength = GRAMMAR_QUIZ_LENGTH;
+        } else if (quizMeta.type === 'vocabulary') { 
             const userDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
-            const vocabDecks = basicDecks.filter(d => d.id !== 'hiragana' && d.id !== 'katakana');
-            const allDeckIds = [...vocabDecks.map(d => d.id), ...userDecks.map(d => d.id)];
+            const vocabDeckId = quizMeta.level === 'N5' ? 'n5-vocab' : 'n4-vocab';
+            
+            const targetDeck = [...basicDecks, ...userDecks].find(d => d.id === vocabDeckId);
             
             let allCards: CardType[] = [];
-            allDeckIds.forEach(deckId => {
-                const cardKey = `cards_${deckId}`;
+            if (targetDeck) {
+                const cardKey = `cards_${targetDeck.id}`;
                 const storedCardsStr = localStorage.getItem(cardKey);
                 if (storedCardsStr) {
-                    allCards = [...allCards, ...JSON.parse(storedCardsStr)];
+                    allCards = JSON.parse(storedCardsStr);
                 } else {
-                     // load initial cards if not in storage (for basic decks)
-                    const deck = basicDecks.find(d => d.id === deckId);
-                    if (deck) {
-                        allCards = [...allCards, ...initialCards.filter(c => c.deckId === deckId)];
-                    }
+                    allCards = initialCards.filter(c => c.deckId === targetDeck.id);
                 }
-            });
+            }
+            
             potentialQuestionItems = allCards;
             questionGenerator = (item, allItems, isReview) => createVocabQuestion(item, allItems, isReview);
+            quizLength = VOCAB_QUIZ_LENGTH;
+        } else {
+            // Should not happen for this page, but as a fallback
+            setSessionQuestions([]);
+            setIsLoading(false);
+            return;
         }
 
         if (potentialQuestionItems.length === 0) {
@@ -227,7 +232,7 @@ export default function QuizPage() {
                 <Card className="w-full max-w-md text-center">
                     <CardHeader><CardTitle>Not Enough Data</CardTitle></CardHeader>
                     <CardContent>
-                        <p>There are not enough {quizMeta.id === 'grammar' ? 'lessons' : 'cards'} to generate a quiz.</p>
+                        <p>There are not enough {quizMeta.type === 'grammar' ? 'lessons' : 'cards'} to generate a quiz.</p>
                     </CardContent>
                     <CardFooter>
                          <Button variant="outline" asChild>
