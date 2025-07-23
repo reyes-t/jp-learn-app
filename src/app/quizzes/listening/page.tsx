@@ -40,7 +40,7 @@ export default function ListeningQuizPage() {
     const isQuizFinished = currentQuestionIndex >= questions.length;
     
     useEffect(() => {
-        if (isQuizFinished) {
+        if (isQuizFinished && questions.length > 0) {
             const score = Math.round((correctAnswersCount / questions.length) * 100);
             const bestScoreKey = 'quiz_best_score_listening';
             const bestScore = JSON.parse(localStorage.getItem(bestScoreKey) || '0');
@@ -83,7 +83,7 @@ export default function ListeningQuizPage() {
     const handleCheckAnswer = () => {
         if (answerStatus !== 'unanswered' || !currentQuestion) return;
 
-        const formattedUserAnswer = userAnswer.trim().toLowerCase();
+        const formattedUserAnswer = userAnswer.trim().toLowerCase().replace(/\./g, '');
         const isCorrect = 
             formattedUserAnswer === currentQuestion.kana || 
             formattedUserAnswer === currentQuestion.romaji.toLowerCase();
