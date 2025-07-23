@@ -82,7 +82,7 @@ export default function QuizPage() {
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
     const [sessionQuestions, setSessionQuestions] = useState<(QuizQuestion & { weight: number })[]>([]);
-    const [listeningQuestions, setListeningQuestions] = useState<ListeningQuizQuestion[]>([]);
+    const [listeningSessionQuestions, setListeningSessionQuestions] = useState<(ListeningQuizQuestion & { weight: number, isReview: boolean })[]>([]);
     const [sessionQuestionUpdates, setSessionQuestionUpdates] = useState<Record<string, number>>({});
 
 
@@ -121,11 +121,27 @@ export default function QuizPage() {
             questionGenerator = (item, allItems, isReview) => createVocabQuestion(item, allItems, isReview);
             quizLength = VOCAB_QUIZ_LENGTH;
         } else if (quizMeta.type === 'listening') {
-            const questions = listeningSentences
-                .filter(s => s.level === quizMeta.level)
-                .sort(() => 0.5 - Math.random())
-                .slice(0, LISTENING_QUIZ_LENGTH);
-            setListeningQuestions(questions);
+            potentialQuestionItems = listeningSentences.filter(s => s.level === quizMeta.level);
+            quizLength = LISTENING_QUIZ_LENGTH;
+            
+            const weightedQuestions = potentialQuestionItems.map(item => ({
+                item,
+                weight: questionWeights[item.id] || 0
+            }));
+
+            weightedQuestions.sort((a, b) => {
+                if (b.weight !== a.weight) return b.weight - a.weight;
+                return Math.random() - 0.5;
+            });
+            
+            const generatedListeningQuestions = weightedQuestions
+                .slice(0, quizLength)
+                .map(wq => ({
+                    ...wq.item,
+                    weight: wq.weight,
+                    isReview: wq.weight > 0
+                }));
+            setListeningSessionQuestions(generatedListeningQuestions);
             setIsLoading(false);
             return;
         }
@@ -239,7 +255,7 @@ export default function QuizPage() {
     }
 
     if (quizMeta.type === 'listening') {
-        return <ListeningQuiz quizMeta={quizMeta} questions={listeningQuestions} />;
+        return <ListeningQuiz quizMeta={quizMeta} questions={listeningSessionQuestions} />;
     }
 
     if (sessionQuestions.length === 0) {
@@ -402,5 +418,7 @@ export default function QuizPage() {
         </div>
     );
 }
+
+    
 
     

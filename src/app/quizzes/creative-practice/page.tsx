@@ -5,39 +5,78 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, XCircle, History } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import type { PhraseValidationResult, CreativeChallenge } from '@/lib/types';
 import { validatePhrase } from '@/ai/flows/validate-phrase-flow';
 import { cn } from '@/lib/utils';
-import { creativeChallenges } from '@/lib/data';
+import { creativeChallenges as allCreativeChallenges } from '@/lib/data';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
+const CREATIVE_QUIZ_LENGTH = 20;
 
 export default function CreativePracticePage() {
+  const [sessionChallenges, setSessionChallenges] = useState<(CreativeChallenge & { weight: number, isReview: boolean })[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<PhraseValidationResult | null>(null);
   const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
   const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
+  const [sessionQuestionUpdates, setSessionQuestionUpdates] = useState<Record<string, number>>({});
 
-  const challenges = creativeChallenges;
-  const currentChallenge = challenges[currentQuestionIndex];
-  const isQuizFinished = currentQuestionIndex >= challenges.length;
+  useEffect(() => {
+    const weightsStorageKey = 'quiz_weights_creative-practice';
+    const questionWeights: Record<string, number> = JSON.parse(localStorage.getItem(weightsStorageKey) || '{}');
+
+    const weightedChallenges = allCreativeChallenges.map(item => ({
+      item,
+      weight: questionWeights[item.id] || 0
+    }));
+
+    weightedChallenges.sort((a, b) => {
+      if (b.weight !== a.weight) return b.weight - a.weight;
+      return Math.random() - 0.5;
+    });
+
+    const generatedChallenges = weightedChallenges
+      .slice(0, CREATIVE_QUIZ_LENGTH)
+      .map(wc => ({
+        ...wc.item,
+        weight: wc.weight,
+        isReview: wc.weight > 0
+      }));
+    
+    setSessionChallenges(generatedChallenges);
+    setIsLoading(false);
+  }, []);
+
+  const currentChallenge = sessionChallenges[currentQuestionIndex];
+  const isQuizFinished = currentQuestionIndex >= sessionChallenges.length;
   
   useEffect(() => {
-    if (isQuizFinished && challenges.length > 0) {
-        const score = Math.round((correctAnswersCount / challenges.length) * 100);
+    if (isQuizFinished && sessionChallenges.length > 0) {
+        const score = Math.round((correctAnswersCount / sessionChallenges.length) * 100);
         const bestScoreKey = 'quiz_best_score_creative-practice';
         const bestScore = JSON.parse(localStorage.getItem(bestScoreKey) || '0');
         if (score > bestScore) {
             localStorage.setItem(bestScoreKey, JSON.stringify(score));
         }
+
+        // Save weights
+        const weightsStorageKey = 'quiz_weights_creative-practice';
+        const allWeights: Record<string, number> = JSON.parse(localStorage.getItem(weightsStorageKey) || '{}');
+        Object.entries(sessionQuestionUpdates).forEach(([id, change]) => {
+            const currentWeight = allWeights[id] || 0;
+            const newWeight = Math.max(0, currentWeight + change);
+            allWeights[id] = newWeight;
+        });
+        localStorage.setItem(weightsStorageKey, JSON.stringify(allWeights));
     }
-  }, [isQuizFinished, correctAnswersCount, challenges.length]);
+  }, [isQuizFinished, correctAnswersCount, sessionChallenges.length, sessionQuestionUpdates]);
 
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -55,8 +94,16 @@ export default function CreativePracticePage() {
       if (validationResult.isValid) {
         setCorrectAnswersCount(prev => prev + 1);
         setAnswerStatus('correct');
+        setSessionQuestionUpdates(prev => ({
+            ...prev,
+            [currentChallenge.id]: (prev[currentChallenge.id] || 0) - 1,
+        }));
       } else {
         setAnswerStatus('incorrect');
+        setSessionQuestionUpdates(prev => ({
+            ...prev,
+            [currentChallenge.id]: (prev[currentChallenge.id] || 0) + 1,
+        }));
       }
     } catch (error) {
       console.error('Validation failed:', error);
@@ -78,15 +125,16 @@ export default function CreativePracticePage() {
   };
   
   const handleRestart = () => {
-    setCurrentQuestionIndex(0);
-    setUserAnswer('');
-    setResult(null);
-    setAnswerStatus('unanswered');
-    setCorrectAnswersCount(0);
+    window.location.reload();
   };
+  
+  if (isLoading) {
+    return <div className="container mx-auto max-w-2xl text-center p-8">Loading quiz...</div>;
+  }
 
-  if (isQuizFinished) {
-    const score = Math.round((correctAnswersCount / challenges.length) * 100);
+
+  if (isQuizFinished && !isLoading) {
+    const score = Math.round((correctAnswersCount / sessionChallenges.length) * 100);
     return (
         <div className="container mx-auto flex flex-col items-center justify-center h-full">
             <Card className="w-full max-w-md text-center">
@@ -102,7 +150,7 @@ export default function CreativePracticePage() {
                             <p>Correct</p>
                         </div>
                         <div className="text-red-500">
-                            <p className="font-bold text-2xl">{challenges.length - correctAnswersCount}</p>
+                            <p className="font-bold text-2xl">{sessionChallenges.length - correctAnswersCount}</p>
                             <p>Incorrect</p>
                         </div>
                     </div>
@@ -118,7 +166,11 @@ export default function CreativePracticePage() {
     );
   }
 
-  const progress = (currentQuestionIndex / challenges.length) * 100;
+  const progress = (currentQuestionIndex / sessionChallenges.length) * 100;
+  
+  if (!currentChallenge) {
+    return <div className="container mx-auto max-w-2xl text-center p-8">Loading challenges...</div>;
+  }
 
   return (
     <div className="container mx-auto max-w-2xl">
@@ -130,7 +182,7 @@ export default function CreativePracticePage() {
           <div className="flex justify-between items-center mb-2">
             <h1 className="text-2xl font-bold font-headline">Creative Practice</h1>
             <div className="text-sm text-muted-foreground">
-                Challenge {currentQuestionIndex + 1} of {challenges.length}
+                Challenge {currentQuestionIndex + 1} of {sessionChallenges.length}
             </div>
           </div>
           <Progress value={progress} />
@@ -139,7 +191,10 @@ export default function CreativePracticePage() {
       <Card>
         <form onSubmit={handleSubmit}>
           <CardHeader>
-            <CardTitle>Your Challenge</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              {currentChallenge.isReview && <History className="w-5 h-5 text-primary" title="You've missed this before"/>}
+              Your Challenge
+            </CardTitle>
             <CardDescription>Write a Japanese phrase that satisfies all of the following conditions.</CardDescription>
             <div className="flex flex-wrap gap-2 pt-4">
                 {currentChallenge.conditions.map((condition, index) => (
@@ -198,7 +253,7 @@ export default function CreativePracticePage() {
       {answerStatus !== 'unanswered' && (
           <div className="mt-6 flex justify-end">
               <Button onClick={handleNextQuestion}>
-                {currentQuestionIndex === challenges.length - 1 ? 'Finish Quiz' : 'Next Challenge'}
+                {currentQuestionIndex === sessionChallenges.length - 1 ? 'Finish Quiz' : 'Next Challenge'}
               </Button>
           </div>
       )}
@@ -206,3 +261,5 @@ export default function CreativePracticePage() {
     </div>
   );
 }
+
+    

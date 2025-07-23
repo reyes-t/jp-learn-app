@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, CheckCircle2, Volume2, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Volume2, XCircle, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ListeningQuizQuestion, QuizMeta } from '@/lib/types';
 import { Input } from '@/components/ui/input';
@@ -16,15 +16,16 @@ type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
 
 interface ListeningQuizProps {
     quizMeta: QuizMeta;
-    questions: ListeningQuizQuestion[];
+    questions: (ListeningQuizQuestion & { weight: number, isReview: boolean })[];
 }
 
-export function ListeningQuiz({ quizMeta, questions }: ListeningQuizProps) {
+export function ListeningQuiz({ quizMeta, questions: sessionQuestions }: ListeningQuizProps) {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [userAnswer, setUserAnswer] = useState('');
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const [sessionQuestionUpdates, setSessionQuestionUpdates] = useState<Record<string, number>>({});
 
     // Clean up any lingering speech synthesis on component unmount
     useEffect(() => {
@@ -35,21 +36,31 @@ export function ListeningQuiz({ quizMeta, questions }: ListeningQuizProps) {
         };
     }, []);
 
-    const isQuizFinished = currentQuestionIndex >= questions.length;
+    const isQuizFinished = currentQuestionIndex >= sessionQuestions.length;
     
     useEffect(() => {
-        if (isQuizFinished && questions.length > 0) {
-            const score = Math.round((correctAnswersCount / questions.length) * 100);
+        if (isQuizFinished && sessionQuestions.length > 0) {
+            const score = Math.round((correctAnswersCount / sessionQuestions.length) * 100);
             const bestScoreKey = `quiz_best_score_${quizMeta.id}`;
             const bestScore = JSON.parse(localStorage.getItem(bestScoreKey) || '0');
             if (score > bestScore) {
                 localStorage.setItem(bestScoreKey, JSON.stringify(score));
             }
+
+            // Save weights
+            const weightsStorageKey = `quiz_weights_${quizMeta.id}`;
+            const allWeights: Record<string, number> = JSON.parse(localStorage.getItem(weightsStorageKey) || '{}');
+            Object.entries(sessionQuestionUpdates).forEach(([id, change]) => {
+                const currentWeight = allWeights[id] || 0;
+                const newWeight = Math.max(0, currentWeight + change);
+                allWeights[id] = newWeight;
+            });
+            localStorage.setItem(weightsStorageKey, JSON.stringify(allWeights));
         }
-    }, [isQuizFinished, correctAnswersCount, questions.length, quizMeta.id]);
+    }, [isQuizFinished, correctAnswersCount, sessionQuestions, quizMeta.id, sessionQuestionUpdates]);
 
 
-    const currentQuestion = questions[currentQuestionIndex];
+    const currentQuestion = sessionQuestions[currentQuestionIndex];
     
     const playAudio = () => {
         if (!currentQuestion || typeof window === 'undefined' || !window.speechSynthesis || isSpeaking) {
@@ -92,8 +103,16 @@ export function ListeningQuiz({ quizMeta, questions }: ListeningQuizProps) {
         if (isCorrect) {
             setAnswerStatus('correct');
             setCorrectAnswersCount(prev => prev + 1);
+            setSessionQuestionUpdates(prev => ({
+                ...prev,
+                [currentQuestion.id]: (prev[currentQuestion.id] || 0) - 1,
+            }));
         } else {
             setAnswerStatus('incorrect');
+            setSessionQuestionUpdates(prev => ({
+                ...prev,
+                [currentQuestion.id]: (prev[currentQuestion.id] || 0) + 1,
+            }));
         }
     };
 
@@ -107,7 +126,7 @@ export function ListeningQuiz({ quizMeta, questions }: ListeningQuizProps) {
         window.location.reload();
     };
     
-    if (questions.length === 0) {
+    if (sessionQuestions.length === 0) {
         return (
              <div className="container mx-auto flex flex-col items-center justify-center h-full">
                 <Card className="w-full max-w-md text-center">
@@ -125,10 +144,10 @@ export function ListeningQuiz({ quizMeta, questions }: ListeningQuizProps) {
          )
     }
 
-    const progress = (currentQuestionIndex / questions.length) * 100;
+    const progress = (currentQuestionIndex / sessionQuestions.length) * 100;
 
     if (isQuizFinished) {
-        const score = Math.round((correctAnswersCount / questions.length) * 100);
+        const score = Math.round((correctAnswersCount / sessionQuestions.length) * 100);
         return (
             <div className="container mx-auto flex flex-col items-center justify-center h-full">
                 <Card className="w-full max-w-md text-center">
@@ -144,7 +163,7 @@ export function ListeningQuiz({ quizMeta, questions }: ListeningQuizProps) {
                                 <p>Correct</p>
                             </div>
                             <div className="text-red-500">
-                                <p className="font-bold text-2xl">{questions.length - correctAnswersCount}</p>
+                                <p className="font-bold text-2xl">{sessionQuestions.length - correctAnswersCount}</p>
                                 <p>Incorrect</p>
                             </div>
                         </div>
@@ -173,7 +192,7 @@ export function ListeningQuiz({ quizMeta, questions }: ListeningQuizProps) {
                 <div className="flex justify-between items-center mb-2">
                     <h1 className="text-2xl font-bold font-headline">{quizMeta.title}</h1>
                     <div className="text-sm text-muted-foreground">
-                        Question {currentQuestionIndex + 1} of {questions.length}
+                        Question {currentQuestionIndex + 1} of {sessionQuestions.length}
                     </div>
                 </div>
                 <Progress value={progress} />
@@ -181,7 +200,10 @@ export function ListeningQuiz({ quizMeta, questions }: ListeningQuizProps) {
 
             <Card>
                 <CardContent className="p-6">
-                    <p className="text-lg font-semibold mb-4">Listen to the audio and type what you hear.</p>
+                    <p className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        {currentQuestion.isReview && <History className="w-5 h-5 text-primary" title="You've missed this before"/>}
+                        Listen to the audio and type what you hear.
+                    </p>
                     <div className="flex flex-col items-center gap-6">
                         <Button onClick={playAudio} size="lg" variant="outline" disabled={isSpeaking}>
                             <Volume2 className="mr-2 h-6 w-6" />
@@ -230,10 +252,12 @@ export function ListeningQuiz({ quizMeta, questions }: ListeningQuizProps) {
                     <Button onClick={handleCheckAnswer} disabled={!userAnswer}>Check Answer</Button>
                 ) : (
                     <Button onClick={handleNextQuestion}>
-                        {currentQuestionIndex === questions.length - 1 ? 'Finish' : 'Next Question'}
+                        {currentQuestionIndex === sessionQuestions.length - 1 ? 'Finish' : 'Next Question'}
                     </Button>
                 )}
             </div>
         </div>
     );
 }
+
+    
