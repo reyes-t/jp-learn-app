@@ -30,7 +30,7 @@ const QuizCard = ({ quiz }: QuizCardProps) => {
     }
   }, [quiz.id]);
 
-  const href = quiz.type === 'creative-practice' || quiz.type === 'listening' 
+  const href = quiz.type === 'creative-practice'
       ? `/quizzes/${quiz.type}`
       : `/quizzes/${quiz.id}`;
 

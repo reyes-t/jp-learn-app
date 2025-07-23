@@ -4,32 +4,30 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, CheckCircle2, Volume2, XCircle, RefreshCw, Trophy } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Volume2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { listeningSentences } from '@/lib/data';
-import type { ListeningQuizQuestion } from '@/lib/types';
+import type { ListeningQuizQuestion, QuizMeta } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 
-const QUIZ_LENGTH = 5;
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
 
-export default function ListeningQuizPage() {
-    const [questions, setQuestions] = useState<ListeningQuizQuestion[]>([]);
+interface ListeningQuizProps {
+    quizMeta: QuizMeta;
+    questions: ListeningQuizQuestion[];
+}
+
+export function ListeningQuiz({ quizMeta, questions }: ListeningQuizProps) {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [userAnswer, setUserAnswer] = useState('');
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
     const [isSpeaking, setIsSpeaking] = useState(false);
 
+    // Clean up any lingering speech synthesis on component unmount
     useEffect(() => {
-        const shuffled = [...listeningSentences].sort(() => 0.5 - Math.random());
-        const selectedSentences = shuffled.slice(0, QUIZ_LENGTH);
-        setQuestions(selectedSentences);
-
-        // Clean up any lingering speech synthesis on component unmount
         return () => {
             if (typeof window !== 'undefined' && window.speechSynthesis) {
                 window.speechSynthesis.cancel();
@@ -42,13 +40,13 @@ export default function ListeningQuizPage() {
     useEffect(() => {
         if (isQuizFinished && questions.length > 0) {
             const score = Math.round((correctAnswersCount / questions.length) * 100);
-            const bestScoreKey = 'quiz_best_score_listening';
+            const bestScoreKey = `quiz_best_score_${quizMeta.id}`;
             const bestScore = JSON.parse(localStorage.getItem(bestScoreKey) || '0');
             if (score > bestScore) {
                 localStorage.setItem(bestScoreKey, JSON.stringify(score));
             }
         }
-    }, [isQuizFinished, correctAnswersCount, questions.length]);
+    }, [isQuizFinished, correctAnswersCount, questions.length, quizMeta.id]);
 
 
     const currentQuestion = questions[currentQuestionIndex];
@@ -115,8 +113,13 @@ export default function ListeningQuizPage() {
                 <Card className="w-full max-w-md text-center">
                     <CardHeader><CardTitle>Loading Quiz</CardTitle></CardHeader>
                     <CardContent>
-                        <p>Preparing the quiz questions...</p>
+                        <p>There are no listening questions for this level yet.</p>
                     </CardContent>
+                     <CardFooter>
+                         <Button variant="outline" asChild>
+                            <Link href="/quizzes">Back to Quizzes</Link>
+                        </Button>
+                    </CardFooter>
                 </Card>
             </div>
          )
@@ -168,7 +171,7 @@ export default function ListeningQuizPage() {
                     Back to all quizzes
                 </Link>
                 <div className="flex justify-between items-center mb-2">
-                    <h1 className="text-2xl font-bold font-headline">Listening Comprehension</h1>
+                    <h1 className="text-2xl font-bold font-headline">{quizMeta.title}</h1>
                     <div className="text-sm text-muted-foreground">
                         Question {currentQuestionIndex + 1} of {questions.length}
                     </div>
@@ -234,5 +237,3 @@ export default function ListeningQuizPage() {
         </div>
     );
 }
-
-    

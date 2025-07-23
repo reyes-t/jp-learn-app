@@ -52,6 +52,7 @@ export type ListeningQuizQuestion = {
   kana: string;
   romaji: string;
   audioDataUri?: string;
+  level: 'N5' | 'N4';
 };
 
 export type GeneratedPhrase = {
@@ -70,7 +71,7 @@ export type ValidatePhraseInput = z.infer<typeof ValidatePhraseInputSchema>;
 
 export const PhraseValidationResultSchema = z.object({
   isValid: z.boolean().describe('Whether the phrase is a correct and valid answer for the given conditions.'),
-  reason: z.string().describe('A brief explanation of why the phrase is valid or invalid. Provide constructive feedback if invalid.'),
+  reason: z.string().describe('An explanation in English of why the phrase is valid or invalid. Provide constructive feedback if invalid.'),
 });
 export type PhraseValidationResult = z.infer<typeof PhraseValidationResultSchema>;
 

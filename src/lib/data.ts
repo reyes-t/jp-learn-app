@@ -355,10 +355,18 @@ export const quizzes: QuizMeta[] = [
         level: 'N4',
     },
     {
-        id: 'listening',
+        id: 'listening-n5',
         type: 'listening',
-        title: 'Listening Comprehension',
-        description: 'Listen to a sentence and write what you hear.',
+        title: 'N5 Listening Comprehension',
+        description: 'Listen to basic sentences and write what you hear.',
+        level: 'N5',
+    },
+    {
+        id: 'listening-n4',
+        type: 'listening',
+        title: 'N4 Listening Comprehension',
+        description: 'Listen to intermediate sentences and write what you hear.',
+        level: 'N4',
     },
     {
         id: 'creative-practice',
@@ -368,25 +376,22 @@ export const quizzes: QuizMeta[] = [
     }
 ];
 
-export const listeningSentences: Omit<ListeningQuizQuestion, 'audioDataUri'>[] = [
-    { id: 'l-1', kana: 'こんにちは', romaji: 'Konnichiwa' },
-    { id: 'l-2', kana: 'ありがとうございます', romaji: 'Arigatou gozaimasu' },
-    { id: 'l-3', kana: 'すみません', romaji: 'Sumimasen' },
-    { id: 'l-4', kana: 'はい、そうです', romaji: 'Hai, sou desu' },
-    {
-      id: 'l-5',
-      kana: 'これはいくらですか',
-      romaji: 'Kore wa ikura desu ka',
-    },
-    { id: 'l-6', kana: 'えきはどこですか', romaji: 'Eki wa doko desu ka' },
-    { id: 'l-7', kana: 'はじめまして', romaji: 'Hajimemashite' },
-    {
-      id: 'l-8',
-      kana: 'どうぞよろしくおねがいします',
-      romaji: 'Douzo yoroshiku onegaishimasu',
-    },
-    { id: 'l-9', kana: 'おなまえはなんですか', romaji: 'O-namae wa nan desu ka' },
-    { id: 'l-10', kana: 'にほんごがすこしわかります', romaji: 'Nihongo ga sukoshi wakarimasu' },
+export const listeningSentences: ListeningQuizQuestion[] = [
+    { id: 'l-1', kana: 'こんにちは', romaji: 'Konnichiwa', level: 'N5' },
+    { id: 'l-2', kana: 'ありがとうございます', romaji: 'Arigatou gozaimasu', level: 'N5' },
+    { id: 'l-3', kana: 'すみません', romaji: 'Sumimasen', level: 'N5' },
+    { id: 'l-4', kana: 'はい、そうです', romaji: 'Hai, sou desu', level: 'N5' },
+    { id: 'l-5', kana: 'これはいくらですか', romaji: 'Kore wa ikura desu ka', level: 'N5' },
+    { id: 'l-6', kana: 'えきはどこですか', romaji: 'Eki wa doko desu ka', level: 'N5' },
+    { id: 'l-7', kana: 'はじめまして', romaji: 'Hajimemashite', level: 'N5' },
+    { id: 'l-8', kana: 'どうぞよろしくおねがいします', romaji: 'Douzo yoroshiku onegaishimasu', level: 'N5' },
+    { id: 'l-9', kana: 'おなまえはなんですか', romaji: 'O-namae wa nan desu ka', level: 'N5' },
+    { id: 'l-10', kana: 'にほんごがすこしわかります', romaji: 'Nihongo ga sukoshi wakarimasu', level: 'N5' },
+    { id: 'l-11', kana: 'レストランは三階にあります', romaji: 'Resutoran wa sankai ni arimasu', level: 'N4' },
+    { id: 'l-12', kana: 'このバスはとうきょうえきにいきますか', romaji: 'Kono basu wa Tokyo-eki ni ikimasu ka', level: 'N4' },
+    { id: 'l-13', kana: 'もっとゆっくりはなしてください', romaji: 'Motto yukkuri hanashite kudasai', level: 'N4' },
+    { id: 'l-14', kana: 'きのう、かいものをしました', romaji: 'Kinou, kaimono o shimashita', level: 'N4' },
+    { id: 'l-15', kana: 'あしたはあめがふるでしょう', romaji: 'Ashita wa ame ga furu deshou', level: 'N4' },
 ];
 
 export const creativeChallenges: CreativeChallenge[] = [

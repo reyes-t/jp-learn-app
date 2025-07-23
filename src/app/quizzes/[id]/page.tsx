@@ -9,15 +9,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { quizzes, grammarPoints, cards as initialCards, basicDecks } from '@/lib/data';
-import type { Deck, Card as CardType, QuizQuestion, GrammarPoint } from '@/lib/types';
+import { quizzes, grammarPoints, cards as initialCards, basicDecks, listeningSentences } from '@/lib/data';
+import type { Deck, Card as CardType, QuizQuestion, GrammarPoint, ListeningQuizQuestion } from '@/lib/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
+import { ListeningQuiz } from '@/components/listening-quiz';
 
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
 const GRAMMAR_QUIZ_LENGTH = 10;
 const VOCAB_QUIZ_LENGTH = 20;
+const LISTENING_QUIZ_LENGTH = 10;
 
 // Helper to shuffle an array
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -63,7 +65,7 @@ const createVocabQuestion = (card: CardType, allCards: CardType[], isReview: boo
         question: questionText,
         options,
         correctAnswer,
-        explanation: `"${card.front}" means "${card.back}".`,
+        explanation: `The correct answer is "${correctAnswer}". "${card.front}" means "${card.back}".`,
         isReview,
     };
 };
@@ -80,6 +82,7 @@ export default function QuizPage() {
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
     const [sessionQuestions, setSessionQuestions] = useState<(QuizQuestion & { weight: number })[]>([]);
+    const [listeningQuestions, setListeningQuestions] = useState<ListeningQuizQuestion[]>([]);
     const [sessionQuestionUpdates, setSessionQuestionUpdates] = useState<Record<string, number>>({});
 
 
@@ -117,7 +120,16 @@ export default function QuizPage() {
             potentialQuestionItems = allCards;
             questionGenerator = (item, allItems, isReview) => createVocabQuestion(item, allItems, isReview);
             quizLength = VOCAB_QUIZ_LENGTH;
-        } else {
+        } else if (quizMeta.type === 'listening') {
+            const questions = listeningSentences
+                .filter(s => s.level === quizMeta.level)
+                .sort(() => 0.5 - Math.random())
+                .slice(0, LISTENING_QUIZ_LENGTH);
+            setListeningQuestions(questions);
+            setIsLoading(false);
+            return;
+        }
+        else {
             // Should not happen for this page, but as a fallback
             setSessionQuestions([]);
             setIsLoading(false);
@@ -224,6 +236,10 @@ export default function QuizPage() {
 
     if (!quizMeta) {
         return <div className="container mx-auto max-w-2xl">Something went wrong.</div>; 
+    }
+
+    if (quizMeta.type === 'listening') {
+        return <ListeningQuiz quizMeta={quizMeta} questions={listeningQuestions} />;
     }
 
     if (sessionQuestions.length === 0) {
