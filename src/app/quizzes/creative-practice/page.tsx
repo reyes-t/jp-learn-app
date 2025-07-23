@@ -15,7 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
-const CREATIVE_QUIZ_LENGTH = 20;
+const CREATIVE_QUIZ_LENGTH = 10;
 
 export default function CreativePracticePage() {
   const [sessionChallenges, setSessionChallenges] = useState<(CreativeChallenge & { weight: number, isReview: boolean })[]>([]);
