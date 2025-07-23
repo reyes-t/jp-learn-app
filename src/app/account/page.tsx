@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Trash2, BrainCircuit, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { basicDecks } from "@/lib/data";
+import { basicDecks, quizzes } from "@/lib/data";
 import type { Deck, Card as CardType } from "@/lib/types";
 
 
@@ -45,12 +45,10 @@ export default function AccountPage() {
   };
 
   const handleResetQuizHistory = () => {
-    localStorage.removeItem('quiz_weights_grammar');
-    localStorage.removeItem('quiz_weights_vocabulary');
-    localStorage.removeItem('quiz_best_score_grammar');
-    localStorage.removeItem('quiz_best_score_vocabulary');
-    localStorage.removeItem('quiz_best_score_listening');
-    localStorage.removeItem('quiz_best_score_creative-practice');
+    quizzes.forEach(quiz => {
+        localStorage.removeItem(`quiz_weights_${quiz.id}`);
+        localStorage.removeItem(`quiz_best_score_${quiz.id}`);
+    });
 
     toast({
         title: "Quiz History Reset",
