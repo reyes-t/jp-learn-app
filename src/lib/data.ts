@@ -293,6 +293,36 @@ export const grammarPoints: GrammarPoint[] = [
     ],
   },
   {
+    id: 'g-10',
+    level: 'N5',
+    title: 'Particles 「に」 and 「へ」 (Direction)',
+    explanation: 'Both 「に」 (ni) and 「へ」 (e) can mark the direction of movement towards a place. 「へ」 emphasizes the direction itself, while 「に」 focuses more on the destination/arrival point. In many cases, they are interchangeable.',
+    examples: [
+      { japanese: 'がっこうにいきます。', english: 'I am going to school. (Gakkou ni ikimasu.)' },
+      { japanese: 'とうきょうへようこそ。', english: 'Welcome to Tokyo. (Tokyo e youkoso.)' },
+    ],
+  },
+  {
+    id: 'g-11',
+    level: 'N5',
+    title: 'Particle 「で」 (Location of Action)',
+    explanation: 'The particle 「で」 (de) is used to indicate the location where an action takes place. It answers the question "where did the action happen?". Don\'t confuse it with 「に」 which indicates existence in a place.',
+    examples: [
+      { japanese: 'レストランでひるごはんをたべます。', english: 'I eat lunch at the restaurant. (Resutoran de hirugohan o tabemasu.)' },
+      { japanese: 'としょかんでべんきょうします。', english: 'I study at the library. (Toshokan de benkyou shimasu.)' },
+    ],
+  },
+  {
+    id: 'g-12',
+    level: 'N5',
+    title: 'Particle 「を」 (Direct Object)',
+    explanation: 'The particle 「を」 (o/wo) marks the direct object of a verb. It indicates what is being acted upon.',
+    examples: [
+      { japanese: 'わたしはほんをよみます。', english: 'I read a book. (Watashi wa hon o yomimasu.)' },
+      { japanese: 'かれはジュースをのみます。', english: 'He drinks juice. (Kare wa juusu o nomimasu.)' },
+    ],
+  },
+  {
     id: 'g-7',
     level: 'N4',
     title: 'Potential Form (~ことができます / ~れる/られる)',
@@ -321,6 +351,36 @@ export const grammarPoints: GrammarPoint[] = [
       { japanese: 'わたしはともだちにはなをあげました。', english: 'I gave flowers to my friend. (Watashi wa tomodachi ni hana o agemashita.)' },
       { japanese: 'ともだちがわたしにはなをくれました。', english: 'My friend gave flowers to me. (Tomodachi ga watashi ni hana o kuremashita.)' },
       { japanese: 'わたしはともだちにはなをもらいました。', english: 'I received flowers from my friend. (Watashi wa tomodachi ni hana o moraimashita.)' },
+    ],
+  },
+  {
+    id: 'g-13',
+    level: 'N4',
+    title: 'Verb Stem + ~やすい / ~にくい',
+    explanation: 'Attach 「やすい」(yasui) to a verb stem to indicate that something is "easy to do". Attach 「にくい」(nikui) to indicate that something is "hard to do". The verb stem is the ます-form without the ます.',
+    examples: [
+      { japanese: 'このパソコンはつかいやすいです。', english: 'This computer is easy to use. (Kono pasokon wa tsukaiyasui desu.)' },
+      { japanese: 'このかんじはわかりにくいです。', english: 'This kanji is hard to understand. (Kono kanji wa wakarinikui desu.)' },
+    ],
+  },
+  {
+    id: 'g-14',
+    level: 'N4',
+    title: '「~そうです」 (Looks like)',
+    explanation: 'Used to express your impression or guess based on what you see. For い-adjectives, drop the final い and add そうです. For な-adjectives, add そうです directly to the adjective stem.',
+    examples: [
+      { japanese: 'このケーキはおいしそうです。', english: 'This cake looks delicious. (Kono keeki wa oishisou desu.)' },
+      { japanese: 'きょうはあめがふりそうです。', english: 'It looks like it\'s going to rain today. (Kyou wa ame ga furisou desu.)' },
+    ],
+  },
+  {
+    id: 'g-15',
+    level: 'N4',
+    title: 'Volitional Form (しよう/ましょう)',
+    explanation: 'This form expresses intention ("let\'s do" or "I will do"). The formal version is the ます-stem + ましょう (e.g., ikimashou - let\'s go). The informal version is formed by changing the final verb vowel to "o" and adding う (e.g., ikou - let\'s go).',
+    examples: [
+      { japanese: 'いっしょにえいがをみましょう。', english: 'Let\'s watch a movie together. (Issho ni eiga o mimashou.)' },
+      { japanese: 'こーひーをのもう。', english: 'Let\'s drink coffee. (Koohii o nomou.)' },
     ],
   },
 ];
