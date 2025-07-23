@@ -460,4 +460,21 @@ export const creativeChallenges: CreativeChallenge[] = [
     { id: 'cc-3', conditions: ['Express gratitude', 'Receiving a gift'] },
     { id: 'cc-4', conditions: ['Introduce yourself', 'Mention your nationality'] },
     { id: 'cc-5', conditions: ['Ask for directions', 'Train station'] },
+    { id: 'cc-6', conditions: ['Make a reservation', 'For two people'] },
+    { id: 'cc-7', conditions: ['State a preference', 'Food', 'Dislike'] },
+    { id: 'cc-8', conditions: ['Describe an object', 'Color: red', 'Size: small'] },
+    { id: 'cc-9', conditions: ['Talk about a hobby', 'Reading books'] },
+    { id: 'cc-10', conditions: ['Apologize', 'For being late'] },
+    { id: 'cc-11', conditions: ['Ask for permission', 'Take a photo'] },
+    { id: 'cc-12', conditions: ['Describe ability', 'Speak Japanese a little'] },
+    { id: 'cc-13', conditions: ['Talk about weather', 'It is hot today'] },
+    { id: 'cc-14', conditions: ['Express desire', 'Want to go to Japan'] },
+    { id: 'cc-15', conditions: ['Describe past action', 'Ate sushi yesterday'] },
+    { id: 'cc-16', conditions: ['Give a compliment', 'To a friend', 'On their new bag'] },
+    { id: 'cc-17', conditions: ['Ask about experience', 'Have you ever been to Kyoto?'] },
+    { id: 'cc-18', conditions: ['Make a suggestion', 'Let\'s watch a movie'] },
+    { id: 'cc-19', conditions: ['Refuse politely', 'An invitation'] },
+    { id: 'cc-20', conditions: ['Talk about future plans', 'Study Japanese tomorrow'] },
 ];
+
+    

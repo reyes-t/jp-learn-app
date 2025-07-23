@@ -19,7 +19,7 @@ import { ListeningQuiz } from '@/components/listening-quiz';
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
 const GRAMMAR_QUIZ_LENGTH = 10;
 const VOCAB_QUIZ_LENGTH = 20;
-const LISTENING_QUIZ_LENGTH = 10;
+const LISTENING_QUIZ_LENGTH = 20;
 
 // Helper to shuffle an array
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -402,3 +402,5 @@ export default function QuizPage() {
         </div>
     );
 }
+
+    
