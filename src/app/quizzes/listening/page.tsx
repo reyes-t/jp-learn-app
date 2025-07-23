@@ -82,11 +82,14 @@ export default function ListeningQuizPage() {
 
     const handleCheckAnswer = () => {
         if (answerStatus !== 'unanswered' || !currentQuestion) return;
+        
+        // Normalize by trimming, lowercasing, and removing periods, commas, and dashes.
+        const normalize = (str: string) => str.trim().toLowerCase().replace(/[.,-]/g, '');
 
-        const formattedUserAnswer = userAnswer.trim().toLowerCase().replace(/\./g, '');
+        const formattedUserAnswer = normalize(userAnswer);
         const isCorrect = 
-            formattedUserAnswer === currentQuestion.kana || 
-            formattedUserAnswer === currentQuestion.romaji.toLowerCase();
+            formattedUserAnswer === normalize(currentQuestion.kana) || 
+            formattedUserAnswer === normalize(currentQuestion.romaji);
         
         if (isCorrect) {
             setAnswerStatus('correct');
@@ -231,3 +234,5 @@ export default function ListeningQuizPage() {
         </div>
     );
 }
+
+    
