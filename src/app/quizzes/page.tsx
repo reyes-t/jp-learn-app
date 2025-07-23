@@ -8,6 +8,7 @@ import { PlayCircle, BrainCircuit, Sparkles, Trophy, Ear, Lightbulb } from "luci
 import Link from "next/link";
 import type { QuizMeta } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const ICONS: Record<string, React.ReactNode> = {
     grammar: <BrainCircuit className="text-primary"/>,
@@ -20,7 +21,26 @@ interface QuizCardProps {
   quiz: QuizMeta;
 }
 
-const QuizCard = ({ quiz }: QuizCardProps) => {
+const LevelQuizCard = ({ group }: { group: { title: string, type: string, quizzes: QuizMeta[] } }) => {
+    return (
+        <Card className="flex flex-col">
+            <CardHeader>
+                <div className="flex items-start justify-between">
+                    <CardTitle className="font-headline">{group.title}</CardTitle>
+                </div>
+                <CardDescription>Test your knowledge of {group.type} points.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow">
+                <div className="text-sm text-muted-foreground">Select a level to begin:</div>
+            </CardContent>
+            <CardFooter className="flex-col items-stretch gap-2">
+                {group.quizzes.map(quiz => <LevelQuizButton key={quiz.id} quiz={quiz} />)}
+            </CardFooter>
+        </Card>
+    )
+}
+
+const LevelQuizButton = ({ quiz }: { quiz: QuizMeta }) => {
   const [bestScore, setBestScore] = useState<number | null>(null);
 
   useEffect(() => {
@@ -28,18 +48,52 @@ const QuizCard = ({ quiz }: QuizCardProps) => {
     if (score) {
       setBestScore(JSON.parse(score));
     }
+     const handleStorageChange = () => {
+      const score = localStorage.getItem(`quiz_best_score_${quiz.id}`);
+      setBestScore(score ? JSON.parse(score) : null);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [quiz.id]);
 
-  const href = quiz.type === 'creative-practice'
-      ? `/quizzes/${quiz.type}`
-      : `/quizzes/${quiz.id}`;
-
   return (
+      <Button variant="outline" className="w-full justify-between h-14" asChild>
+          <Link href={`/quizzes/${quiz.id}`}>
+              <div className="flex items-center gap-2">
+                  <PlayCircle className="mr-2 h-4 w-4" />
+                  <div>
+                    <div className="font-semibold text-base">{quiz.level}</div>
+                  </div>
+              </div>
+               {bestScore !== null && (
+                <div className="flex items-center gap-2 text-amber-500 font-medium text-xs">
+                  <Trophy className="w-4 h-4" />
+                  <span>Best: {bestScore}%</span>
+                </div>
+              )}
+          </Link>
+      </Button>
+  )
+}
+
+
+const CreativeQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
+    const [bestScore, setBestScore] = useState<number | null>(null);
+
+    useEffect(() => {
+        const score = localStorage.getItem(`quiz_best_score_${quiz.id}`);
+        if (score) {
+            setBestScore(JSON.parse(score));
+        }
+    }, [quiz.id]);
+
+    const href = `/quizzes/creative-practice`;
+
+    return (
     <Card className="flex flex-col">
       <CardHeader>
           <div className="flex items-start justify-between">
               <CardTitle className="font-headline">{quiz.title}</CardTitle>
-              {quiz.level && <Badge variant="secondary">{quiz.level}</Badge>}
           </div>
           <CardDescription>{quiz.description}</CardDescription>
       </CardHeader>
@@ -60,28 +114,26 @@ const QuizCard = ({ quiz }: QuizCardProps) => {
           </Button>
       </CardFooter>
     </Card>
-  );
-};
+    )
+}
 
 export default function QuizzesPage() {
   
-  const quizGroups = useMemo(() => {
-    return quizzes.reduce((acc, quiz) => {
-        const type = quiz.type;
-        if (!acc[type]) {
-            acc[type] = [];
+  const leveledQuizzes = useMemo(() => {
+    const groups: Record<string, {title: string, type: string, quizzes: QuizMeta[]}> = {
+        grammar: { title: 'Grammar Quiz', type: 'grammar', quizzes: [] },
+        vocabulary: { title: 'Vocabulary Quiz', type: 'vocabulary', quizzes: [] },
+        listening: { title: 'Listening Quiz', type: 'listening', quizzes: [] },
+    };
+    quizzes.forEach((quiz) => {
+        if (quiz.level && groups[quiz.type]) {
+            groups[quiz.type].quizzes.push(quiz);
         }
-        acc[type].push(quiz);
-        return acc;
-    }, {} as Record<string, QuizMeta[]>);
+    });
+    return Object.values(groups).filter(g => g.quizzes.length > 0);
   }, []);
 
-  const groupTitles = {
-      grammar: "Grammar Quizzes",
-      vocabulary: "Vocabulary Quizzes",
-      listening: "Listening Quizzes",
-      'creative-practice': "Creative Practice"
-  };
+  const creativeQuiz = useMemo(() => quizzes.find(q => q.type === 'creative-practice'), []);
 
   return (
     <div className="container mx-auto">
@@ -92,20 +144,11 @@ export default function QuizzesPage() {
         </div>
       </div>
 
-      <div className="space-y-12">
-        {Object.entries(quizGroups).map(([type, quizzesInGroup]) => (
-            <section key={type}>
-                <h2 className="text-2xl font-semibold font-headline mb-4 flex items-center gap-3">
-                    {ICONS[type]}
-                    {groupTitles[type as keyof typeof groupTitles]}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {quizzesInGroup.map((quiz) => (
-                      <QuizCard key={quiz.id} quiz={quiz} />
-                    ))}
-                </div>
-            </section>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {leveledQuizzes.map((group) => (
+             <LevelQuizCard key={group.type} group={group} />
+          ))}
+          {creativeQuiz && <CreativeQuizCard quiz={creativeQuiz} />}
       </div>
     </div>
   );
