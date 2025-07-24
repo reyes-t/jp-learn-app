@@ -137,21 +137,24 @@ export default function QuizPage() {
                         // Add the original incorrect item
                         potentialReviewItems.push({ item, weight, type, originalQuizId: quizId });
 
-                        // Add "similar" items
+                        // Add "similar" items (at least 2)
                         if (type === 'grammar') {
                             // Re-adding the same grammar point allows the generator
                             // to pick a different example sentence from it.
                             potentialReviewItems.push({ item, weight, type, originalQuizId: quizId });
+                            potentialReviewItems.push({ item, weight, type, originalQuizId: quizId });
                         } else if (type === 'vocabulary') {
-                            // Add another random unique card from the same deck.
+                            // Add 2 other random unique cards from the same deck.
                             const otherCards = sourceItems.filter(c => c.id !== item.id);
                             if (otherCards.length > 0) {
-                                const similarItem = shuffleArray(otherCards)[0];
-                                potentialReviewItems.push({
-                                    item: similarItem,
-                                    weight: 1, // Give it a base weight
-                                    type,
-                                    originalQuizId: quizId
+                                const similarItems = shuffleArray(otherCards).slice(0, 2);
+                                similarItems.forEach(similarItem => {
+                                    potentialReviewItems.push({
+                                        item: similarItem,
+                                        weight: 1, // Give it a base weight
+                                        type,
+                                        originalQuizId: quizId
+                                    });
                                 });
                             }
                         }
@@ -562,5 +565,7 @@ export default function QuizPage() {
         </div>
     );
 }
+
+    
 
     

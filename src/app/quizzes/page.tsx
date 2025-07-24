@@ -154,19 +154,8 @@ const ReviewQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
                 <CardDescription>{quiz.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
-                {reviewCount === null ? (
-                     <div className="flex items-center gap-2 text-muted-foreground">
-                        <Loader2 className="w-4 h-4 animate-spin"/>
-                        <span>Checking for items...</span>
-                    </div>
-                ) : reviewCount > 0 ? (
-                    <div className="flex items-center gap-2 font-medium text-primary">
-                        <History className="w-4 h-4"/>
-                        <span>{reviewCount} items to review</span>
-                    </div>
-                ) : (
-                    <p className="text-muted-foreground">You're all caught up!</p>
-                )}
+                <p className="text-muted-foreground"></p>
+
             </CardContent>
             <CardFooter>
                 <Button className="w-full" asChild disabled={reviewCount === 0}>
