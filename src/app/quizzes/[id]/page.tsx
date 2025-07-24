@@ -130,25 +130,39 @@ export default function QuizPage() {
                         itemFinder = (id) => sourceItems.find((c: CardType) => c.id === id);
                     }
                 }
-                // Note: Listening and Creative are not included in this logic as they are handled separately
-                // or might not have a "similar question" concept that fits this model.
-
+                
                 incorrectEntries.forEach(([id, weight]) => {
                     const item = itemFinder(id);
                     if (item) {
                         // Add the original incorrect item
                         potentialReviewItems.push({ item, weight, type, originalQuizId: quizId });
-                        // Add a "similar" item. For grammar and vocab, re-adding the source item
-                        // allows the generator function to create a different question from it.
-                        potentialReviewItems.push({ item, weight, type, originalQuizId: quizId });
+
+                        // Add "similar" items
+                        if (type === 'grammar') {
+                            // Re-adding the same grammar point allows the generator
+                            // to pick a different example sentence from it.
+                            potentialReviewItems.push({ item, weight, type, originalQuizId: quizId });
+                        } else if (type === 'vocabulary') {
+                            // Add another random unique card from the same deck.
+                            const otherCards = sourceItems.filter(c => c.id !== item.id);
+                            if (otherCards.length > 0) {
+                                const similarItem = shuffleArray(otherCards)[0];
+                                potentialReviewItems.push({
+                                    item: similarItem,
+                                    weight: 1, // Give it a base weight
+                                    type,
+                                    originalQuizId: quizId
+                                });
+                            }
+                        }
                     }
                 });
             }
 
             // Shuffle the potential items before slicing to get variation
-            const shuffledItems = shuffleArray(potentialReviewItems);
+            const sortedItems = potentialReviewItems.sort((a, b) => b.weight - a.weight);
 
-            const reviewQuestions = shuffledItems
+            const reviewQuestions = sortedItems
                 .slice(0, REVIEW_QUIZ_LENGTH)
                 .map(({ item, weight, type, originalQuizId }) => {
                     let question: QuizQuestion;
@@ -327,7 +341,7 @@ export default function QuizPage() {
             const allWeightsUpdates: Record<string, Record<string, number>> = {};
             
             sessionQuestions.forEach(q => {
-                if (q.originalQuizId) {
+                if (q.originalQuizId && q.id) {
                     if (!allWeightsUpdates[q.originalQuizId]) {
                         allWeightsUpdates[q.originalQuizId] = {};
                     }
@@ -335,7 +349,9 @@ export default function QuizPage() {
                     const finalWeightInSession = sessionQuestionUpdates[q.id] ?? q.weight;
                     // The change is the difference from the original weight
                     const change = finalWeightInSession - q.weight;
-                    allWeightsUpdates[q.originalQuizId][q.id] = (allWeightsUpdates[q.originalQuizId][q.id] || 0) + change;
+                    
+                    const existingChange = allWeightsUpdates[q.originalQuizId][q.id] || 0;
+                    allWeightsUpdates[q.originalQuizId][q.id] = existingChange + change;
                 }
             });
 
@@ -541,3 +557,4 @@ export default function QuizPage() {
 }
 
     
+

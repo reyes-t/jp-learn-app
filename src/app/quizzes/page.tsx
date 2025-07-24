@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { quizzes } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlayCircle, BrainCircuit, Sparkles, Trophy, Ear, Lightbulb, History } from "lucide-react";
+import { PlayCircle, BrainCircuit, Sparkles, Trophy, Ear, Lightbulb, History, Loader2 } from "lucide-react";
 import Link from "next/link";
 import type { QuizMeta } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -118,6 +118,68 @@ const SingularQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
     )
 }
 
+const ReviewQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
+    const [reviewCount, setReviewCount] = useState<number | null>(null);
+
+    useEffect(() => {
+        const getReviewCount = () => {
+            let count = 0;
+            quizzes.forEach(q => {
+                if (q.type !== 'review') {
+                    const weights = localStorage.getItem(`quiz_weights_${q.id}`);
+                    if (weights) {
+                        const parsedWeights: Record<string, number> = JSON.parse(weights);
+                        count += Object.values(parsedWeights).filter(w => w > 0).length;
+                    }
+                }
+            });
+            return count;
+        };
+        
+        setReviewCount(getReviewCount());
+
+        const handleStorageChange = () => {
+            setReviewCount(getReviewCount());
+        };
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
+    return (
+        <Card className="flex flex-col">
+            <CardHeader>
+                <div className="flex items-start justify-between">
+                    <CardTitle className="font-headline">{quiz.title}</CardTitle>
+                </div>
+                <CardDescription>{quiz.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow">
+                {reviewCount === null ? (
+                     <div className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin"/>
+                        <span>Checking for items...</span>
+                    </div>
+                ) : reviewCount > 0 ? (
+                    <div className="flex items-center gap-2 font-medium text-primary">
+                        <History className="w-4 h-4"/>
+                        <span>{reviewCount} items to review</span>
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground">You're all caught up!</p>
+                )}
+            </CardContent>
+            <CardFooter>
+                <Button className="w-full" asChild disabled={reviewCount === 0}>
+                    <Link href={`/quizzes/${quiz.id}`}>
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Start Review
+                    </Link>
+                </Button>
+            </CardFooter>
+        </Card>
+    )
+}
+
 export default function QuizzesPage() {
   
   const leveledQuizzes = useMemo(() => {
@@ -134,7 +196,8 @@ export default function QuizzesPage() {
     return Object.values(groups).filter(g => g.quizzes.length > 0);
   }, []);
 
-  const singularQuizzes = useMemo(() => quizzes.filter(q => q.type === 'creative-practice' || q.type === 'review'), []);
+  const singularQuizzes = useMemo(() => quizzes.filter(q => q.type === 'creative-practice'), []);
+  const reviewQuiz = useMemo(() => quizzes.find(q => q.type === 'review'), []);
 
   return (
     <div className="container mx-auto">
@@ -146,6 +209,7 @@ export default function QuizzesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {reviewQuiz && <ReviewQuizCard quiz={reviewQuiz}/>}
           {leveledQuizzes.map((group) => (
              <LevelQuizCard key={group.type} group={group} />
           ))}
@@ -158,3 +222,4 @@ export default function QuizzesPage() {
 }
 
     
+
