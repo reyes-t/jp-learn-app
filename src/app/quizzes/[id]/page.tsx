@@ -161,12 +161,11 @@ export default function QuizPage() {
 
             // Shuffle the potential items before slicing to get variation
             const sortedItems = potentialReviewItems.sort((a, b) => b.weight - a.weight);
-
-            const reviewQuestions = sortedItems
-                .slice(0, REVIEW_QUIZ_LENGTH)
+            
+            const potentialQuestions = sortedItems
                 .map(({ item, weight, type, originalQuizId }) => {
                     let question: QuizQuestion;
-                    if (type === 'grammar') {
+                     if (type === 'grammar') {
                         question = createGrammarQuestion(item, grammarPoints, true);
                     } else { // vocabulary
                         const cardKey = `cards_${item.deckId}`;
@@ -180,6 +179,14 @@ export default function QuizPage() {
                         originalQuizId,
                     };
                 });
+            
+            // Filter out duplicate questions before setting the session
+            const uniqueQuestions = Array.from(new Map(potentialQuestions.map(q => [q.question, q])).values());
+
+
+            const reviewQuestions = uniqueQuestions
+                .slice(0, REVIEW_QUIZ_LENGTH);
+                
 
             setSessionQuestions(reviewQuestions);
             setIsLoading(false);
@@ -557,4 +564,3 @@ export default function QuizPage() {
 }
 
     
-
