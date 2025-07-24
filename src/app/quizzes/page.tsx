@@ -162,7 +162,7 @@ const ReviewQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
                 ) : reviewCount > 0 ? (
                     <div className="flex items-center gap-2 font-medium text-primary">
                         <History className="w-4 h-4"/>
-                        <span>{reviewCount} items to review</span>
+                        <span>{reviewCount}</span>
                     </div>
                 ) : (
                     <p className="text-muted-foreground">You're all caught up!</p>
@@ -209,17 +209,14 @@ export default function QuizzesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {reviewQuiz && <ReviewQuizCard quiz={reviewQuiz}/>}
           {leveledQuizzes.map((group) => (
              <LevelQuizCard key={group.type} group={group} />
           ))}
           {singularQuizzes.map((quiz) => (
              <SingularQuizCard key={quiz.id} quiz={quiz} />
           ))}
+          {reviewQuiz && <ReviewQuizCard quiz={reviewQuiz}/>}
       </div>
     </div>
   );
 }
-
-    
-
