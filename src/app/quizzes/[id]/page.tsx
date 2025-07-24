@@ -267,14 +267,14 @@ export default function QuizPage() {
             // Decrement weight for correct answer
             setSessionQuestionUpdates(prev => ({
                 ...prev,
-                [currentQuestion.id]: (prev[currentQuestion.id] || currentQuestion.weight) - 1,
+                [currentQuestion.id]: (prev[currentQuestion.id] ?? currentQuestion.weight) - 1,
             }));
         } else {
             setAnswerStatus('incorrect');
             // Increment weight for incorrect answer
             setSessionQuestionUpdates(prev => ({
                 ...prev,
-                [currentQuestion.id]: (prev[currentQuestion.id] || currentQuestion.weight) + 1,
+                [currentQuestion.id]: (prev[currentQuestion.id] ?? currentQuestion.weight) + 1,
             }));
         }
     };
@@ -302,7 +302,10 @@ export default function QuizPage() {
                     if (!allWeightsUpdates[q.originalQuizId]) {
                         allWeightsUpdates[q.originalQuizId] = {};
                     }
-                    const change = (sessionQuestionUpdates[q.id] || q.weight) - q.weight;
+                    // This calculates the final weight after the session's answers
+                    const finalWeightInSession = sessionQuestionUpdates[q.id] ?? q.weight;
+                    // The change is the difference from the original weight
+                    const change = finalWeightInSession - q.weight;
                     allWeightsUpdates[q.originalQuizId][q.id] = (allWeightsUpdates[q.originalQuizId][q.id] || 0) + change;
                 }
             });
@@ -496,7 +499,7 @@ export default function QuizPage() {
                             <ul className="text-sm font-mono space-y-2">
                                 {sessionQuestions.map((q, index) => (
                                     <li key={q.id + index} className={cn("p-2 rounded", index === currentQuestionIndex && "bg-muted")}>
-                                       <span className="font-bold">W: {q.weight} ({q.id})</span> - {q.question}
+                                       <span className="font-bold">W: {sessionQuestionUpdates[q.id] ?? q.weight} ({q.id})</span> - {q.question}
                                     </li>
                                 ))}
                             </ul>
