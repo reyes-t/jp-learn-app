@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { quizzes } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlayCircle, BrainCircuit, Sparkles, Trophy, Ear, Lightbulb } from "lucide-react";
+import { PlayCircle, BrainCircuit, Sparkles, Trophy, Ear, Lightbulb, History } from "lucide-react";
 import Link from "next/link";
 import type { QuizMeta } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ const ICONS: Record<string, React.ReactNode> = {
     vocabulary: <Sparkles className="text-primary"/>,
     listening: <Ear className="text-primary"/>,
     'creative-practice': <Lightbulb className="text-primary"/>,
+    'review': <History className="text-primary"/>,
 }
 
 interface QuizCardProps {
@@ -77,7 +78,7 @@ const LevelQuizButton = ({ quiz }: { quiz: QuizMeta }) => {
 }
 
 
-const CreativeQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
+const SingularQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
     const [bestScore, setBestScore] = useState<number | null>(null);
 
     useEffect(() => {
@@ -87,7 +88,7 @@ const CreativeQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
         }
     }, [quiz.id]);
 
-    const href = `/quizzes/creative-practice`;
+    const href = quiz.type === 'creative-practice' ? `/quizzes/creative-practice` : `/quizzes/${quiz.id}`;
 
     return (
     <Card className="flex flex-col">
@@ -133,7 +134,7 @@ export default function QuizzesPage() {
     return Object.values(groups).filter(g => g.quizzes.length > 0);
   }, []);
 
-  const creativeQuiz = useMemo(() => quizzes.find(q => q.type === 'creative-practice'), []);
+  const singularQuizzes = useMemo(() => quizzes.filter(q => q.type === 'creative-practice' || q.type === 'review'), []);
 
   return (
     <div className="container mx-auto">
@@ -148,8 +149,12 @@ export default function QuizzesPage() {
           {leveledQuizzes.map((group) => (
              <LevelQuizCard key={group.type} group={group} />
           ))}
-          {creativeQuiz && <CreativeQuizCard quiz={creativeQuiz} />}
+          {singularQuizzes.map((quiz) => (
+             <SingularQuizCard key={quiz.id} quiz={quiz} />
+          ))}
       </div>
     </div>
   );
 }
+
+    

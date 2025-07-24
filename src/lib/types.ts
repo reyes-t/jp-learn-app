@@ -41,12 +41,14 @@ export type QuizQuestion = {
   correctAnswer: string;
   explanation: string;
   isReview?: boolean;
+  quizType?: QuizMeta['type']; // To know how to handle the weight updates
+  originalQuizId?: string; // To know which weights storage to update
 };
 
 // This is for the metadata of the quiz, not the full quiz itself
 export type QuizMeta = {
   id: string;
-  type: 'grammar' | 'vocabulary' | 'listening' | 'creative-practice';
+  type: 'grammar' | 'vocabulary' | 'listening' | 'creative-practice' | 'review';
   title: string;
   description: string;
   level?: 'N5' | 'N4';
@@ -84,3 +86,5 @@ export type CreativeChallenge = {
     id: string;
     conditions: string[];
 };
+
+    

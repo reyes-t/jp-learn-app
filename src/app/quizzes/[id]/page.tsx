@@ -9,8 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { quizzes, grammarPoints, cards as initialCards, basicDecks, listeningSentences } from '@/lib/data';
-import type { Deck, Card as CardType, QuizQuestion, GrammarPoint, ListeningQuizQuestion, GrammarPointExample } from '@/lib/types';
+import { quizzes, grammarPoints, cards as initialCards, basicDecks, listeningSentences, creativeChallenges } from '@/lib/data';
+import type { Deck, Card as CardType, QuizQuestion, GrammarPoint, ListeningQuizQuestion, GrammarPointExample, QuizMeta } from '@/lib/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { ListeningQuiz } from '@/components/listening-quiz';
@@ -20,10 +20,11 @@ type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
 const GRAMMAR_QUIZ_LENGTH = 10;
 const VOCAB_QUIZ_LENGTH = 10;
 const LISTENING_QUIZ_LENGTH = 10;
+const REVIEW_QUIZ_LENGTH = 10;
 
 // Helper to shuffle an array
 const shuffleArray = <T,>(array: T[]): T[] => {
-    return array.sort(() => Math.random() - 0.5);
+    return [...array].sort(() => Math.random() - 0.5);
 };
 
 // Generates a grammar question from a grammar point
@@ -96,6 +97,51 @@ export default function QuizPage() {
 
     useEffect(() => {
         if (!quizMeta) return;
+
+        if (quizMeta.type === 'review') {
+            const allIncorrectQuestions: (QuizQuestion & { weight: number })[] = [];
+            const allWeightsKeys = quizzes
+                .filter(q => q.type !== 'review')
+                .map(q => ({ storageKey: `quiz_weights_${q.id}`, type: q.type, quizId: q.id }));
+
+            for (const { storageKey, type, quizId } of allWeightsKeys) {
+                const weights: Record<string, number> = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                const incorrectIds = Object.entries(weights).filter(([, w]) => w > 0).map(([id]) => id);
+
+                if (type === 'grammar') {
+                    const incorrectGrammarPoints = grammarPoints.filter(p => incorrectIds.includes(p.id));
+                    incorrectGrammarPoints.forEach(p => {
+                        allIncorrectQuestions.push({
+                            ...createGrammarQuestion(p, grammarPoints, true),
+                            weight: weights[p.id],
+                            quizType: 'grammar',
+                            originalQuizId: quizId,
+                        });
+                    });
+                } else if (type === 'vocabulary') {
+                    const vocabDeckId = quizId === 'vocabulary-n5' ? 'n5-vocab' : 'n4-vocab';
+                    const targetDeck = basicDecks.find(d => d.id === vocabDeckId);
+                     if (targetDeck) {
+                        const cardKey = `cards_${targetDeck.id}`;
+                        const storedCardsStr = localStorage.getItem(cardKey);
+                        const allCards = storedCardsStr ? JSON.parse(storedCardsStr) : initialCards.filter(c => c.deckId === targetDeck.id);
+                        const incorrectCards = allCards.filter((c: CardType) => incorrectIds.includes(c.id));
+                        incorrectCards.forEach((c: CardType) => {
+                            allIncorrectQuestions.push({
+                                ...createVocabQuestion(c, allCards, true),
+                                weight: weights[c.id],
+                                quizType: 'vocabulary',
+                                originalQuizId: quizId,
+                            });
+                        });
+                    }
+                }
+            }
+
+            setSessionQuestions(shuffleArray(allIncorrectQuestions).slice(0, REVIEW_QUIZ_LENGTH));
+            setIsLoading(false);
+            return;
+        }
 
         const weightsStorageKey = `quiz_weights_${quizMeta.id}`;
         const questionWeights: Record<string, number> = JSON.parse(localStorage.getItem(weightsStorageKey) || '{}');
@@ -171,6 +217,7 @@ export default function QuizPage() {
 
         const weightedQuestions = potentialQuestionItems.map(item => ({
             item,
+            id: item.id,
             weight: questionWeights[item.id] || 0
         }));
 
@@ -199,7 +246,7 @@ export default function QuizPage() {
     const currentQuestion = sessionQuestions[currentQuestionIndex];
     
     useEffect(() => {
-        if (isQuizFinished && quizMeta) {
+        if (isQuizFinished && quizMeta && quizMeta.type !== 'review') {
             const score = Math.round((correctAnswersCount / sessionQuestions.length) * 100);
             const bestScoreKey = `quiz_best_score_${quizMeta.id}`;
             const bestScore = JSON.parse(localStorage.getItem(bestScoreKey) || '0');
@@ -220,14 +267,14 @@ export default function QuizPage() {
             // Decrement weight for correct answer
             setSessionQuestionUpdates(prev => ({
                 ...prev,
-                [currentQuestion.id]: (prev[currentQuestion.id] || 0) - 1,
+                [currentQuestion.id]: (prev[currentQuestion.id] || currentQuestion.weight) - 1,
             }));
         } else {
             setAnswerStatus('incorrect');
             // Increment weight for incorrect answer
             setSessionQuestionUpdates(prev => ({
                 ...prev,
-                [currentQuestion.id]: (prev[currentQuestion.id] || 0) + 1,
+                [currentQuestion.id]: (prev[currentQuestion.id] || currentQuestion.weight) + 1,
             }));
         }
     };
@@ -244,16 +291,43 @@ export default function QuizPage() {
     }
     
     const handleFinish = () => {
-         const weightsStorageKey = `quiz_weights_${quizMeta.id}`;
-         const allWeights: Record<string, number> = JSON.parse(localStorage.getItem(weightsStorageKey) || '{}');
-        
-        Object.entries(sessionQuestionUpdates).forEach(([id, change]) => {
-            const currentWeight = allWeights[id] || 0;
-            const newWeight = Math.max(0, currentWeight + change); // Ensure weight doesn't go below 0
-            allWeights[id] = newWeight;
-        });
+        if (!quizMeta) return;
 
-        localStorage.setItem(weightsStorageKey, JSON.stringify(allWeights));
+        if (quizMeta.type === 'review') {
+             // Update weights across all original quizzes
+            const allWeightsUpdates: Record<string, Record<string, number>> = {};
+            
+            sessionQuestions.forEach(q => {
+                if (q.originalQuizId) {
+                    if (!allWeightsUpdates[q.originalQuizId]) {
+                        allWeightsUpdates[q.originalQuizId] = {};
+                    }
+                    const change = (sessionQuestionUpdates[q.id] || q.weight) - q.weight;
+                    allWeightsUpdates[q.originalQuizId][q.id] = (allWeightsUpdates[q.originalQuizId][q.id] || 0) + change;
+                }
+            });
+
+            Object.entries(allWeightsUpdates).forEach(([originalQuizId, updates]) => {
+                const storageKey = `quiz_weights_${originalQuizId}`;
+                const allWeights: Record<string, number> = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                Object.entries(updates).forEach(([id, change]) => {
+                    const currentWeight = allWeights[id] || 0;
+                    const newWeight = Math.max(0, currentWeight + change);
+                    allWeights[id] = newWeight;
+                });
+                localStorage.setItem(storageKey, JSON.stringify(allWeights));
+            });
+        } else {
+            const weightsStorageKey = `quiz_weights_${quizMeta.id}`;
+            const allWeights: Record<string, number> = JSON.parse(localStorage.getItem(weightsStorageKey) || '{}');
+            
+            Object.entries(sessionQuestionUpdates).forEach(([id, newWeight]) => {
+                allWeights[id] = Math.max(0, newWeight);
+            });
+    
+            localStorage.setItem(weightsStorageKey, JSON.stringify(allWeights));
+        }
+        
         setCurrentQuestionIndex(prev => prev + 1); // Move to finished screen
     }
 
@@ -273,9 +347,13 @@ export default function QuizPage() {
          return (
              <div className="container mx-auto flex flex-col items-center justify-center h-full">
                 <Card className="w-full max-w-md text-center">
-                    <CardHeader><CardTitle>Not Enough Data</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{quizMeta.type === 'review' ? "All Caught Up!" : "Not Enough Data"}</CardTitle></CardHeader>
                     <CardContent>
-                        <p>There are not enough {quizMeta.type === 'grammar' ? 'lessons' : 'cards'} to generate a quiz.</p>
+                        <p>{
+                            quizMeta.type === 'review' 
+                                ? "You have no incorrect questions to review. Great job!" 
+                                : `There are not enough ${quizMeta.type === 'grammar' ? 'lessons' : 'cards'} to generate a quiz.`
+                        }</p>
                     </CardContent>
                     <CardFooter>
                          <Button variant="outline" asChild>
@@ -429,5 +507,7 @@ export default function QuizPage() {
         </div>
     );
 }
+
+    
 
     

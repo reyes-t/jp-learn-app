@@ -433,6 +433,12 @@ export const quizzes: QuizMeta[] = [
         type: 'creative-practice',
         title: 'Creative Practice',
         description: 'Test your skills by creating sentences that fit certain conditions, validated by AI.',
+    },
+    {
+        id: 'review-quiz',
+        type: 'review',
+        title: 'Review Quiz',
+        description: 'Practice all the questions you have answered incorrectly across all quizzes.'
     }
 ];
 
@@ -476,3 +482,5 @@ export const creativeChallenges: CreativeChallenge[] = [
     { id: 'cc-19', conditions: ['Refuse politely', 'An invitation'] },
     { id: 'cc-20', conditions: ['Talk about future plans', 'Study Japanese tomorrow'] },
 ];
+
+    
