@@ -31,7 +31,7 @@ const LevelQuizCard = ({ group }: { group: { title: string, type: string, quizze
                 <CardDescription>Test your knowledge of {group.type} points.</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
-                <div className="text-sm text-muted-foreground">Select a level to begin:</div>
+                
             </CardContent>
             <CardFooter className="flex-col items-stretch gap-2">
                 {group.quizzes.map(quiz => <LevelQuizButton key={quiz.id} quiz={quiz} />)}
