@@ -162,7 +162,7 @@ const ReviewQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
                 ) : reviewCount > 0 ? (
                     <div className="flex items-center gap-2 font-medium text-primary">
                         <History className="w-4 h-4"/>
-                        <span>{reviewCount}</span>
+                        <span>{reviewCount} items to review</span>
                     </div>
                 ) : (
                     <p className="text-muted-foreground">You're all caught up!</p>
