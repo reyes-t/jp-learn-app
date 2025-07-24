@@ -259,5 +259,3 @@ export function ListeningQuiz({ quizMeta, questions: sessionQuestions }: Listeni
         </div>
     );
 }
-
-    
