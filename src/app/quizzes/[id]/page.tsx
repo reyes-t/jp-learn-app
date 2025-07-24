@@ -138,7 +138,10 @@ export default function QuizPage() {
                 }
             }
 
-            setSessionQuestions(shuffleArray(allIncorrectQuestions).slice(0, REVIEW_QUIZ_LENGTH));
+            // Sort by weight descending
+            allIncorrectQuestions.sort((a, b) => b.weight - a.weight);
+
+            setSessionQuestions(allIncorrectQuestions.slice(0, REVIEW_QUIZ_LENGTH));
             setIsLoading(false);
             return;
         }
@@ -514,3 +517,4 @@ export default function QuizPage() {
     
 
     
+
