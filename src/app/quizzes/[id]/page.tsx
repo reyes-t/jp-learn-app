@@ -99,49 +99,75 @@ export default function QuizPage() {
         if (!quizMeta) return;
 
         if (quizMeta.type === 'review') {
-            const allIncorrectQuestions: (QuizQuestion & { weight: number })[] = [];
+            const potentialReviewItems: {
+                item: any;
+                weight: number;
+                type: string;
+                originalQuizId: string;
+            }[] = [];
+
             const allWeightsKeys = quizzes
                 .filter(q => q.type !== 'review')
                 .map(q => ({ storageKey: `quiz_weights_${q.id}`, type: q.type, quizId: q.id }));
 
             for (const { storageKey, type, quizId } of allWeightsKeys) {
                 const weights: Record<string, number> = JSON.parse(localStorage.getItem(storageKey) || '{}');
-                const incorrectIds = Object.entries(weights).filter(([, w]) => w > 0).map(([id]) => id);
+                const incorrectEntries = Object.entries(weights).filter(([, w]) => w > 0);
+
+                let sourceItems: any[] = [];
+                let itemFinder: (id: string) => any = () => null;
 
                 if (type === 'grammar') {
-                    const incorrectGrammarPoints = grammarPoints.filter(p => incorrectIds.includes(p.id));
-                    incorrectGrammarPoints.forEach(p => {
-                        allIncorrectQuestions.push({
-                            ...createGrammarQuestion(p, grammarPoints, true),
-                            weight: weights[p.id],
-                            quizType: 'grammar',
-                            originalQuizId: quizId,
-                        });
-                    });
+                    sourceItems = grammarPoints;
+                    itemFinder = (id) => sourceItems.find(p => p.id === id);
                 } else if (type === 'vocabulary') {
                     const vocabDeckId = quizId === 'vocabulary-n5' ? 'n5-vocab' : 'n4-vocab';
                     const targetDeck = basicDecks.find(d => d.id === vocabDeckId);
                      if (targetDeck) {
                         const cardKey = `cards_${targetDeck.id}`;
                         const storedCardsStr = localStorage.getItem(cardKey);
-                        const allCards = storedCardsStr ? JSON.parse(storedCardsStr) : initialCards.filter(c => c.deckId === targetDeck.id);
-                        const incorrectCards = allCards.filter((c: CardType) => incorrectIds.includes(c.id));
-                        incorrectCards.forEach((c: CardType) => {
-                            allIncorrectQuestions.push({
-                                ...createVocabQuestion(c, allCards, true),
-                                weight: weights[c.id],
-                                quizType: 'vocabulary',
-                                originalQuizId: quizId,
-                            });
-                        });
+                        sourceItems = storedCardsStr ? JSON.parse(storedCardsStr) : initialCards.filter(c => c.deckId === targetDeck.id);
+                        itemFinder = (id) => sourceItems.find((c: CardType) => c.id === id);
                     }
                 }
+                // Note: Listening and Creative are not included in this logic as they are handled separately
+                // or might not have a "similar question" concept that fits this model.
+
+                incorrectEntries.forEach(([id, weight]) => {
+                    const item = itemFinder(id);
+                    if (item) {
+                        // Add the original incorrect item
+                        potentialReviewItems.push({ item, weight, type, originalQuizId: quizId });
+                        // Add a "similar" item. For grammar and vocab, re-adding the source item
+                        // allows the generator function to create a different question from it.
+                        potentialReviewItems.push({ item, weight, type, originalQuizId: quizId });
+                    }
+                });
             }
 
-            // Sort by weight descending
-            allIncorrectQuestions.sort((a, b) => b.weight - a.weight);
+            // Shuffle the potential items before slicing to get variation
+            const shuffledItems = shuffleArray(potentialReviewItems);
 
-            setSessionQuestions(allIncorrectQuestions.slice(0, REVIEW_QUIZ_LENGTH));
+            const reviewQuestions = shuffledItems
+                .slice(0, REVIEW_QUIZ_LENGTH)
+                .map(({ item, weight, type, originalQuizId }) => {
+                    let question: QuizQuestion;
+                    if (type === 'grammar') {
+                        question = createGrammarQuestion(item, grammarPoints, true);
+                    } else { // vocabulary
+                        const cardKey = `cards_${item.deckId}`;
+                        const allCards = JSON.parse(localStorage.getItem(cardKey) || '[]');
+                        question = createVocabQuestion(item, allCards, true);
+                    }
+                    return {
+                        ...question,
+                        weight,
+                        quizType: type as QuizMeta['type'],
+                        originalQuizId,
+                    };
+                });
+
+            setSessionQuestions(reviewQuestions);
             setIsLoading(false);
             return;
         }
@@ -515,6 +541,3 @@ export default function QuizPage() {
 }
 
     
-
-    
-
