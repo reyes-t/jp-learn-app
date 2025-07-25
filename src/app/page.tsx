@@ -6,6 +6,7 @@ import Link from 'next/link';
 
 export default function DashboardPage() {
   const featuredDecks = basicDecks.slice(0, 2);
+  const featuredQuizzes = quizzes.filter(q => q.id === 'grammar-n5' || q.id === 'vocabulary-n5');
 
   return (
     <div className="container mx-auto">
@@ -65,7 +66,7 @@ export default function DashboardPage() {
             </Button>
         </div>
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {quizzes.map(quiz => (
+            {featuredQuizzes.map(quiz => (
                  <Link key={quiz.id} href={`/quizzes/${quiz.id}`} className="no-underline group">
                     <div className="p-6 border rounded-lg bg-card h-full transition-colors hover:bg-muted/50">
                         <h3 className="font-headline text-xl font-semibold mb-2 group-hover:text-primary">{quiz.title}</h3>
