@@ -23,7 +23,6 @@ interface QuizCardProps {
 }
 
 const LevelQuizCard = ({ group }: { group: { title: string, type: string, quizzes: QuizMeta[] } }) => {
-    // Sort quizzes by level N5, N4, N3, N2, N1
     const sortedQuizzes = group.quizzes.sort((a, b) => {
         const levelOrder = { 'N5': 1, 'N4': 2, 'N3': 3, 'N2': 4, 'N1': 5 };
         return levelOrder[a.level!] - levelOrder[b.level!];
@@ -40,7 +39,7 @@ const LevelQuizCard = ({ group }: { group: { title: string, type: string, quizze
             <CardContent className="flex-grow">
                 
             </CardContent>
-            <CardFooter className="flex-col items-stretch gap-2">
+            <CardFooter className="flex-wrap gap-2">
                 {sortedQuizzes.map(quiz => <LevelQuizButton key={quiz.id} quiz={quiz} />)}
             </CardFooter>
         </Card>
@@ -64,19 +63,11 @@ const LevelQuizButton = ({ quiz }: { quiz: QuizMeta }) => {
   }, [quiz.id]);
 
   return (
-      <Button variant="outline" className="w-full justify-between h-14" asChild>
+      <Button variant="outline" size="sm" className="relative" asChild>
           <Link href={`/quizzes/${quiz.id}`}>
-              <div className="flex items-center gap-2">
-                  <PlayCircle className="mr-2 h-4 w-4" />
-                  <div>
-                    <div className="font-semibold text-base">{quiz.level}</div>
-                  </div>
-              </div>
-               {bestScore !== null && (
-                <div className="flex items-center gap-2 text-amber-500 font-medium text-xs">
-                  <Trophy className="w-4 h-4" />
-                  <span>Best: {bestScore}%</span>
-                </div>
+              {quiz.level}
+              {bestScore !== null && bestScore === 100 && (
+                <Trophy className="absolute -top-2 -right-2 w-4 h-4 text-amber-400" />
               )}
           </Link>
       </Button>
