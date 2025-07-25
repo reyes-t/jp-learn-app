@@ -1,3 +1,4 @@
+
 import type { Deck, Card, GrammarPoint, QuizMeta, ListeningQuizQuestion, CreativeChallenge, GrammarPointExample } from './types';
 
 export const basicDecks: Deck[] = [
@@ -312,6 +313,26 @@ export const grammarPoints: GrammarPoint[] = [
       { question: 'さくらさん___かばんは大きいです。', answer: 'の', options: ['と', 'も', 'や'], sentence: 'さくらさんのかばんは大きいです。', translation: "Sakura's bag is big." },
     ],
   },
+  {
+    id: 'g-4',
+    level: 'N5',
+    title: 'Purpose of movement (~に 行きます)',
+    explanation: 'To express the purpose of going somewhere, you can use the structure: "Place に Verb Stem + に 行きます/来ます/帰ります". The verb stem is the ます-form of a verb without the ます.',
+    examples: [
+      { question: 'わたしはえいがを___にいきます。', answer: 'み', options: ['みます', 'みる', 'み'], sentence: 'わたしはえいがをみにいきます。', translation: 'I am going to watch a movie.' },
+      { question: 'レストランへごはんを___にいきます。', answer: 'たべ', options: ['たべる', 'たべます', 'たべ'], sentence: 'レストランへごはんをたべにいきます。', translation: 'I am going to the restaurant to eat a meal.' },
+    ],
+  },
+  {
+    id: 'g-5',
+    level: 'N5',
+    title: 'Making invitations (~ませんか)',
+    explanation: 'To invite someone to do something, you can use the negative question form of a verb: 「~ませんか」 (masen ka?). This is a polite way to say "Won\'t you...?" or "How about...?".',
+    examples: [
+      { question: 'いっしょにえいがをみ___か。', answer: 'ませんか', options: ['ます', 'ません', 'ませんか'], sentence: 'いっしょにえいがをみませんか。', translation: 'Won\'t you watch a movie with me?' },
+      { question: 'こーひーをのみ___か。', answer: 'ませんか', options: ['ます', 'ました', 'ませんか'], sentence: 'こーひーをのみませんか。', translation: 'How about drinking some coffee?' },
+    ],
+  },
   // N4
   {
     id: 'g-7',
@@ -331,6 +352,36 @@ export const grammarPoints: GrammarPoint[] = [
     examples: [
       { question: 'にほんに___、さくらをみたいです。', answer: 'いったら', options: ['いくと', 'いけば', 'いくなら'], sentence: 'にほんにいったら、さくらをみたいです。', translation: 'If/When I go to Japan, I want to see the cherry blossoms.' },
       { question: 'やす___、かいます。', answer: 'かったら', options: ['ければ', 'いと', 'く'], sentence: 'やすかったら、かいます。', translation: "If it's cheap, I'll buy it." },
+    ],
+  },
+  {
+    id: 'g-9',
+    level: 'N4',
+    title: 'Hearsay (~そうです)',
+    explanation: 'To report something you heard, you can add 「そうです」 (sou desu) to the dictionary form of verbs and i-adjectives, or to the stem of na-adjectives and nouns. It translates to "I heard that..." or "It seems that...".',
+    examples: [
+      { question: 'てんきよほうによると、あしたはあめがふる___です。', answer: 'そう', options: ['よう', 'みたい', 'そう'], sentence: 'てんきよほうによると、あしたはあめがふるそうです。', translation: 'According to the weather forecast, I heard it will rain tomorrow.' },
+      { question: 'あのレストランはおいしい___です。', answer: 'そう', options: ['よう', 'そう', 'らしい'], sentence: 'あのレストランはおいしいそうです。', translation: 'I heard that restaurant is delicious.' },
+    ],
+  },
+  {
+    id: 'g-10',
+    level: 'N4',
+    title: 'Easy/Hard to do (~やすい / ~にくい)',
+    explanation: 'Attach 「やすい」 (yasui) or 「にくい」 (nikui) to the verb stem (ます-form without ます) to express that something is "easy to do" or "hard to do", respectively.',
+    examples: [
+      { question: 'このかんじは___やすいです。', answer: 'おぼえ', options: ['おぼえる', 'おぼえて', 'おぼえ'], sentence: 'このかんじはおぼえやすいです。', translation: 'This kanji is easy to remember.' },
+      { question: 'このくつは___にくいです。', answer: 'あるき', options: ['あるく', 'あるいて', 'あるき'], sentence: 'このくつはあるきにくいです。', translation: 'These shoes are hard to walk in.' },
+    ],
+  },
+  {
+    id: 'g-11',
+    level: 'N4',
+    title: 'Volitional Form (~よう / ~おう)',
+    explanation: 'The volitional form expresses intention ("let\'s do..."). For る-verbs, change る to よう. For う-verbs, change the final "u" vowel to "o" and add う.',
+    examples: [
+      { question: 'えいがを___。', answer: 'みよう', options: ['みます', 'みよう', 'みたい'], sentence: 'えいがをみよう。', translation: 'Let\'s watch a movie.' },
+      { question: 'いっしょに___。', answer: 'いこう', options: ['いきます', 'いく', 'いこう'], sentence: 'いっしょにいこう。', translation: 'Let\'s go together.' },
     ],
   },
   // N3
@@ -354,9 +405,39 @@ export const grammarPoints: GrammarPoint[] = [
           { question: '先生は生徒に本を___。', answer: '読ませます', options: ['読みます', '読ませます', '読まれます'], sentence: '先生は生徒に本を読ませます。', translation: 'The teacher makes the students read books.' },
       ],
   },
-  // N2
   {
     id: 'g-18',
+    level: 'N3',
+    title: '~うちに (While/before)',
+    explanation: 'Expresses that something should be done while a certain condition is true, or before a change occurs. It often carries a sense of opportunity or urgency.',
+    examples: [
+      { question: 'あたたかい___、どうぞめしあがってください。', answer: 'うちに', options: ['あいだに', 'うちに', 'ときに'], sentence: 'あたたかいうちに、どうぞめしあがってください。', translation: 'Please eat while it\'s warm.' },
+      { question: 'わかいうちに、たくさん___したほうがいい。', answer: 'べんきょう', options: ['あそんで', 'べんきょう', 'ねて'], sentence: 'わかいうちに、たくさんべんきょうしたほうがいい。', translation: 'You should study a lot while you are young.' },
+    ],
+  },
+  {
+    id: 'g-19',
+    level: 'N3',
+    title: '~おかげで / ~せいで (Thanks to / due to)',
+    explanation: '「おかげで」 is used for positive outcomes, meaning "thanks to...". 「せいで」 is used for negative outcomes, meaning "due to..." or "because of...".',
+    examples: [
+      { question: '先生の___、しけんにごうかくできました。', answer: 'おかげで', options: ['おかげで', 'せいで', 'ために'], sentence: '先生のおかげで、しけんにごうかくできました。', translation: 'Thanks to my teacher, I was able to pass the exam.' },
+      { question: 'バスがおくれた___、かいぎにちこくした。', answer: 'せいで', options: ['おかげで', 'せいで', 'から'], sentence: 'バスがおくれたせいで、かいぎにちこくした。', translation: 'I was late for the meeting because the bus was late.' },
+    ],
+  },
+  {
+    id: 'g-20',
+    level: 'N3',
+    title: '~はずだ (Should be/expected to be)',
+    explanation: 'Expresses a high degree of certainty based on evidence or logic. It means "it is expected that...", "it should be the case that...", or "I\'m sure that...".',
+    examples: [
+      { question: 'かれはきのうここに来た___です。', answer: 'はず', options: ['そう', 'よう', 'はず'], sentence: 'かれはきのうここに来たはずです。', translation: 'He should have come here yesterday.' },
+      { question: 'くすりをのんだから、ねつはさがる___だ。', answer: 'はず', options: ['はず', 'わけ', 'こと'], sentence: 'くすりをのんだから、ねつはさがるはずだ。', translation: 'Since I took the medicine, my fever is expected to go down.' },
+    ],
+  },
+  // N2
+  {
+    id: 'g-21',
     level: 'N2',
     title: '~わけだ (No wonder)',
     explanation: 'Used to indicate a natural conclusion based on the preceding context. It translates to "it makes sense that...", "no wonder...", or "that\'s why...".',
@@ -366,7 +447,7 @@ export const grammarPoints: GrammarPoint[] = [
     ],
   },
   {
-    id: 'g-19',
+    id: 'g-22',
     level: 'N2',
     title: '~得る/うる (Can/possible)',
     explanation: 'A formal way to say something is possible. It attaches to the verb stem (ます-form without ます). The negative form is ~得ない (enai).',
@@ -375,9 +456,39 @@ export const grammarPoints: GrammarPoint[] = [
       { question: 'それはあり___話だ。', answer: '得ない', options: ['得ない', 'わけがない', 'はずがない'], sentence: 'それはあり得ない話だ。', translation: 'That is an impossible story.' },
     ],
   },
+  {
+    id: 'g-23',
+    level: 'N2',
+    title: '~うえに (On top of that)',
+    explanation: 'Used to add another fact or reason, usually in the same positive or negative direction. It means "in addition to...", "on top of that...".',
+    examples: [
+      { question: 'このレストランは、値段が高い___、サービスも悪い。', answer: 'うえに', options: ['ばかりか', 'うえに', 'どころか'], sentence: 'このレストランは、値段が高いうえに、サービスも悪い。', translation: 'This restaurant is expensive, and on top of that, the service is bad.' },
+      { question: '彼女は美しい___、頭もいい。', answer: 'うえに', options: ['うえに', 'かわりに', 'いっぽうで'], sentence: '彼女は美しいうえに、頭もいい。', translation: 'She is beautiful, and moreover, she is smart.' },
+    ],
+  },
+  {
+    id: 'g-24',
+    level: 'N2',
+    title: '~にこたえて (In response to)',
+    explanation: 'Indicates that an action is done in response to expectations, requests, or hopes. It is a formal expression.',
+    examples: [
+      { question: 'ファンの期待___、すばらしいパフォーマンスを見せた。', answer: 'にこたえて', options: ['について', 'にたいして', 'にこたえて'], sentence: 'ファンの期待にこたえて、すばらしいパフォーマンスを見せた。', translation: 'In response to the fans\' expectations, they gave a wonderful performance.' },
+      { question: '地域住民の要望___、新しい公園が建設された。', answer: 'にこたえて', options: ['にしたがって', 'にこたえて', 'にもとづいて'], sentence: '地域住民の要望にこたえて、新しい公園が建設された。', translation: 'A new park was built in response to the residents\' requests.' },
+    ],
+  },
+  {
+    id: 'g-25',
+    level: 'N2',
+    title: '~反面 (On the other hand)',
+    explanation: 'Used to present two opposing aspects of the same thing. It is similar to "on the other hand" or "while".',
+    examples: [
+      { question: '都会の生活は便利な___、ストレスも多い。', answer: '反面', options: ['反面', 'いっぽうで', 'かわりに'], sentence: '都会の生活は便利な反面、ストレスも多い。', translation: 'City life is convenient, but on the other hand, it is also very stressful.' },
+      { question: 'この薬はよく効く___、副作用も強い。', answer: '反面', options: ['反面', 'うえに', 'ばかりに'], sentence: 'この薬はよく効く反面、副作用も強い。', translation: 'This medicine is effective, but on the other hand, it has strong side effects.' },
+    ],
+  },
   // N1
   {
-    id: 'g-20',
+    id: 'g-26',
     level: 'N1',
     title: '~かのようだ (As if)',
     explanation: 'Expresses that something appears to be a certain way, even though it isn\'t true. It creates a simile. It is often used with まるで (marude).',
@@ -387,13 +498,43 @@ export const grammarPoints: GrammarPoint[] = [
     ],
   },
   {
-    id: 'g-21',
+    id: 'g-27',
     level: 'N1',
     title: '~ずにはいられない (Can\'t help but do)',
     explanation: 'Expresses an uncontrollable urge or feeling to do something. It\'s formed with the verb negative stem (ない-form without ない) + ずにはいられない.',
     examples: [
       { question: 'その光景を見て、涙を流さ___。', answer: 'ずにはいられなかった', options: ['ずにはいられなかった', 'ないではなかった', 'ないわけではなかった'], sentence: 'その光景を見て、涙を流さずにはいられなかった。', translation: 'Seeing that sight, I couldn\'t help but cry.' },
       { question: '彼の冗談には笑わ___。', answer: 'ずにはいられない', options: ['ないではいられない', 'ずにはいられない', 'ないこともない'], sentence: '彼の冗談には笑わずにはいられない。', translation: 'I can\'t help but laugh at his jokes.' },
+    ],
+  },
+  {
+    id: 'g-28',
+    level: 'N1',
+    title: '~極まる / ~極まりない (Extremely)',
+    explanation: 'An emphatic way to say "extremely" or "the height of...". It attaches to the stem of na-adjectives or nouns. 「極まる」 (kiwamaru) is a bit more literary than 「極まりない」 (kiwamarinai).',
+    examples: [
+      { question: '彼の態度は失礼___。', answer: '極まる', options: ['極まる', 'きりだ', 'しかない'], sentence: '彼の態度は失礼極まる。', translation: 'His attitude is extremely rude.' },
+      { question: '危険___ことだ。', answer: '極まりない', options: ['極まりない', 'にすぎない', 'にほかならない'], sentence: '危険極まりないことだ。', translation: 'It is an extremely dangerous thing.' },
+    ],
+  },
+  {
+    id: 'g-29',
+    level: 'N1',
+    title: '~とあれば (If it\'s the case that)',
+    explanation: 'A conditional expression used for special or exceptional situations. It implies a strong resolve or willingness to act if the condition is met. "If it\'s for...", "If it means...".',
+    examples: [
+      { question: '子供のため___、どんなことでもします。', answer: 'とあれば', options: ['とあれば', 'としたら', 'とすれば'], sentence: '子供のためとあれば、どんなことでもします。', translation: 'If it\'s for my children, I will do anything.' },
+      { question: '優勝がかかっている___、全力で戦うしかない。', answer: 'とあれば', options: ['とあれば', 'ともなると', 'にあって'], sentence: '優勝がかかっているとあれば、全力で戦うしかない。', translation: 'If the championship is on the line, we have no choice but to fight with all our might.' },
+    ],
+  },
+  {
+    id: 'g-30',
+    level: 'N1',
+    title: '~を皮切りに (Starting with)',
+    explanation: 'Indicates the starting point of a series of similar events or actions that then expand or continue. It implies a chain reaction.',
+    examples: [
+      { question: 'この展覧会は東京___、全国各地で開催される。', answer: 'を皮切りに', options: ['をはじめ', 'を皮切りに', 'からして'], sentence: 'この展覧-覧会は東京を皮切りに、全国各地で開催される。', translation: 'Starting with Tokyo, this exhibition will be held in various places nationwide.' },
+      { question: '彼の発言___、議論が巻き起こった。', answer: 'を皮切りに', options: ['をきっかけに', 'を皮切りに', 'をめぐって'], sentence: '彼の発言を皮切りに、議論が巻き起こった。', translation: 'Starting with his remark, a debate broke out.' },
     ],
   },
 ];
