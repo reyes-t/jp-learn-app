@@ -116,9 +116,12 @@ export default function QuizPage() {
 
                 let sourceItems: any[] = [];
                 let itemFinder: (id: string) => any = () => null;
+                
+                let allSourceItemsForSimilar: any[] = [];
 
                 if (type === 'grammar') {
                     sourceItems = grammarPoints;
+                    allSourceItemsForSimilar = grammarPoints;
                     itemFinder = (id) => sourceItems.find(p => p.id === id);
                 } else if (type === 'vocabulary') {
                     const vocabDeckId = quizId === 'vocabulary-n5' ? 'n5-vocab' : 'n4-vocab';
@@ -127,6 +130,7 @@ export default function QuizPage() {
                         const cardKey = `cards_${targetDeck.id}`;
                         const storedCardsStr = localStorage.getItem(cardKey);
                         sourceItems = storedCardsStr ? JSON.parse(storedCardsStr) : initialCards.filter(c => c.deckId === targetDeck.id);
+                        allSourceItemsForSimilar = sourceItems;
                         itemFinder = (id) => sourceItems.find((c: CardType) => c.id === id);
                     }
                 }
@@ -136,33 +140,21 @@ export default function QuizPage() {
                     if (item) {
                         // Add the original incorrect item
                         potentialReviewItems.push({ item, weight, type, originalQuizId: quizId });
-
-                        // Add "similar" items (at least 2)
-                        if (type === 'grammar') {
-                            // Re-adding the same grammar point allows the generator
-                            // to pick a different example sentence from it.
-                            potentialReviewItems.push({ item, weight, type, originalQuizId: quizId });
-                            potentialReviewItems.push({ item, weight, type, originalQuizId: quizId });
-                        } else if (type === 'vocabulary') {
-                            // Add 2 other random unique cards from the same deck.
-                            const otherCards = sourceItems.filter(c => c.id !== item.id);
-                            if (otherCards.length > 0) {
-                                const similarItems = shuffleArray(otherCards).slice(0, 2);
-                                similarItems.forEach(similarItem => {
-                                    potentialReviewItems.push({
-                                        item: similarItem,
-                                        weight: 1, // Give it a base weight
-                                        type,
-                                        originalQuizId: quizId
-                                    });
-                                });
-                            }
-                        }
+                        
+                        // Add 2 more similar items
+                        const similarItems = shuffleArray(allSourceItemsForSimilar.filter(i => i.id !== item.id)).slice(0, 2);
+                        similarItems.forEach(similarItem => {
+                           potentialReviewItems.push({
+                                item: similarItem,
+                                weight: 1, // Give it a base weight
+                                type,
+                                originalQuizId: quizId
+                            });
+                        });
                     }
                 });
             }
 
-            // Shuffle the potential items before slicing to get variation
             const sortedItems = potentialReviewItems.sort((a, b) => b.weight - a.weight);
             
             const potentialQuestions = sortedItems
@@ -183,14 +175,12 @@ export default function QuizPage() {
                     };
                 });
             
-            // Filter out duplicate questions before setting the session
             const uniqueQuestions = Array.from(new Map(potentialQuestions.map(q => [q.question, q])).values());
 
 
             const reviewQuestions = uniqueQuestions
                 .slice(0, REVIEW_QUIZ_LENGTH);
                 
-
             setSessionQuestions(reviewQuestions);
             setIsLoading(false);
             return;
