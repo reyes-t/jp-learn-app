@@ -333,6 +333,56 @@ export const grammarPoints: GrammarPoint[] = [
       { question: 'こーひーをのみ___か。', answer: 'ませんか', options: ['ます', 'ました', 'ませんか'], sentence: 'こーひーをのみませんか。', translation: 'How about drinking some coffee?' },
     ],
   },
+   {
+    id: 'g-6',
+    level: 'N5',
+    title: 'Direct Object Particle 「を」 (o)',
+    explanation: 'The particle 「を」 (o/wo) marks the direct object of a verb. It is placed after a noun to indicate that the noun is the thing being directly acted upon by the verb.',
+    examples: [
+      { question: 'わたしはほん___よみます。', answer: 'を', options: ['が', 'は', 'に'], sentence: 'わたしはほんをよみます。', translation: 'I read a book.' },
+      { question: 'かれはみず___のみます。', answer: 'を', options: ['で', 'と', 'へ'], sentence: 'かれはみずをのみます。', translation: 'He drinks water.' },
+    ],
+  },
+  {
+    id: 'g-12',
+    level: 'N5',
+    title: 'Location of Action Particle 「で」 (de)',
+    explanation: 'The particle 「で」 (de) is used to indicate the location where an action takes place. It answers the question "where did the action happen?".',
+    examples: [
+      { question: 'わたしはとしょかん___べんきょうします。', answer: 'で', options: ['に', 'へ', 'で'], sentence: 'わたしはとしょかんでべんきょうします。', translation: 'I study at the library.' },
+      { question: 'レストラン___ひるごはんをたべました。', answer: 'で', options: ['を', 'に', 'で'], sentence: 'レストランでひるごはんをたべました。', translation: 'I ate lunch at the restaurant.' },
+    ],
+  },
+  {
+    id: 'g-13',
+    level: 'N5',
+    title: 'Verbs of Existence 「います」 & 「あります」',
+    explanation: '「います」 (imasu) is used for the existence of animate things (people, animals), while 「あります」 (arimasu) is for inanimate things (objects, plants). Both mean "to be" or "to exist". The location particle is 「に」.',
+    examples: [
+      { question: 'へやにねこが___。', answer: 'います', options: ['あります', 'います', 'です'], sentence: 'へやにねこがいます。', translation: 'There is a cat in the room.' },
+      { question: 'つくえのうえにほんが___。', answer: 'あります', options: ['あります', 'います', 'です'], sentence: 'つくえのうえにほんがあります。', translation: 'There is a book on the desk.' },
+    ],
+  },
+  {
+    id: 'g-14',
+    level: 'N5',
+    title: 'Past Tense (~ました / ~でした)',
+    explanation: 'To talk about the past, verbs in ます-form change to ました (mashita). For nouns and na-adjectives, です (desu) changes to でした (deshita). For i-adjectives, the final い (i) changes to かったです (katta desu).',
+    examples: [
+      { question: 'きのう、えいがを___。', answer: 'みました', options: ['みます', 'みました', 'みて'], sentence: 'きのう、えいがをみました。', translation: 'I watched a movie yesterday.' },
+      { question: 'きのうはあめ___。', answer: 'でした', options: ['です', 'でした', 'で'], sentence: 'きのうはあめでした。', translation: 'It was rainy yesterday.' },
+    ],
+  },
+  {
+    id: 'g-15',
+    level: 'N5',
+    title: 'Adjective Usage (~い / ~な)',
+    explanation: 'There are two types of adjectives. い-adjectives end with い (e.g., おおきい) and come directly before a noun. な-adjectives require a な (na) particle when they come before a noun (e.g., きれいな).',
+    examples: [
+      { question: 'これは___ほんです。', answer: 'あたらしい', options: ['あたらしいな', 'あたらしいの', 'あたらしい'], sentence: 'これはあたらしいほんです。', translation: 'This is a new book.' },
+      { question: 'しずか___まちです。', answer: 'な', options: ['の', 'な', 'い'], sentence: 'しずかなまちです。', translation: 'It is a quiet town.' },
+    ],
+  },
   // N4
   {
     id: 'g-7',
