@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -50,8 +51,13 @@ export default function GrammarPage() {
     setReadLessons(read);
   }, []);
 
-  const n5Lessons = useMemo(() => grammarPoints.filter(p => p.level === 'N5'), []);
-  const n4Lessons = useMemo(() => grammarPoints.filter(p => p.level === 'N4'), []);
+  const lessonsByLevel = useMemo(() => {
+    const levels: ('N5' | 'N4' | 'N3' | 'N2' | 'N1')[] = ['N5', 'N4', 'N3', 'N2', 'N1'];
+    return levels.map(level => ({
+      level,
+      points: grammarPoints.filter(p => p.level === level)
+    }));
+  }, []);
 
   return (
     <div className="container mx-auto">
@@ -64,23 +70,21 @@ export default function GrammarPage() {
       
       <Tabs defaultValue="n5" className="w-full">
         <TabsList className="mb-4">
-            <TabsTrigger value="n5">N5</TabsTrigger>
-            <TabsTrigger value="n4">N4</TabsTrigger>
+            {lessonsByLevel.map(group => 
+                group.points.length > 0 && <TabsTrigger key={group.level} value={group.level.toLowerCase()}>{group.level}</TabsTrigger>
+            )}
         </TabsList>
-        <TabsContent value="n5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {n5Lessons.map(point => (
-                <GrammarLessonCard key={point.id} point={point} isRead={readLessons.has(point.id)} />
-            ))}
-            </div>
-        </TabsContent>
-        <TabsContent value="n4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {n4Lessons.map(point => (
-                <GrammarLessonCard key={point.id} point={point} isRead={readLessons.has(point.id)} />
-            ))}
-            </div>
-        </TabsContent>
+        {lessonsByLevel.map(group => (
+            group.points.length > 0 && (
+                <TabsContent key={group.level} value={group.level.toLowerCase()}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {group.points.map(point => (
+                        <GrammarLessonCard key={point.id} point={point} isRead={readLessons.has(point.id)} />
+                    ))}
+                    </div>
+                </TabsContent>
+            )
+        ))}
       </Tabs>
 
     </div>

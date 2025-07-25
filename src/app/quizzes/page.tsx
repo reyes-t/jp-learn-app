@@ -23,6 +23,12 @@ interface QuizCardProps {
 }
 
 const LevelQuizCard = ({ group }: { group: { title: string, type: string, quizzes: QuizMeta[] } }) => {
+    // Sort quizzes by level N5, N4, N3, N2, N1
+    const sortedQuizzes = group.quizzes.sort((a, b) => {
+        const levelOrder = { 'N5': 1, 'N4': 2, 'N3': 3, 'N2': 4, 'N1': 5 };
+        return levelOrder[a.level!] - levelOrder[b.level!];
+    });
+
     return (
         <Card className="flex flex-col">
             <CardHeader>
@@ -35,7 +41,7 @@ const LevelQuizCard = ({ group }: { group: { title: string, type: string, quizze
                 
             </CardContent>
             <CardFooter className="flex-col items-stretch gap-2">
-                {group.quizzes.map(quiz => <LevelQuizButton key={quiz.id} quiz={quiz} />)}
+                {sortedQuizzes.map(quiz => <LevelQuizButton key={quiz.id} quiz={quiz} />)}
             </CardFooter>
         </Card>
     )
@@ -154,8 +160,7 @@ const ReviewQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
                 <CardDescription>{quiz.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
-                <p className="text-muted-foreground"></p>
-
+               
             </CardContent>
             <CardFooter>
                 <Button className="w-full" asChild disabled={reviewCount === 0}>
@@ -187,6 +192,10 @@ export default function QuizzesPage() {
 
   const singularQuizzes = useMemo(() => quizzes.filter(q => q.type === 'creative-practice'), []);
   const reviewQuiz = useMemo(() => quizzes.find(q => q.type === 'review'), []);
+
+  const orderedQuizzes = [...leveledQuizzes];
+  const singularAndReview = [...singularQuizzes, ...(reviewQuiz ? [reviewQuiz] : [])];
+
 
   return (
     <div className="container mx-auto">

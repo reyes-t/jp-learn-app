@@ -29,7 +29,7 @@ export type GrammarPointExample = {
 export type GrammarPoint = {
   id:string;
   title: string;
-  level: 'N5' | 'N4';
+  level: 'N5' | 'N4' | 'N3' | 'N2' | 'N1';
   explanation: string;
   examples: GrammarPointExample[];
 };
@@ -51,7 +51,7 @@ export type QuizMeta = {
   type: 'grammar' | 'vocabulary' | 'listening' | 'creative-practice' | 'review';
   title: string;
   description: string;
-  level?: 'N5' | 'N4';
+  level?: 'N5' | 'N4' | 'N3' | 'N2' | 'N1';
 };
 
 export type ListeningQuizQuestion = {
@@ -59,7 +59,7 @@ export type ListeningQuizQuestion = {
   kana: string;
   romaji: string;
   audioDataUri?: string;
-  level: 'N5' | 'N4';
+  level: 'N5' | 'N4' | 'N3' | 'N2' | 'N1';
 };
 
 export type GeneratedPhrase = {

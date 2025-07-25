@@ -29,6 +29,27 @@ export const basicDecks: Deck[] = [
     cardCount: 150,
     isCustom: false,
   },
+  {
+    id: 'n3-vocab',
+    name: 'JLPT N3 Vocabulary',
+    description: 'Upper-intermediate words.',
+    cardCount: 5,
+    isCustom: false,
+  },
+  {
+    id: 'n2-vocab',
+    name: 'JLPT N2 Vocabulary',
+    description: 'Pre-advanced vocabulary.',
+    cardCount: 5,
+    isCustom: false,
+  },
+  {
+    id: 'n1-vocab',
+    name: 'JLPT N1 Vocabulary',
+    description: 'Advanced and specialized words.',
+    cardCount: 5,
+    isCustom: false,
+  },
 ];
 
 export const cards: Card[] = [
@@ -229,9 +250,38 @@ export const cards: Card[] = [
   { id: 'v-98', deckId: 'n5-vocab', front: '店', back: 'Store, shop (mise)' },
   { id: 'v-99', deckId: 'n5-vocab', front: '駅', back: 'Station (eki)' },
   { id: 'v-100', deckId: 'n5-vocab', front: '飛行機', back: 'Airplane (hikouki)' },
+  
+  // N4 Vocab (150 cards, showing a few)
+  { id: 'v4-1', deckId: 'n4-vocab', front: '意見', back: 'Opinion (iken)' },
+  { id: 'v4-2', deckId: 'n4-vocab', front: '経験', back: 'Experience (keiken)' },
+  { id: 'v4-3', deckId: 'n4-vocab', front: '文化', back: 'Culture (bunka)' },
+  { id: 'v4-4', deckId: 'n4-vocab', front: '将来', back: 'Future (shourai)' },
+  { id: 'v4-5', deckId: 'n4-vocab', front: '続ける', back: 'To continue (tsuzukeru)' },
+
+  // N3 Vocab
+  { id: 'v3-1', deckId: 'n3-vocab', front: '解決', back: 'Solution, resolution (kaiketsu)' },
+  { id: 'v3-2', deckId: 'n3-vocab', front: '影響', back: 'Influence, effect (eikyou)' },
+  { id: 'v3-3', deckId: 'n3-vocab', front: '努力', back: 'Effort, endeavor (doryoku)' },
+  { id: 'v3-4', deckId: 'n3-vocab', front: '生産', back: 'Production (seisan)' },
+  { id: 'v3-5', deckId: 'n3-vocab', front: '開発', back: 'Development (kaihatsu)' },
+  
+  // N2 Vocab
+  { id: 'v2-1', deckId: 'n2-vocab', front: '議論', back: 'Argument, discussion (giron)' },
+  { id: 'v2-2', deckId: 'n2-vocab', front: '貢献', back: 'Contribution (kouken)' },
+  { id: 'v2-3', deckId: 'n2-vocab', front: '哲学', back: 'Philosophy (tetsugaku)' },
+  { id: 'v2-4', deckId: 'n2-vocab', front: '組織', back: 'Organization (soshiki)' },
+  { id: 'v2-5', deckId: 'n2-vocab', front: '法律', back: 'Law (houritsu)' },
+
+  // N1 Vocab
+  { id: 'v1-1', deckId: 'n1-vocab', front: '普遍的', back: 'Universal (fuhenteki)' },
+  { id: 'v1-2', deckId: 'n1-vocab', front: '抽象的', back: 'Abstract (chuushouteki)' },
+  { id: 'v1-3', deckId: 'n1-vocab', front: '矛盾', back: 'Contradiction (mujun)' },
+  { id: 'v1-4', deckId: 'n1-vocab', front: '規範', back: 'Norm, standard (kihan)' },
+  { id: 'v1-5', deckId: 'n1-vocab', front: '概念', back: 'Concept, idea (gainen)' },
 ];
 
 export const grammarPoints: GrammarPoint[] = [
+  // N5
   {
     id: 'g-1',
     level: 'N5',
@@ -262,66 +312,7 @@ export const grammarPoints: GrammarPoint[] = [
       { question: 'さくらさん___かばんは大きいです。', answer: 'の', options: ['と', 'も', 'や'], sentence: 'さくらさんのかばんは大きいです。', translation: "Sakura's bag is big." },
     ],
   },
-  {
-    id: 'g-4',
-    level: 'N5',
-    title: 'Adjectives (い-Adjectives and な-Adjectives)',
-    explanation: 'Japanese has two types of adjectives. い-adjectives end with い (like "ookii" - big). な-adjectives require な (na) when they come before a noun (like "kirei na hana" - beautiful flower).',
-    examples: [
-      { question: 'このラーメンは___です。', answer: 'おいしい', options: ['おいしく', 'おいしいな', 'おいし'], sentence: 'このラーメンはおいしいです。', translation: 'This ramen is delicious.' },
-      { question: '___へやがすきです。', answer: 'しずかな', options: ['しずか', 'しずかで', 'しずかに'], sentence: 'しずかなへやがすきです。', translation: 'I like quiet rooms.' },
-    ],
-  },
-  {
-    id: 'g-5',
-    level: 'N5',
-    title: 'Question Particle 「か」 (ka)',
-    explanation: 'To turn a statement into a question, you simply add the particle 「か」 (ka) to the end of the sentence. The word order does not change, and a question mark is usually not necessary in formal writing.',
-    examples: [
-      { question: 'これはペンです___。', answer: 'か', options: ['ね', 'よ', 'の'], sentence: 'これはペンですか。', translation: 'Is this a pen?' },
-      { question: 'さとうさんはせんせいです___。', answer: 'か', options: ['よ', 'ね', 'さ'], sentence: 'さとうさんはせんせいですか。', translation: 'Is Mr. Sato a teacher?' },
-    ],
-  },
-  {
-    id: 'g-6',
-    level: 'N5',
-    title: 'Past Tense (ました/でした)',
-    explanation: 'To talk about the past, verbs in ます-form change to ました (mashita). For nouns and な-adjectives, です (desu) becomes でした (deshita). For い-adjectives, the final い becomes かったです (katta desu).',
-    examples: [
-      { question: 'きのう、えいがを___。', answer: 'みました', options: ['みます', 'みて', 'みる'], sentence: 'きのう、えいがをみました。', translation: 'I watched a movie yesterday.' },
-      { question: 'きのうは___。', answer: 'あつかったです', options: ['あついです', 'あつかった', 'あついでした'], sentence: 'きのうはあつかったです。', translation: 'It was hot yesterday.' },
-    ],
-  },
-  {
-    id: 'g-10',
-    level: 'N5',
-    title: 'Particles 「に」 and 「へ」 (Direction)',
-    explanation: 'Both 「に」 (ni) and 「へ」 (e) can mark the direction of movement towards a place. 「へ」 emphasizes the direction itself, while 「に」 focuses more on the destination/arrival point. In many cases, they are interchangeable.',
-    examples: [
-      { question: 'がっこう___いきます。', answer: 'に', options: ['で', 'を', 'が'], sentence: 'がっこうにいきます。', translation: 'I am going to school.' },
-      { question: 'とうきょう___ようこそ。', answer: 'へ', options: ['で', 'の', 'から'], sentence: 'とうきょうへようこそ。', translation: 'Welcome to Tokyo.' },
-    ],
-  },
-  {
-    id: 'g-11',
-    level: 'N5',
-    title: 'Particle 「で」 (Location of Action)',
-    explanation: 'The particle 「で」 (de) is used to indicate the location where an action takes place. It answers the question "where did the action happen?". Don\'t confuse it with 「に」 which indicates existence in a place.',
-    examples: [
-      { question: 'レストラン___ひるごはんをたべます。', answer: 'で', options: ['に', 'へ', 'を'], sentence: 'レストランでひるごはんをたべます。', translation: 'I eat lunch at the restaurant.' },
-      { question: 'としょかん___べんきょうします。', answer: 'で', options: ['に', 'を', 'と'], sentence: 'としょかんでべんきょうします。', translation: 'I study at the library.' },
-    ],
-  },
-  {
-    id: 'g-12',
-    level: 'N5',
-    title: 'Particle 「を」 (Direct Object)',
-    explanation: 'The particle 「を」 (o/wo) marks the direct object of a verb. It indicates what is being acted upon.',
-    examples: [
-      { question: 'わたしはほん___よみます。', answer: 'を', options: ['が', 'は', 'で'], sentence: 'わたしはほんをよみます。', translation: 'I read a book.' },
-      { question: 'かれはジュース___のみます。', answer: 'を', options: ['が', 'に', 'も'], sentence: 'かれはジュースをのみます。', translation: 'He drinks juice.' },
-    ],
-  },
+  // N4
   {
     id: 'g-7',
     level: 'N4',
@@ -342,45 +333,67 @@ export const grammarPoints: GrammarPoint[] = [
       { question: 'やす___、かいます。', answer: 'かったら', options: ['ければ', 'いと', 'く'], sentence: 'やすかったら、かいます。', translation: "If it's cheap, I'll buy it." },
     ],
   },
+  // N3
   {
-    id: 'g-9',
-    level: 'N4',
-    title: 'Giving and Receiving (あげる, くれる, もらう)',
-    explanation: 'These verbs are crucial for social context. 「あげる」(ageru) is for giving to others. 「くれる」(kureru) is for someone giving to you or your in-group. 「もらう」(morau) is for receiving from others.',
+    id: 'g-16',
+    level: 'N3',
+    title: 'Passive Form (~れる/られる)',
+    explanation: 'The passive voice is used when the subject of the sentence is being acted upon. For る-verbs, change る to られる. For う-verbs, change the final "u" vowel to "a" and add れる.',
     examples: [
-      { question: 'わたしはともだちにプレゼントを___。', answer: 'あげました', options: ['くれました', 'もらいました', 'ありました'], sentence: 'わたしはともだちにプレゼントをあげました。', translation: 'I gave a present to my friend.' },
-      { question: 'ともだちがわたしにプレゼントを___。', answer: 'くれました', options: ['あげました', 'もらいました', 'いきました'], sentence: 'ともだちがわたしにプレゼントをくれました。', translation: 'My friend gave a present to me.' },
-      { question: 'わたしはともだちにプレゼントを___。', answer: 'もらいました', options: ['あげました', 'くれました', 'ありました'], sentence: 'わたしはともだちにプレゼントをもらいました。', translation: 'I received a present from my friend.' },
+        { question: 'この本は多くの人に___います。', answer: '読まれて', options: ['読んで', '読ませて', '読まれて'], sentence: 'この本は多くの人に読まれています。', translation: 'This book is read by many people.' },
+        { question: '私は先生に___。', answer: '褒められました', options: ['褒めました', '褒めさせました', '褒められました'], sentence: '私は先生に褒められました。', translation: 'I was praised by the teacher.' },
     ],
   },
   {
-    id: 'g-13',
-    level: 'N4',
-    title: 'Verb Stem + ~やすい / ~にくい',
-    explanation: 'Attach 「やすい」(yasui) to a verb stem to indicate that something is "easy to do". Attach 「にくい」(nikui) to indicate that something is "hard to do". The verb stem is the ます-form without the ます.',
+      id: 'g-17',
+      level: 'N3',
+      title: 'Causative Form (~せる/させる)',
+      explanation: 'The causative form expresses that someone makes or lets someone do something. For る-verbs, change る to させる. For う-verbs, change the final "u" vowel to "a" and add せる.',
+      examples: [
+          { question: '母は私に部屋を___。', answer: '掃除させました', options: ['掃除しました', '掃除させました', '掃除されました'], sentence: '母は私に部屋を掃除させました。', translation: 'My mother made me clean the room.' },
+          { question: '先生は生徒に本を___。', answer: '読ませます', options: ['読みます', '読ませます', '読まれます'], sentence: '先生は生徒に本を読ませます。', translation: 'The teacher makes the students read books.' },
+      ],
+  },
+  // N2
+  {
+    id: 'g-18',
+    level: 'N2',
+    title: '~わけだ (No wonder)',
+    explanation: 'Used to indicate a natural conclusion based on the preceding context. It translates to "it makes sense that...", "no wonder...", or "that\'s why...".',
     examples: [
-      { question: 'このパソコンは___です。', answer: 'つかいやすい', options: ['つかうやすい', 'つかいやすいな', 'つかいやすくて'], sentence: 'このパソコンはつかいやすいです。', translation: 'This computer is easy to use.' },
-      { question: 'このかんじは___です。', answer: 'わかりにくい', options: ['わかるにくい', 'わかりにくくて', 'わかりにくいな'], sentence: 'このかんじはわかりにくいです。', translation: 'This kanji is hard to understand.' },
+      { question: '彼は日本に10年住んでいる。日本語が上手な___。', answer: 'わけだ', options: ['はずだ', 'わけだ', 'つもりだ'], sentence: '彼は日本に10年住んでいる。日本語が上手なわけだ。', translation: 'He has lived in Japan for 10 years. No wonder his Japanese is so good.' },
+      { question: '夜中にたくさん食べたから、お腹が痛い___。', answer: 'わけだ', options: ['わけだ', 'ことだ', 'ものだ'], sentence: '夜中にたくさん食べたから、お腹が痛いわけだ。', translation: "I ate a lot late at night, that's why my stomach hurts." },
     ],
   },
   {
-    id: 'g-14',
-    level: 'N4',
-    title: '「~そうです」 (Looks like)',
-    explanation: 'Used to express your impression or guess based on what you see. For い-adjectives, drop the final い and add そうです. For な-adjectives, add そうです directly to the adjective stem.',
+    id: 'g-19',
+    level: 'N2',
+    title: '~得る/うる (Can/possible)',
+    explanation: 'A formal way to say something is possible. It attaches to the verb stem (ます-form without ます). The negative form is ~得ない (enai).',
     examples: [
-      { question: 'このケーキは___です。', answer: 'おいしそう', options: ['おいしいそう', 'おいしいそうです', 'おいしそうに'], sentence: 'このケーキはおいしそうです。', translation: 'This cake looks delicious.' },
-      { question: 'きょうはあめが___です。', answer: 'ふりそう', options: ['ふるそう', 'ふりそうです', 'ふりそうで'], sentence: 'きょうはあめがふりそうです。', translation: "It looks like it's going to rain today." },
+      { question: 'この状況では、事故が起こり___。', answer: '得る', options: ['得る', '過ぎる', 'がちだ'], sentence: 'この状況では、事故が起こり得る。', translation: 'In this situation, an accident could happen.' },
+      { question: 'それはあり___話だ。', answer: '得ない', options: ['得ない', 'わけがない', 'はずがない'], sentence: 'それはあり得ない話だ。', translation: 'That is an impossible story.' },
+    ],
+  },
+  // N1
+  {
+    id: 'g-20',
+    level: 'N1',
+    title: '~かのようだ (As if)',
+    explanation: 'Expresses that something appears to be a certain way, even though it isn\'t true. It creates a simile. It is often used with まるで (marude).',
+    examples: [
+      { question: '彼はまるで全てを知っている___話す。', answer: 'かのように', options: ['かのように', 'ばかりに', 'だけあって'], sentence: '彼はまるで全てを知っているかのように話す。', translation: 'He talks as if he knows everything.' },
+      { question: '彼女は、何もなかった___振る舞った。', answer: 'かのように', options: ['かのように', 'ものなら', 'とあれば'], sentence: '彼女は、何もなかったかのように振る舞った。', translation: 'She behaved as if nothing had happened.' },
     ],
   },
   {
-    id: 'g-15',
-    level: 'N4',
-    title: 'Volitional Form (しよう/ましょう)',
-    explanation: 'This form expresses intention ("let\'s do" or "I will do"). The formal version is the ます-stem + ましょう (e.g., ikimashou - let\'s go). The informal version is formed by changing the final verb vowel to "o" and adding う (e.g., ikou - let\'s go).',
+    id: 'g-21',
+    level: 'N1',
+    title: '~ずにはいられない (Can\'t help but do)',
+    explanation: 'Expresses an uncontrollable urge or feeling to do something. It\'s formed with the verb negative stem (ない-form without ない) + ずにはいられない.',
     examples: [
-      { question: 'いっしょにえいがを___。', answer: 'みましょう', options: ['みます', 'みよう', 'みたい'], sentence: 'いっしょにえいがをみましょう。', translation: "Let's watch a movie together." },
-      { question: 'こーひーを___。', answer: 'のもう', options: ['のみましょう', 'のむ', 'のみたい'], sentence: 'こーひーをのもう。', translation: "Let's drink coffee." },
+      { question: 'その光景を見て、涙を流さ___。', answer: 'ずにはいられなかった', options: ['ずにはいられなかった', 'ないではなかった', 'ないわけではなかった'], sentence: 'その光景を見て、涙を流さずにはいられなかった。', translation: 'Seeing that sight, I couldn\'t help but cry.' },
+      { question: '彼の冗談には笑わ___。', answer: 'ずにはいられない', options: ['ないではいられない', 'ずにはいられない', 'ないこともない'], sentence: '彼の冗談には笑わずにはいられない。', translation: 'I can\'t help but laugh at his jokes.' },
     ],
   },
 ];
@@ -400,6 +413,27 @@ export const quizzes: QuizMeta[] = [
         description: 'Test your knowledge of N4 grammar points.',
         level: 'N4',
     },
+     {
+        id: 'grammar-n3',
+        type: 'grammar',
+        title: 'Grammar Quiz',
+        description: 'Test your knowledge of N3 grammar points.',
+        level: 'N3',
+    },
+     {
+        id: 'grammar-n2',
+        type: 'grammar',
+        title: 'Grammar Quiz',
+        description: 'Test your knowledge of N2 grammar points.',
+        level: 'N2',
+    },
+     {
+        id: 'grammar-n1',
+        type: 'grammar',
+        title: 'Grammar Quiz',
+        description: 'Test your knowledge of N1 grammar points.',
+        level: 'N1',
+    },
     {
         id: 'vocabulary-n5',
         type: 'vocabulary',
@@ -413,6 +447,27 @@ export const quizzes: QuizMeta[] = [
         title: 'Vocabulary Quiz',
         description: 'A quiz on intermediate N4 flashcards.',
         level: 'N4',
+    },
+    {
+        id: 'vocabulary-n3',
+        type: 'vocabulary',
+        title: 'Vocabulary Quiz',
+        description: 'A quiz on upper-intermediate N3 flashcards.',
+        level: 'N3',
+    },
+    {
+        id: 'vocabulary-n2',
+        type: 'vocabulary',
+        title: 'Vocabulary Quiz',
+        description: 'A quiz on pre-advanced N2 flashcards.',
+        level: 'N2',
+    },
+    {
+        id: 'vocabulary-n1',
+        type: 'vocabulary',
+        title: 'Vocabulary Quiz',
+        description: 'A quiz on advanced N1 flashcards.',
+        level: 'N1',
     },
     {
         id: 'listening-n5',
@@ -429,6 +484,27 @@ export const quizzes: QuizMeta[] = [
         level: 'N4',
     },
     {
+        id: 'listening-n3',
+        type: 'listening',
+        title: 'Listening Comprehension',
+        description: 'Listen to upper-intermediate sentences.',
+        level: 'N3',
+    },
+    {
+        id: 'listening-n2',
+        type: 'listening',
+        title: 'Listening Comprehension',
+        description: 'Listen to pre-advanced sentences.',
+        level: 'N2',
+    },
+    {
+        id: 'listening-n1',
+        type: 'listening',
+        title: 'Listening Comprehension',
+        description: 'Listen to advanced and natural-speed sentences.',
+        level: 'N1',
+    },
+    {
         id: 'creative-practice',
         type: 'creative-practice',
         title: 'Creative Practice',
@@ -443,21 +519,25 @@ export const quizzes: QuizMeta[] = [
 ];
 
 export const listeningSentences: ListeningQuizQuestion[] = [
+    //N5
     { id: 'l-1', kana: 'こんにちは', romaji: 'Konnichiwa', level: 'N5' },
     { id: 'l-2', kana: 'ありがとうございます', romaji: 'Arigatou gozaimasu', level: 'N5' },
     { id: 'l-3', kana: 'すみません', romaji: 'Sumimasen', level: 'N5' },
     { id: 'l-4', kana: 'はい、そうです', romaji: 'Hai, sou desu', level: 'N5' },
     { id: 'l-5', kana: 'これはいくらですか', romaji: 'Kore wa ikura desu ka', level: 'N5' },
-    { id: 'l-6', kana: 'えきはどこですか', romaji: 'Eki wa doko desu ka', level: 'N5' },
-    { id: 'l-7', kana: 'はじめまして', romaji: 'Hajimemashite', level: 'N5' },
-    { id: 'l-8', kana: 'どうぞよろしくおねがいします', romaji: 'Douzo yoroshiku onegaishimasu', level: 'N5' },
-    { id: 'l-9', kana: 'おなまえはなんですか', romaji: 'O-namae wa nan desu ka', level: 'N5' },
-    { id: 'l-10', kana: 'にほんごがすこしわかります', romaji: 'Nihongo ga sukoshi wakarimasu', level: 'N5' },
+    // N4
     { id: 'l-11', kana: 'レストランは三階にあります', romaji: 'Resutoran wa sankai ni arimasu', level: 'N4' },
     { id: 'l-12', kana: 'このバスはとうきょうえきにいきますか', romaji: 'Kono basu wa Tokyo-eki ni ikimasu ka', level: 'N4' },
     { id: 'l-13', kana: 'もっとゆっくりはなしてください', romaji: 'Motto yukkuri hanashite kudasai', level: 'N4' },
-    { id: 'l-14', kana: 'きのう、かいものをしました', romaji: 'Kinou, kaimono o shimashita', level: 'N4' },
-    { id: 'l-15', kana: 'あしたはあめがふるでしょう', romaji: 'Ashita wa ame ga furu deshou', level: 'N4' },
+    // N3
+    { id: 'l-21', kana: 'その問題を解決するために、私たちは協力すべきです。', romaji: 'Sono mondai o kaiketsu suru tame ni, watashitachi wa kyōryoku subeki desu.', level: 'N3' },
+    { id: 'l-22', kana: '彼のスピーチは聴衆に大きな影響を与えました。', romaji: 'Kare no supīchi wa chōshū ni ōkina eikyō o ataemashita.', level: 'N3' },
+    // N2
+    { id: 'l-31', kana: '環境問題に関する議論が活発に行われています。', romaji: 'Kankyō mondai ni kansuru giron ga kappatsu ni okonawarete imasu.', level: 'N2' },
+    { id: 'l-32', kana: '彼は地域社会の発展に大きく貢献した。', romaji: 'Kare wa chiiki shakai no hatten ni ōkiku kōken shita.', level: 'N2' },
+    // N1
+    { id: 'l-41', kana: '自由という概念は普遍的価値を持つと考えられている。', romaji: 'Jiyū to iu gainen wa fuhenteki kachi o motsu to kangaerarete iru.', level: 'N1' },
+    { id: 'l-42', kana: '彼の理論は抽象的すぎて、具体的な応用が難しい。', romaji: 'Kare no riron wa chūshōtekisugite, gutaitekina ōyō ga muzukashii.', level: 'N1' },
 ];
 
 export const creativeChallenges: CreativeChallenge[] = [
