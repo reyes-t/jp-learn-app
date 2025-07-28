@@ -94,7 +94,7 @@ export default function QuizPage() {
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
-    const [sessionQuestions, setSessionQuestions] = useState<(QuizQuestion & { weight: number })[]>([]);
+    const [sessionQuestions, setSessionQuestions] = useState<(QuizQuestion & { weight: number, originalQuizId?: string })[]>([]);
     const [listeningSessionQuestions, setListeningSessionQuestions] = useState<(ListeningQuizQuestion & { weight: number, isReview: boolean })[]>([]);
     const [sessionQuestionUpdates, setSessionQuestionUpdates] = useState<Record<string, { change: number, originalQuizId?: string }>>({});
 
@@ -287,48 +287,39 @@ export default function QuizPage() {
     
     const handleFinish = async () => {
         if (!user) return;
-        const batch = writeBatch(db);
-
-        if (quizMeta?.type === 'review') {
-            const quizDataRefs: Record<string, any> = {};
-            const quizDataCache: Record<string, any> = {};
-
-            for (const id in sessionQuestionUpdates) {
-                const { originalQuizId } = sessionQuestionUpdates[id];
-                if (originalQuizId && !quizDataRefs[originalQuizId]) {
-                    quizDataRefs[originalQuizId] = doc(db, "users", user.uid, "quizData", originalQuizId);
-                    const docSnap = await getDoc(quizDataRefs[originalQuizId]);
-                    quizDataCache[originalQuizId] = docSnap.exists() ? docSnap.data().weights || {} : {};
-                }
-            }
-            
-            for (const id in sessionQuestionUpdates) {
-                const { change, originalQuizId } = sessionQuestionUpdates[id];
-                if (originalQuizId) {
-                    const currentWeight = quizDataCache[originalQuizId][id] || 0;
-                    quizDataCache[originalQuizId][id] = Math.max(0, currentWeight + change);
-                }
-            }
-
-            for (const qid in quizDataCache) {
-                batch.set(quizDataRefs[qid], { weights: quizDataCache[qid] }, { merge: true });
-            }
-
-        } else if (quizMeta) {
-            const quizDataRef = doc(db, 'users', user.uid, 'quizData', quizMeta.id);
-            const docSnap = await getDoc(quizDataRef);
-            const allWeights = docSnap.exists() ? docSnap.data().weights || {} : {};
-            
-            for (const id in sessionQuestionUpdates) {
-                const currentWeight = allWeights[id] || sessionQuestions.find(q => q.id === id)?.weight || 0;
-                allWeights[id] = Math.max(0, currentWeight + sessionQuestionUpdates[id].change);
-            }
-            batch.set(quizDataRef, { weights: allWeights }, { merge: true });
-        }
         
+        const batch = writeBatch(db);
+        const updates: Record<string, any> = {};
+
+        // Aggregate all weight changes first
+        for (const id in sessionQuestionUpdates) {
+            const { change, originalQuizId } = sessionQuestionUpdates[id];
+            const quizIdToUpdate = originalQuizId || quizMeta?.id;
+
+            if (quizIdToUpdate) {
+                if (!updates[quizIdToUpdate]) {
+                    const quizDataRef = doc(db, "users", user.uid, "quizData", quizIdToUpdate);
+                    const docSnap = await getDoc(quizDataRef);
+                    updates[quizIdToUpdate] = {
+                        ref: quizDataRef,
+                        weights: docSnap.exists() ? docSnap.data().weights || {} : {}
+                    };
+                }
+
+                const currentWeight = updates[quizIdToUpdate].weights[id] || 0;
+                updates[quizIdToUpdate].weights[id] = Math.max(0, currentWeight + change);
+            }
+        }
+
+        // Apply all updates in a batch
+        for (const qid in updates) {
+            batch.set(updates[qid].ref, { weights: updates[qid].weights }, { merge: true });
+        }
+
         await batch.commit();
         setCurrentQuestionIndex(prev => prev + 1); // Move to finished screen
     }
+
 
     if (isLoading) {
         return <div className="container mx-auto max-w-2xl text-center p-8">Loading quiz...</div>;
@@ -506,3 +497,5 @@ export default function QuizPage() {
         </div>
     );
 }
+
+    
