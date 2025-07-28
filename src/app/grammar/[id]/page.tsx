@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -6,18 +7,24 @@ import Link from 'next/link';
 import { grammarPoints } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+
 
 export default function GrammarLessonPage() {
   const params = useParams();
   const lessonId = params.id as string;
+  const { user } = useAuth();
   
   const lesson = grammarPoints.find((p) => p.id === lessonId);
 
   useEffect(() => {
-    if (lesson) {
-      localStorage.setItem(`grammar_read_${lesson.id}`, 'true');
+    if (lesson && user) {
+      const lessonReadRef = doc(db, 'users', user.uid, 'readLessons', lesson.id);
+      setDoc(lessonReadRef, { read: true }, { merge: true });
     }
-  }, [lesson]);
+  }, [lesson, user]);
 
   if (!lesson) {
     notFound();

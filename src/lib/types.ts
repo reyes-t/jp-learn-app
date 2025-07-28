@@ -7,6 +7,7 @@ export type Deck = {
   description: string;
   cardCount: number;
   isCustom: boolean;
+  createdAt?: any;
 };
 
 export type Card = {
@@ -86,5 +87,3 @@ export type CreativeChallenge = {
     id: string;
     conditions: string[];
 };
-
-    

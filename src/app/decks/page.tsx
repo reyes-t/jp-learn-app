@@ -1,32 +1,53 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DeckCard } from '@/components/deck-card';
 import { CreateDeckDialog } from '@/components/create-deck-dialog';
 import { basicDecks as initialBasicDecks } from '@/lib/data';
 import { BookHeart } from 'lucide-react';
 import type { Deck } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 export default function DecksPage() {
   const [userDecks, setUserDecks] = useState<Deck[]>([]);
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Load decks from localStorage on initial render
-    const savedDecks = localStorage.getItem('userDecks');
-    if (savedDecks) {
-      setUserDecks(JSON.parse(savedDecks));
-    }
-  }, []);
+    if (!user) {
+      setUserDecks([]);
+      return;
+    };
 
-  const handleDeckCreated = (newDeck: Deck) => {
-    setUserDecks((prevDecks) => {
-      const updatedDecks = [newDeck, ...prevDecks];
-      // Save updated decks to localStorage
-      localStorage.setItem('userDecks', JSON.stringify(updatedDecks));
-      return updatedDecks;
+    const decksRef = collection(db, 'users', user.uid, 'decks');
+    const q = query(decksRef, orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const decks: Deck[] = [];
+        snapshot.forEach((doc) => {
+            decks.push({ id: doc.id, ...doc.data() } as Deck);
+        });
+        setUserDecks(decks);
     });
-  };
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const handleDeckCreated = useCallback(async (deckData: { name: string; description: string; }) => {
+    if (!user) return;
+    
+    const newDeck: Omit<Deck, 'id'> = {
+        ...deckData,
+        cardCount: 0,
+        isCustom: true,
+        // @ts-ignore
+        createdAt: new Date(),
+    };
+    
+    await addDoc(collection(db, 'users', user.uid, 'decks'), newDeck);
+  }, [user]);
 
   return (
     <div className="container mx-auto">

@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Deck } from "@/lib/types";
 
 interface CreateDeckDialogProps {
-    onDeckCreated: (newDeck: Deck) => void;
+    onDeckCreated: (deckData: { name: string; description: string; }) => void;
 }
 
 export function CreateDeckDialog({ onDeckCreated }: CreateDeckDialogProps) {
@@ -34,15 +34,7 @@ export function CreateDeckDialog({ onDeckCreated }: CreateDeckDialogProps) {
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
     
-    const newDeck: Deck = {
-        id: `custom-${Date.now()}`,
-        name,
-        description,
-        cardCount: 0,
-        isCustom: true,
-    };
-
-    onDeckCreated(newDeck);
+    onDeckCreated({ name, description });
     
     toast({
       title: "Deck Created!",

@@ -11,6 +11,10 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Check, X, Info } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, getDocs, collection, query, where, updateDoc, writeBatch } from 'firebase/firestore';
+
 
 // SRS Intervals in days for each level
 const srsIntervals = [1, 2, 4, 8, 16, 32, 64];
@@ -24,13 +28,14 @@ const addDays = (date: Date, days: number): Date => {
 export default function StudyPage() {
   const params = useParams();
   const deckId = params.id as string;
+  const { user } = useAuth();
   
   const [deck, setDeck] = useState<Deck | undefined>(undefined);
   const [allCards, setAllCards] = useState<CardType[]>([]);
   
   // State for the current session
   const [sessionQueue, setSessionQueue] = useState<CardType[]>([]);
-  const [correctlyAnsweredOnce, setCorrectlyAnsweredOnce] = useState<CardType[]>([]);
+  const [correctlyAnsweredOnce, setCorrectlyAnsweredOnce] = useState<string[]>([]);
   const [initialSessionSize, setInitialSessionSize] = useState(0);
 
   // Stats for the current session
@@ -40,26 +45,47 @@ export default function StudyPage() {
 
   // Load initial data and set up the study session
   useEffect(() => {
-    // Load all decks from localStorage or fall back to initial data
-    const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
-    const allDecks = [...initialDecks, ...storedDecks];
-    const currentDeck = allDecks.find((d) => d.id === deckId);
-    setDeck(currentDeck);
+    if (!user) return;
 
-    if (currentDeck) {
-        let loadedCards: CardType[];
-        if (currentDeck.isCustom) {
-            loadedCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
-        } else {
-            const storedPregen = localStorage.getItem(`cards_${deckId}`);
-            loadedCards = storedPregen ? JSON.parse(storedPregen) : initialCards.filter(card => card.deckId === deckId);
+    const fetchDeckAndCards = async () => {
+        const deckRef = doc(db, 'users', user.uid, 'decks', deckId);
+        const deckSnap = await getDoc(deckRef);
+
+        let currentDeckData: Deck | undefined;
+        let isBasic = initialDecks.some(d => d.id === deckId);
+        if (deckSnap.exists()) {
+            currentDeckData = deckSnap.data() as Deck;
+        } else if (isBasic) {
+            currentDeckData = initialDecks.find(d => d.id === deckId);
+        }
+        if (!currentDeckData) {
+            // notFound();
+            return;
+        }
+        setDeck(currentDeckData);
+
+        const cardsRef = collection(db, 'users', user.uid, 'decks', deckId, 'cards');
+        const cardsSnap = await getDocs(cardsRef);
+        let loadedCards = cardsSnap.docs.map(d => ({id: d.id, ...d.data()})) as CardType[];
+
+        if (loadedCards.length === 0 && isBasic) {
+            // First time user is studying this basic deck, populate cards.
+            const batch = writeBatch(db);
+            const originalCards = initialCards.filter(c => c.deckId === deckId);
+            originalCards.forEach(card => {
+                const cardRef = doc(cardsRef, card.id);
+                const newCard = { ...card, srsLevel: 0, nextReview: new Date() };
+                batch.set(cardRef, newCard);
+                loadedCards.push(newCard);
+            });
+            await batch.commit();
         }
         
         const now = new Date();
         const cardsWithSrs = loadedCards.map(card => ({
             ...card,
             srsLevel: card.srsLevel ?? 0,
-            nextReview: card.nextReview ? new Date(card.nextReview) : now,
+            nextReview: card.nextReview ? (card.nextReview as any).toDate() : now,
         }));
         setAllCards(cardsWithSrs);
 
@@ -67,23 +93,23 @@ export default function StudyPage() {
             .filter(card => new Date(card.nextReview) <= now)
             .sort(() => Math.random() - 0.5);
         
-        const storedSettings = JSON.parse(localStorage.getItem(`deckSettings_${deckId}`) || '{}');
-        const sessionSize = storedSettings.sessionSize;
-
+        const sessionSize = (currentDeckData as any).sessionSize;
         const session = sessionSize && dueCards.length > sessionSize ? dueCards.slice(0, sessionSize) : dueCards;
         setSessionQueue(session);
         setInitialSessionSize(session.length);
     }
-  }, [deckId]);
+
+    fetchDeckAndCards();
+
+  }, [user, deckId]);
   
-  const updateCardInStorage = (updatedCard: CardType) => {
-    const cardIndex = allCards.findIndex(c => c.id === updatedCard.id);
-    if (cardIndex > -1) {
-        const updatedAllCards = [...allCards];
-        updatedAllCards[cardIndex] = updatedCard;
-        setAllCards(updatedAllCards); // Update the master list of cards
-        localStorage.setItem(`cards_${deckId}`, JSON.stringify(updatedAllCards));
-    }
+  const updateCardInStorage = async (updatedCard: CardType) => {
+    if (!user) return;
+    const cardRef = doc(db, 'users', user.uid, 'decks', deckId, 'cards', updatedCard.id);
+    await updateDoc(cardRef, { 
+      srsLevel: updatedCard.srsLevel,
+      nextReview: updatedCard.nextReview
+    });
   };
 
   const handleNextCard = (knewIt: boolean) => {
@@ -91,45 +117,28 @@ export default function StudyPage() {
     if (!currentCard) return;
 
     if (knewIt) {
-        // Card answered correctly. Move it to the `correctlyAnsweredOnce` pile.
-        // If it's already there, it means it was answered correctly twice.
-        const alreadyKnewItOnce = correctlyAnsweredOnce.find(c => c.id === currentCard.id);
+        const alreadyKnewItOnce = correctlyAnsweredOnce.includes(currentCard.id);
 
         if (alreadyKnewItOnce) {
-            // This is the second time they got it right.
-            // Update SRS level and permanently remove from this session.
             setSessionCorrect(c => c + 1);
             const newSrsLevel = Math.min((currentCard.srsLevel || 0) + 1, srsIntervals.length - 1);
             const nextReviewDate = addDays(new Date(), srsIntervals[newSrsLevel]);
             const updatedCard = { ...currentCard, srsLevel: newSrsLevel, nextReview: nextReviewDate };
             updateCardInStorage(updatedCard);
-            // Remove from the `correctlyAnsweredOnce` list
-            setCorrectlyAnsweredOnce(prev => prev.filter(c => c.id !== currentCard.id));
+            setCorrectlyAnsweredOnce(prev => prev.filter(id => id !== currentCard.id));
+            setSessionQueue(restOfQueue);
         } else {
-            // First time they got it right. Add to the list.
-            setCorrectlyAnsweredOnce(prev => [...prev, currentCard]);
+            setCorrectlyAnsweredOnce(prev => [...prev, currentCard.id]);
+            setSessionQueue([...restOfQueue, currentCard]); // Put at back of queue
         }
     } else {
-        // Card answered incorrectly. Reset SRS and put at the back of the queue.
         setSessionIncorrect(c => c + 1);
         const newSrsLevel = 0;
         const nextReviewDate = addDays(new Date(), srsIntervals[newSrsLevel]);
         const updatedCard = { ...currentCard, srsLevel: newSrsLevel, nextReview: nextReviewDate };
         updateCardInStorage(updatedCard);
-        
-        // Put the card back at the end of the session queue to be repeated.
-        restOfQueue.push(currentCard);
-    }
-
-    // If the main queue is empty, start reviewing the cards they got right once.
-    if (restOfQueue.length === 0 && correctlyAnsweredOnce.length > 0) {
-        // Only re-queue cards that haven't been completed yet.
-        const cardsToRequeue = correctlyAnsweredOnce.filter(c => 
-            !sessionQueue.find(sc => sc.id === c.id) // check if it was already re-queued
-        );
-        setSessionQueue(cardsToRequeue);
-    } else {
-        setSessionQueue(restOfQueue);
+        setCorrectlyAnsweredOnce(prev => prev.filter(id => id !== currentCard.id));
+        setSessionQueue([...restOfQueue, currentCard]); // Put at back of queue
     }
     
     setShowAnswer(false);
@@ -137,7 +146,7 @@ export default function StudyPage() {
   
   const totalDueCount = useMemo(() => {
     const now = new Date();
-    return allCards.filter(card => new Date(card.nextReview) <= now).length;
+    return allCards.filter(card => new Date((card.nextReview as any)) <= now).length;
   }, [allCards]);
 
   const resetStudySession = () => {
@@ -147,9 +156,9 @@ export default function StudyPage() {
   if (!deck) {
     return null; // Loading state
   }
-
-  const isFinished = sessionQueue.length === 0 && correctlyAnsweredOnce.length === 0 && initialSessionSize > 0;
-  const cardsCompletedThisSession = initialSessionSize - sessionQueue.length - correctlyAnsweredOnce.length;
+  
+  const isFinished = sessionQueue.length === 0 && initialSessionSize > 0;
+  const cardsCompletedThisSession = sessionCorrect;
   const progress = initialSessionSize > 0 ? (cardsCompletedThisSession / initialSessionSize) * 100 : (isFinished ? 100 : 0);
   const currentCard = sessionQueue[0];
 
@@ -194,7 +203,7 @@ export default function StudyPage() {
   }
 
   if (isFinished) {
-    const remainingDue = totalDueCount;
+    const remainingDue = totalDueCount - sessionCorrect;
     return (
         <div className="container mx-auto flex flex-col items-center justify-center h-full">
             <Card className="w-full max-w-md text-center">

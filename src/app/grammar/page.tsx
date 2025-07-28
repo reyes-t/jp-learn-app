@@ -9,6 +9,9 @@ import { CheckCircle2 } from 'lucide-react';
 import type { GrammarPoint } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 interface GrammarLessonCardProps {
   point: GrammarPoint;
@@ -40,16 +43,20 @@ const GrammarLessonCard = ({ point, isRead }: GrammarLessonCardProps) => (
 
 export default function GrammarPage() {
   const [readLessons, setReadLessons] = useState<Set<string>>(new Set());
+  const { user } = useAuth();
 
   useEffect(() => {
-    const read = new Set<string>();
-    grammarPoints.forEach(point => {
-      if (localStorage.getItem(`grammar_read_${point.id}`)) {
-        read.add(point.id);
-      }
-    });
-    setReadLessons(read);
-  }, []);
+    if (!user) return;
+    const fetchReadLessons = async () => {
+      const readLessonsRef = collection(db, 'users', user.uid, 'readLessons');
+      const snapshot = await getDocs(readLessonsRef);
+      const readIds = new Set<string>();
+      snapshot.forEach(doc => readIds.add(doc.id));
+      setReadLessons(readIds);
+    };
+
+    fetchReadLessons();
+  }, [user]);
 
   const lessonsByLevel = useMemo(() => {
     const levels: ('N5' | 'N4' | 'N3' | 'N2' | 'N1')[] = ['N5', 'N4', 'N3', 'N2', 'N1'];

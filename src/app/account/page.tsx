@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { basicDecks, quizzes } from "@/lib/data";
 import type { Deck, Card as CardType } from "@/lib/types";
 import { useAuth } from "@/hooks/use-auth";
-
+import { db } from "@/lib/firebase";
+import { collection, doc, getDocs, writeBatch, query, where, getDoc } from "firebase/firestore";
 
 export default function AccountPage() {
   const { toast } = useToast();
@@ -26,44 +27,71 @@ export default function AccountPage() {
     }
   }, [user]);
 
-  const handleResetProgress = () => {
-    const userDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
-    const allDecks: Deck[] = [...basicDecks, ...userDecks];
+  const handleResetProgress = async () => {
+    if (!user) return;
+    try {
+      const batch = writeBatch(db);
+      
+      // Reset progress for basic decks
+      for (const deck of basicDecks) {
+        const cardsRef = collection(db, "users", user.uid, "decks", deck.id, "cards");
+        const cardsSnapshot = await getDocs(cardsRef);
+        cardsSnapshot.forEach(cardDoc => {
+          batch.update(cardDoc.ref, { srsLevel: 0, nextReview: new Date() });
+        });
+      }
 
-    allDecks.forEach(deck => {
-        const cardKey = `cards_${deck.id}`;
-        const storedCards = localStorage.getItem(cardKey);
-        
-        if (storedCards) {
-            try {
-                const cards: CardType[] = JSON.parse(storedCards);
-                const updatedCards = cards.map((card) => {
-                    const { srsLevel, nextReview, ...rest } = card;
-                    return { ...rest, srsLevel: 0, nextReview: new Date() };
-                });
-                localStorage.setItem(cardKey, JSON.stringify(updatedCards));
-            } catch (error) {
-                console.error(`Failed to parse or update cards for deck ${deck.id}`, error);
-            }
-        }
-    });
+      // Reset progress for custom decks
+      const customDecksRef = collection(db, "users", user.uid, "decks");
+      const customDecksQuery = query(customDecksRef, where("isCustom", "==", true));
+      const customDecksSnapshot = await getDocs(customDecksQuery);
 
-    toast({
-        title: "Progress Reset",
-        description: "All your study progress has been successfully reset.",
-    });
+      for (const deckDoc of customDecksSnapshot.docs) {
+          const cardsRef = collection(deckDoc.ref, "cards");
+          const cardsSnapshot = await getDocs(cardsRef);
+          cardsSnapshot.forEach(cardDoc => {
+              batch.update(cardDoc.ref, { srsLevel: 0, nextReview: new Date() });
+          });
+      }
+
+      await batch.commit();
+
+      toast({
+          title: "Progress Reset",
+          description: "All your study progress has been successfully reset.",
+      });
+    } catch (error) {
+       console.error("Error resetting progress: ", error);
+       toast({
+          title: "Error",
+          description: "Could not reset your progress. Please try again.",
+          variant: "destructive"
+       });
+    }
   };
 
-  const handleResetQuizHistory = () => {
-    quizzes.forEach(quiz => {
-        localStorage.removeItem(`quiz_weights_${quiz.id}`);
-        localStorage.removeItem(`quiz_best_score_${quiz.id}`);
-    });
-
-    toast({
-        title: "Quiz History Reset",
-        description: "Your adaptive quiz data has been cleared.",
-    });
+  const handleResetQuizHistory = async () => {
+    if (!user) return;
+    try {
+      const batch = writeBatch(db);
+      for (const quiz of quizzes) {
+        const quizDataRef = doc(db, "users", user.uid, "quizData", quiz.id);
+        batch.delete(quizDataRef);
+      }
+      await batch.commit();
+      
+      toast({
+          title: "Quiz History Reset",
+          description: "Your adaptive quiz data has been cleared.",
+      });
+    } catch (error) {
+       console.error("Error resetting quiz history: ", error);
+       toast({
+          title: "Error",
+          description: "Could not reset quiz history. Please try again.",
+          variant: "destructive"
+       });
+    }
   };
 
   const handleProfileSave = async () => {

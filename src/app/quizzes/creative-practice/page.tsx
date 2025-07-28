@@ -13,11 +13,16 @@ import { cn } from '@/lib/utils';
 import { creativeChallenges as allCreativeChallenges } from '@/lib/data';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
+
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
 const CREATIVE_QUIZ_LENGTH = 10;
 
 export default function CreativePracticePage() {
+  const { user } = useAuth();
   const [sessionChallenges, setSessionChallenges] = useState<(CreativeChallenge & { weight: number, isReview: boolean })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -29,54 +34,64 @@ export default function CreativePracticePage() {
   const [sessionQuestionUpdates, setSessionQuestionUpdates] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    const weightsStorageKey = 'quiz_weights_creative-practice';
-    const questionWeights: Record<string, number> = JSON.parse(localStorage.getItem(weightsStorageKey) || '{}');
+    if (!user) return;
+    const quizDataRef = doc(db, 'users', user.uid, 'quizData', 'creative-practice');
+    
+    getDoc(quizDataRef).then(docSnap => {
+        const questionWeights = docSnap.exists() ? docSnap.data().weights || {} : {};
 
-    const weightedChallenges = allCreativeChallenges.map(item => ({
-      item,
-      weight: questionWeights[item.id] || 0
-    }));
+        const weightedChallenges = allCreativeChallenges.map(item => ({
+          item,
+          weight: questionWeights[item.id] || 0
+        }));
 
-    weightedChallenges.sort((a, b) => {
-      if (b.weight !== a.weight) return b.weight - a.weight;
-      return Math.random() - 0.5;
+        weightedChallenges.sort((a, b) => {
+          if (b.weight !== a.weight) return b.weight - a.weight;
+          return Math.random() - 0.5;
+        });
+
+        const generatedChallenges = weightedChallenges
+          .slice(0, CREATIVE_QUIZ_LENGTH)
+          .map(wc => ({
+            ...wc.item,
+            weight: wc.weight,
+            isReview: wc.weight > 0
+          }));
+        
+        setSessionChallenges(generatedChallenges);
+        setIsLoading(false);
     });
 
-    const generatedChallenges = weightedChallenges
-      .slice(0, CREATIVE_QUIZ_LENGTH)
-      .map(wc => ({
-        ...wc.item,
-        weight: wc.weight,
-        isReview: wc.weight > 0
-      }));
-    
-    setSessionChallenges(generatedChallenges);
-    setIsLoading(false);
-  }, []);
+  }, [user]);
 
   const currentChallenge = sessionChallenges[currentQuestionIndex];
   const isQuizFinished = currentQuestionIndex >= sessionChallenges.length;
   
   useEffect(() => {
-    if (isQuizFinished && sessionChallenges.length > 0) {
+    if (isQuizFinished && sessionChallenges.length > 0 && user) {
         const score = Math.round((correctAnswersCount / sessionChallenges.length) * 100);
-        const bestScoreKey = 'quiz_best_score_creative-practice';
-        const bestScore = JSON.parse(localStorage.getItem(bestScoreKey) || '0');
-        if (score > bestScore) {
-            localStorage.setItem(bestScoreKey, JSON.stringify(score));
+        const quizDataRef = doc(db, "users", user.uid, "quizData", 'creative-practice');
+
+        const saveProgress = async () => {
+            const docSnap = await getDoc(quizDataRef);
+            const data = docSnap.exists() ? docSnap.data() : { weights: {}, bestScore: 0 };
+            
+            if (score > (data.bestScore || 0)) {
+                data.bestScore = score;
+            }
+
+            const allWeights = data.weights || {};
+             Object.entries(sessionQuestionUpdates).forEach(([id, change]) => {
+                const currentWeight = allWeights[id] || 0;
+                allWeights[id] = Math.max(0, currentWeight + change);
+            });
+            
+            await setDoc(quizDataRef, { bestScore: data.bestScore, weights: allWeights }, { merge: true });
         }
 
-        // Save weights
-        const weightsStorageKey = 'quiz_weights_creative-practice';
-        const allWeights: Record<string, number> = JSON.parse(localStorage.getItem(weightsStorageKey) || '{}');
-        Object.entries(sessionQuestionUpdates).forEach(([id, change]) => {
-            const currentWeight = allWeights[id] || 0;
-            const newWeight = Math.max(0, currentWeight + change);
-            allWeights[id] = newWeight;
-        });
-        localStorage.setItem(weightsStorageKey, JSON.stringify(allWeights));
+        saveProgress();
     }
-  }, [isQuizFinished, correctAnswersCount, sessionChallenges.length, sessionQuestionUpdates]);
+  }, [isQuizFinished, correctAnswersCount, sessionChallenges.length, sessionQuestionUpdates, user]);
 
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -94,16 +109,10 @@ export default function CreativePracticePage() {
       if (validationResult.isValid) {
         setCorrectAnswersCount(prev => prev + 1);
         setAnswerStatus('correct');
-        setSessionQuestionUpdates(prev => ({
-            ...prev,
-            [currentChallenge.id]: (prev[currentChallenge.id] || 0) - 1,
-        }));
+        setSessionQuestionUpdates(prev => ({ ...prev, [currentChallenge.id]: (prev[currentChallenge.id] || 0) - 1 }));
       } else {
         setAnswerStatus('incorrect');
-        setSessionQuestionUpdates(prev => ({
-            ...prev,
-            [currentChallenge.id]: (prev[currentChallenge.id] || 0) + 1,
-        }));
+        setSessionQuestionUpdates(prev => ({ ...prev, [currentChallenge.id]: (prev[currentChallenge.id] || 0) + 1 }));
       }
     } catch (error) {
       console.error('Validation failed:', error);
@@ -261,5 +270,3 @@ export default function CreativePracticePage() {
     </div>
   );
 }
-
-    

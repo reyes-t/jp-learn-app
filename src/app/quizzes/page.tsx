@@ -9,6 +9,10 @@ import Link from "next/link";
 import type { QuizMeta } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, collection, getDocs, onSnapshot } from 'firebase/firestore';
+
 
 const ICONS: Record<string, React.ReactNode> = {
     grammar: <BrainCircuit className="text-primary"/>,
@@ -47,20 +51,21 @@ const LevelQuizCard = ({ group }: { group: { title: string, type: string, quizze
 }
 
 const LevelQuizButton = ({ quiz }: { quiz: QuizMeta }) => {
+  const { user } = useAuth();
   const [bestScore, setBestScore] = useState<number | null>(null);
 
   useEffect(() => {
-    const score = localStorage.getItem(`quiz_best_score_${quiz.id}`);
-    if (score) {
-      setBestScore(JSON.parse(score));
-    }
-     const handleStorageChange = () => {
-      const score = localStorage.getItem(`quiz_best_score_${quiz.id}`);
-      setBestScore(score ? JSON.parse(score) : null);
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [quiz.id]);
+    if (!user) return;
+    const quizDataRef = doc(db, 'users', user.uid, 'quizData', quiz.id);
+    const unsubscribe = onSnapshot(quizDataRef, (doc) => {
+        if (doc.exists()) {
+            setBestScore(doc.data().bestScore || null);
+        } else {
+            setBestScore(null);
+        }
+    });
+    return () => unsubscribe();
+  }, [quiz.id, user]);
 
   return (
       <Button variant="outline" size="sm" className="relative" asChild>
@@ -76,14 +81,19 @@ const LevelQuizButton = ({ quiz }: { quiz: QuizMeta }) => {
 
 
 const SingularQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
+    const { user } = useAuth();
     const [bestScore, setBestScore] = useState<number | null>(null);
 
     useEffect(() => {
-        const score = localStorage.getItem(`quiz_best_score_${quiz.id}`);
-        if (score) {
-            setBestScore(JSON.parse(score));
-        }
-    }, [quiz.id]);
+        if (!user) return;
+        const quizDataRef = doc(db, 'users', user.uid, 'quizData', quiz.id);
+        const unsubscribe = onSnapshot(quizDataRef, (doc) => {
+            if (doc.exists()) {
+                setBestScore(doc.data().bestScore || null);
+            }
+        });
+        return () => unsubscribe();
+    }, [quiz.id, user]);
 
     const href = quiz.type === 'creative-practice' ? `/quizzes/creative-practice` : `/quizzes/${quiz.id}`;
 
@@ -116,31 +126,29 @@ const SingularQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
 }
 
 const ReviewQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
+    const { user } = useAuth();
     const [reviewCount, setReviewCount] = useState<number | null>(null);
 
     useEffect(() => {
-        const getReviewCount = () => {
+        if (!user) {
+            setReviewCount(0);
+            return;
+        }
+
+        const quizDataColRef = collection(db, 'users', user.uid, 'quizData');
+        const unsubscribe = onSnapshot(quizDataColRef, (snapshot) => {
             let count = 0;
-            quizzes.forEach(q => {
-                if (q.type !== 'review') {
-                    const weights = localStorage.getItem(`quiz_weights_${q.id}`);
-                    if (weights) {
-                        const parsedWeights: Record<string, number> = JSON.parse(weights);
-                        count += Object.values(parsedWeights).filter(w => w > 0).length;
-                    }
+            snapshot.forEach((doc) => {
+                const weights = doc.data().weights;
+                if (weights) {
+                    count += Object.values(weights).filter(w => (w as number) > 0).length;
                 }
             });
-            return count;
-        };
-        
-        setReviewCount(getReviewCount());
+            setReviewCount(count);
+        });
 
-        const handleStorageChange = () => {
-            setReviewCount(getReviewCount());
-        };
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+        return () => unsubscribe();
+    }, [user]);
 
     return (
         <Card className="flex flex-col">
@@ -157,7 +165,7 @@ const ReviewQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
                 <Button className="w-full" asChild disabled={reviewCount === 0}>
                     <Link href={`/quizzes/${quiz.id}`}>
                         <PlayCircle className="mr-2 h-4 w-4" />
-                        Start Review
+                        Start Review ({reviewCount ?? 0})
                     </Link>
                 </Button>
             </CardFooter>

@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -19,6 +18,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, writeBatch, getDocs, query, orderBy } from 'firebase/firestore';
+
 
 const MASTERY_THRESHOLD = 5; // SRS level 5+ is considered "mastered"
 
@@ -33,7 +36,7 @@ function ProgressCard({ cards: deckCards, cardCount }: { cards: CardType[], card
       const srsCards = deckCards.map(c => ({
         ...c,
         srsLevel: c.srsLevel ?? 0,
-        nextReview: c.nextReview ? new Date(c.nextReview) : now,
+        nextReview: c.nextReview ? (c.nextReview as any).toDate() : now,
       }));
 
       const due = srsCards.filter(c => c.nextReview <= now).length;
@@ -96,131 +99,175 @@ export default function DeckDetailPage() {
   const params = useParams();
   const router = useRouter();
   const deckId = params.id as string;
+  const { user } = useAuth();
+  
   const [deck, setDeck] = useState<Deck | undefined>(undefined);
   const [cards, setCards] = useState<CardType[]>([]);
+  const { toast } = useToast();
+
+  const isBasicDeck = useMemo(() => initialDecks.some(d => d.id === deckId), [deckId]);
+
+  const deckRef = useMemo(() => {
+    if (!user || !deckId) return null;
+    return doc(db, 'users', user.uid, 'decks', deckId);
+  }, [user, deckId]);
+
+  const cardsRef = useMemo(() => {
+    if (!deckRef) return null;
+    return collection(deckRef, 'cards');
+  }, [deckRef]);
+
+
+  // Effect for deck details and settings
+  useEffect(() => {
+    if (!user || !deckId) return;
+
+    let unsub: () => void;
+    if (isBasicDeck) {
+      const basicDeckData = initialDecks.find(d => d.id === deckId)!;
+      // Fetch or create deck document in Firestore for basic decks to store settings
+      const deckDocRef = doc(db, "users", user.uid, "decks", deckId);
+      
+      const getOrCreateDeck = async () => {
+        const docSnap = await getDoc(deckDocRef);
+        if (docSnap.exists()) {
+          setDeck({ ...basicDeckData, ...docSnap.data() });
+        } else {
+          // If it doesn't exist, create it with default data
+          await updateDoc(deckDocRef, { ...basicDeckData, id: deckId }, { merge: true });
+          setDeck(basicDeckData);
+        }
+      }
+      getOrCreateDeck();
+      unsub = onSnapshot(deckDocRef, (doc) => {
+        setDeck({ ...basicDeckData, ...doc.data() });
+      });
+
+    } else {
+      // For custom decks
+      if (!deckRef) return;
+      unsub = onSnapshot(deckRef, (doc) => {
+        if (doc.exists()) {
+          setDeck({ id: doc.id, ...doc.data() } as Deck);
+        } else {
+          // Handle case where custom deck is not found
+        }
+      });
+    }
+
+    return () => unsub && unsub();
+  }, [user, deckId, isBasicDeck, deckRef]);
   
-  // State for editable deck details
+  // Effect for fetching cards
+  useEffect(() => {
+    if (!user || !deckId) return;
+    
+    let unsubCards: () => void;
+    const cardsColRef = collection(db, 'users', user.uid, 'decks', deckId, 'cards');
+    
+    const getCards = async () => {
+      const snapshot = await getDocs(cardsColRef);
+      if (snapshot.empty && isBasicDeck) {
+          // Cards for this basic deck not yet in Firestore, let's add them
+          const batch = writeBatch(db);
+          const originalCards = initialCards.filter(c => c.deckId === deckId);
+          originalCards.forEach(card => {
+            const cardRef = doc(cardsColRef, card.id);
+            batch.set(cardRef, { 
+                ...card, 
+                srsLevel: 0, 
+                nextReview: new Date()
+            });
+          });
+          await batch.commit();
+      }
+
+      const q = query(cardsColRef, orderBy('front'));
+      unsubCards = onSnapshot(q, (snapshot) => {
+        const fetchedCards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CardType));
+        setCards(fetchedCards);
+      });
+    }
+
+    getCards();
+
+    return () => unsubCards && unsubCards();
+  }, [user, deckId, isBasicDeck]);
+  
+
   const [deckName, setDeckName] = useState('');
   const [deckDescription, setDeckDescription] = useState('');
   const [sessionSize, setSessionSize] = useState<number | string>('');
-  const { toast } = useToast();
 
   useEffect(() => {
-    if (!deckId) return;
-
-    // Load all decks from localStorage or fall back to initial data
-    const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
-    const allDecks = [...initialDecks, ...storedDecks];
-    const currentDeck = allDecks.find((d) => d.id === deckId);
-    setDeck(currentDeck);
-
-    if (currentDeck) {
-      setDeckName(currentDeck.name);
-      setDeckDescription(currentDeck.description);
+    if (deck) {
+      setDeckName(deck.name);
+      setDeckDescription(deck.description);
+      setSessionSize((deck as any).sessionSize || '');
     }
-
-    // Load session size setting
-    const storedSettings = JSON.parse(localStorage.getItem(`deckSettings_${deckId}`) || '{}');
-    setSessionSize(storedSettings.sessionSize || '');
-
-    if (currentDeck) {
-      if (currentDeck.isCustom) {
-        // Load cards from localStorage for custom decks
-        const storedCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
-        setCards(storedCards);
-      } else {
-        // Load cards from initial data for pre-generated decks, but check for stored progress
-        const storedPregenCards = localStorage.getItem(`cards_${deckId}`);
-        const pregenCards = storedPregenCards 
-          ? JSON.parse(storedPregenCards)
-          : initialCards.filter(card => card.deckId === deckId);
-        setCards(pregenCards);
-      }
-    }
-  }, [deckId]);
-
-  const updateCardCountInStorage = (deckId: string, newCount: number) => {
-      const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
-      const updatedDecks = storedDecks.map((d: Deck) =>
-        d.id === deckId ? { ...d, cardCount: newCount } : d
-      );
-      localStorage.setItem('userDecks', JSON.stringify(updatedDecks));
-      setDeck(prevDeck => prevDeck ? {...prevDeck, cardCount: newCount} : undefined);
-  };
+  }, [deck]);
 
 
-  const handleCardAdded = (newCard: { front: string; back: string }) => {
-    const newCardWithId: CardType = {
-      id: `card-${Date.now()}`,
-      deckId: deckId,
+  const handleCardAdded = async (newCard: { front: string; back: string }) => {
+    if (!cardsRef || !deckRef) return;
+
+    const cardWithData: Omit<CardType, 'id'|'deckId'> = {
       ...newCard,
       srsLevel: 0,
       nextReview: new Date(),
     };
     
-    const updatedCards = [...cards, newCardWithId];
-    setCards(updatedCards);
-    localStorage.setItem(`cards_${deckId}`, JSON.stringify(updatedCards));
-    updateCardCountInStorage(deckId, updatedCards.length);
-
+    await addDoc(cardsRef, cardWithData);
+    await updateDoc(deckRef, { cardCount: cards.length + 1 });
+    
     toast({
         title: "Card Added!",
         description: "Your new card has been saved to the deck.",
     });
   };
 
-  const handleCardUpdated = (updatedCard: CardType) => {
-    const updatedCards = cards.map(card => 
-      card.id === updatedCard.id ? updatedCard : card
-    );
-    setCards(updatedCards);
-    localStorage.setItem(`cards_${deckId}`, JSON.stringify(updatedCards));
+  const handleCardUpdated = async (updatedCard: CardType) => {
+    if (!cardsRef) return;
+    const cardDocRef = doc(cardsRef, updatedCard.id);
+    await updateDoc(cardDocRef, {
+        front: updatedCard.front,
+        back: updatedCard.back
+    });
+
     toast({
       title: 'Card Updated!',
       description: 'Your changes have been saved.',
     });
   };
   
-  const handleCardDeleted = (cardId: string) => {
-    const updatedCards = cards.filter(card => card.id !== cardId);
-    setCards(updatedCards);
-    localStorage.setItem(`cards_${deckId}`, JSON.stringify(updatedCards));
-    updateCardCountInStorage(deckId, updatedCards.length);
+  const handleCardDeleted = async (cardId: string) => {
+    if (!cardsRef || !deckRef) return;
+    await deleteDoc(doc(cardsRef, cardId));
+    await updateDoc(deckRef, { cardCount: cards.length - 1 });
     toast({
         title: 'Card Deleted',
         description: 'The card has been removed from your deck.',
     });
   };
 
-  const handleDeleteDeck = () => {
-    const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
-    const updatedDecks = storedDecks.filter((d: Deck) => d.id !== deckId);
-    localStorage.setItem('userDecks', JSON.stringify(updatedDecks));
-    localStorage.removeItem(`cards_${deckId}`);
-    localStorage.removeItem(`studyProgress_${deckId}`);
-    localStorage.removeItem(`deckSettings_${deckId}`);
-    
+  const handleDeleteDeck = async () => {
+    if (!deckRef) return;
+    // Note: This requires a cloud function for full recursive delete.
+    // For now, we just delete the deck doc. Cards become orphaned.
+    await deleteDoc(deckRef);
     toast({
         title: 'Deck Deleted',
         description: `The deck "${deck?.name}" has been deleted.`,
     });
-
     router.push('/decks');
   };
   
-  const handleSaveDeckDetails = () => {
-    if (!deck?.isCustom) return;
-    
-    const storedDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
-    const updatedDecks = storedDecks.map(d => {
-      if (d.id === deckId) {
-        return { ...d, name: deckName, description: deckDescription };
-      }
-      return d;
+  const handleSaveDeckDetails = async () => {
+    if (!deck?.isCustom || !deckRef) return;
+    await updateDoc(deckRef, {
+      name: deckName,
+      description: deckDescription,
     });
-    localStorage.setItem('userDecks', JSON.stringify(updatedDecks));
-    setDeck(prevDeck => prevDeck ? {...prevDeck, name: deckName, description: deckDescription} : undefined);
-    
     toast({
         title: "Deck Updated",
         description: "Your deck details have been saved.",
@@ -228,48 +275,33 @@ export default function DeckDetailPage() {
   };
 
 
-  const handleSaveSettings = () => {
-    const newSettings = {
-        sessionSize: sessionSize === '' ? undefined : Number(sessionSize)
-    };
-    localStorage.setItem(`deckSettings_${deckId}`, JSON.stringify(newSettings));
+  const handleSaveSettings = async () => {
+    if (!deckRef) return;
+    const size = sessionSize === '' ? null : Number(sessionSize);
+    await updateDoc(deckRef, { sessionSize: size });
     toast({
         title: "Settings Saved",
         description: "Your study settings have been updated.",
     });
   };
 
-  const handleResetDeckProgress = () => {
-    if (!deck) return;
-
-    let deckCards: CardType[];
-    if (deck.isCustom) {
-        deckCards = JSON.parse(localStorage.getItem(`cards_${deckId}`) || '[]');
-    } else {
-        const storedCards = localStorage.getItem(`cards_${deckId}`);
-        deckCards = storedCards ? JSON.parse(storedCards) : initialCards.filter(c => c.deckId === deckId);
-    }
-    
-    const updatedCards = deckCards.map(card => {
-        const { srsLevel, nextReview, ...rest } = card;
-        return { ...rest, srsLevel: 0, nextReview: new Date() };
+  const handleResetDeckProgress = async () => {
+    if (!cardsRef) return;
+    const batch = writeBatch(db);
+    const cardsSnapshot = await getDocs(cardsRef);
+    cardsSnapshot.forEach((doc) => {
+      batch.update(doc.ref, { srsLevel: 0, nextReview: new Date() });
     });
-
-    localStorage.setItem(`cards_${deckId}`, JSON.stringify(updatedCards));
-    setCards(updatedCards); // Refresh the state on the page if needed
+    await batch.commit();
 
     toast({
         title: "Progress Reset",
-        description: `Study progress for "${deck.name}" has been reset.`,
+        description: `Study progress for "${deck?.name}" has been reset.`,
     });
-    // Force reload of other components that rely on this data, like DeckCard on other pages.
-    // A more sophisticated state management solution would be better, but for now this is simple.
-    window.dispatchEvent(new Event('storage'));
   };
 
 
   if (!deck) {
-    // Still loading or not found
     return null; 
   }
 

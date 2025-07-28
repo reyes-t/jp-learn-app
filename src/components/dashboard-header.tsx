@@ -29,28 +29,38 @@ import { basicDecks as initialDecks } from "@/lib/data"
 import type { Deck } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
+import { db } from "@/lib/firebase"
+import { doc, getDoc } from "firebase/firestore"
 
 // A helper function to capitalize the first letter of a string
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const HeaderBreadcrumb = () => {
     const pathname = usePathname();
+    const { user } = useAuth();
     const [deckTitle, setDeckTitle] = useState<string | undefined>(undefined);
     const pathSegments = pathname.split("/").filter(Boolean);
 
     useEffect(() => {
-      if (pathSegments.length >= 2 && pathSegments[0] === 'decks') {
-          const deckId = pathSegments[1];
-          const storedDecks = JSON.parse(localStorage.getItem('userDecks') || '[]');
-          const allDecks: Deck[] = [...initialDecks, ...storedDecks];
-          const currentDeck = allDecks.find(d => d.id === deckId);
-          if (currentDeck) {
-              setDeckTitle(currentDeck.name);
-          }
-      } else {
-        setDeckTitle(undefined);
+      const fetchDeckTitle = async () => {
+        if (pathSegments.length >= 2 && pathSegments[0] === 'decks' && user) {
+            const deckId = pathSegments[1];
+            const isBasic = initialDecks.some(d => d.id === deckId);
+            if (isBasic) {
+                setDeckTitle(initialDecks.find(d => d.id === deckId)?.name);
+            } else {
+                const deckRef = doc(db, 'users', user.uid, 'decks', deckId);
+                const docSnap = await getDoc(deckRef);
+                if (docSnap.exists()) {
+                    setDeckTitle(docSnap.data().name);
+                }
+            }
+        } else {
+          setDeckTitle(undefined);
+        }
       }
-    }, [pathname, pathSegments]);
+      fetchDeckTitle();
+    }, [pathname, pathSegments, user]);
 
     return (
         <Breadcrumb className="hidden flex-1 md:flex">
@@ -66,49 +76,10 @@ const HeaderBreadcrumb = () => {
               const href = "/" + pathSegments.slice(0, index + 1).join("/")
               const isLast = index === pathSegments.length - 1
               
-              let segmentTitle: string;
+              let segmentTitle: string = capitalize(segment);
               if (index === 1 && pathSegments[0] === 'decks' && deckTitle) {
                 segmentTitle = deckTitle;
-              } else if (index === 2 && pathSegments[0] === 'decks' && deckTitle) {
-                segmentTitle = capitalize(segment);
               }
-              else {
-                segmentTitle = capitalize(segment);
-              }
-              
-              if (isLast) {
-                 if (index > 0 && pathSegments[index-1] === 'decks' && deckTitle) {
-                    segmentTitle = deckTitle;
-                 }
-              }
-
-              // Special handling for study page
-              if (segment === 'study' && deckTitle) {
-                  segmentTitle = deckTitle;
-              }
-
-
-              // Create a breadcrumb structure that makes sense
-              const breadcrumbItems = [];
-              if (pathSegments[0]) {
-                  breadcrumbItems.push({
-                      href: `/${pathSegments[0]}`,
-                      title: capitalize(pathSegments[0])
-                  });
-              }
-              if (pathSegments[0] === 'decks' && deckTitle && pathSegments[1]) {
-                   breadcrumbItems.push({
-                      href: `/decks/${pathSegments[1]}`,
-                      title: deckTitle
-                  });
-              }
-               if (pathSegments[2]) {
-                   breadcrumbItems.push({
-                      href: `/decks/${pathSegments[1]}/${pathSegments[2]}`,
-                      title: capitalize(pathSegments[2])
-                  });
-              }
-
 
               return (
                 <React.Fragment key={href}>
