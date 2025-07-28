@@ -11,10 +11,12 @@ import { Trash2, BrainCircuit, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { basicDecks, quizzes } from "@/lib/data";
 import type { Deck, Card as CardType } from "@/lib/types";
+import { useAuth } from "@/hooks/use-auth";
 
 
 export default function AccountPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleResetProgress = () => {
     const userDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
@@ -65,21 +67,18 @@ export default function AccountPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Profile</CardTitle>
-                    <CardDescription>This information will be displayed on your profile.</CardDescription>
+                    <CardDescription>This information is managed by your authentication provider.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="name">Name</Label>
-                        <Input id="name" defaultValue="Sakura Chan" />
+                        <Input id="name" value="Sakura Chan" disabled />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" defaultValue="sakura@example.com" />
+                        <Input id="email" type="email" value={user?.email || ''} disabled />
                     </div>
                 </CardContent>
-                <CardFooter>
-                    <Button>Save Changes</Button>
-                </CardFooter>
             </Card>
 
             <Card>
