@@ -329,8 +329,8 @@ export const grammarPoints: GrammarPoint[] = [
     title: 'Making invitations (~ませんか)',
     explanation: 'To invite someone to do something, you can use the negative question form of a verb: 「~ませんか」 (masen ka?). This is a polite way to say "Won\'t you...?" or "How about...?".',
     examples: [
-      { question: 'いっしょにえいがをみ___か。', answer: 'ませんか', options: ['ます', 'ません', 'ませんか'], sentence: 'いっしょにえいがをみませんか。', translation: 'Won\'t you watch a movie with me?' },
-      { question: 'こーひーをのみ___', answer: 'ませんか', options: ['ます', 'ました', 'ませんか'], sentence: 'こーひーをのみませんか。', translation: 'How about drinking some coffee?' },
+      { question: 'いっしょにえいがをみ___。', answer: 'ませんか', options: ['ます', 'ません', 'ませんか'], sentence: 'いっしょにえいがをみませんか。', translation: 'Won\'t you watch a movie with me?' },
+      { question: 'こーひーをのみ___。', answer: 'ませんか', options: ['ます', 'ました', 'ませんか'], sentence: 'こーひーをのみませんか。', translation: 'How about drinking some coffee?' },
     ],
   },
    {
