@@ -265,10 +265,14 @@ export default function QuizPage() {
         if (answerStatus !== 'unanswered' || !currentQuestion) return;
 
         setSelectedAnswer(option);
+        const currentWeight = currentQuestion.weight || 0;
+
         if (option === currentQuestion.correctAnswer) {
             setAnswerStatus('correct');
             setCorrectAnswersCount(c => c + 1);
-            setSessionQuestionUpdates(prev => ({ ...prev, [currentQuestion.id]: { change: -1, originalQuizId: currentQuestion.originalQuizId } }));
+            if (currentWeight > 0) {
+                setSessionQuestionUpdates(prev => ({ ...prev, [currentQuestion.id]: { change: -1, originalQuizId: currentQuestion.originalQuizId } }));
+            }
         } else {
             setAnswerStatus('incorrect');
             setSessionQuestionUpdates(prev => ({ ...prev, [currentQuestion.id]: { change: 1, originalQuizId: currentQuestion.originalQuizId } }));

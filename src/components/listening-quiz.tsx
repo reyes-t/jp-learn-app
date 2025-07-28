@@ -109,13 +109,17 @@ export function ListeningQuiz({ quizMeta, questions: sessionQuestions }: Listeni
             formattedUserAnswer === normalize(currentQuestion.kana) || 
             formattedUserAnswer === normalize(currentQuestion.romaji);
         
+        const currentWeight = currentQuestion.weight || 0;
+
         if (isCorrect) {
             setAnswerStatus('correct');
             setCorrectAnswersCount(prev => prev + 1);
-            setSessionQuestionUpdates(prev => ({
-                ...prev,
-                [currentQuestion.id]: (prev[currentQuestion.id] || 0) - 1,
-            }));
+            if (currentWeight > 0) {
+                setSessionQuestionUpdates(prev => ({
+                    ...prev,
+                    [currentQuestion.id]: (prev[currentQuestion.id] || 0) - 1,
+                }));
+            }
         } else {
             setAnswerStatus('incorrect');
             setSessionQuestionUpdates(prev => ({

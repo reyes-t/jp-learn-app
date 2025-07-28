@@ -106,10 +106,14 @@ export default function CreativePracticePage() {
         phrase: userAnswer,
       });
       setResult(validationResult);
+      const currentWeight = currentChallenge.weight || 0;
+
       if (validationResult.isValid) {
         setCorrectAnswersCount(prev => prev + 1);
         setAnswerStatus('correct');
-        setSessionQuestionUpdates(prev => ({ ...prev, [currentChallenge.id]: (prev[currentChallenge.id] || 0) - 1 }));
+        if (currentWeight > 0) {
+            setSessionQuestionUpdates(prev => ({ ...prev, [currentChallenge.id]: (prev[currentChallenge.id] || 0) - 1 }));
+        }
       } else {
         setAnswerStatus('incorrect');
         setSessionQuestionUpdates(prev => ({ ...prev, [currentChallenge.id]: (prev[currentChallenge.id] || 0) + 1 }));
