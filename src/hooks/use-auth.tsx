@@ -18,7 +18,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, pass: string) => Promise<any>;
-  register: (email: string, pass: string) => Promise<any>;
+  register: (email: string, pass: string, name: string) => Promise<any>;
   logout: () => Promise<any>;
   updateUserProfile: (name: string) => Promise<void>;
 }
@@ -65,8 +65,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return signInWithEmailAndPassword(auth, email, pass);
   };
 
-  const register = (email: string, pass: string) => {
-    return createUserWithEmailAndPassword(auth, email, pass);
+  const register = async (email: string, pass: string, name: string) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    await updateProfile(userCredential.user, { displayName: name });
+    return userCredential;
   };
 
   const logout = () => {
