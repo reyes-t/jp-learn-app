@@ -490,7 +490,7 @@ export default function QuizPage() {
                             <ul className="text-sm font-mono space-y-2">
                                 {sessionQuestions.map((q, index) => (
                                     <li key={q.id + index} className={cn("p-2 rounded", index === currentQuestionIndex && "bg-muted")}>
-                                       <span className="font-bold">W: {currentQuestion.weight + (sessionQuestionUpdates[q.id]?.change || 0)} ({q.id})</span> - {q.question}
+                                       <span className="font-bold">W: {q.weight + (sessionQuestionUpdates[q.id]?.change || 0)} ({q.id})</span> - {q.question}
                                     </li>
                                 ))}
                             </ul>
@@ -501,3 +501,5 @@ export default function QuizPage() {
         </div>
     );
 }
+
+    
