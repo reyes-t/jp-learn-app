@@ -8,7 +8,7 @@ import {
   Languages,
   LayoutDashboard,
   Layers,
-  Settings,
+  ShieldCheck,
   User,
 } from "lucide-react"
 
@@ -43,7 +43,10 @@ function AppContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const showNav = user && !['/login', '/register'].includes(pathname);
+  const noNavRoutes = ['/login', '/register', '/admin'];
+  const showNav = user && !noNavRoutes.includes(pathname);
+  const isAdmin = user?.email === 'admin@sakuralearn.com';
+
 
   return (
     <SidebarProvider>
@@ -111,6 +114,20 @@ function AppContent({ children }: { children: React.ReactNode }) {
           </SidebarContent>
           <SidebarFooter>
             <SidebarMenu>
+               {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith("/admin")}
+                    tooltip="Admin"
+                  >
+                    <Link href="/admin/dashboard">
+                      <ShieldCheck />
+                      <span>Admin</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild

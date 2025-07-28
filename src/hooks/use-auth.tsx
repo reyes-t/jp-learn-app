@@ -29,6 +29,8 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => Promise.resolve(),
 });
 
+const ADMIN_EMAIL = "admin@sakuralearn.com";
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,9 +42,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(user);
       setLoading(false);
 
-      if (!user && pathname !== '/login' && pathname !== '/register') {
+      const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/admin';
+      const isAdminPage = pathname.startsWith('/admin/dashboard');
+
+      if (!user && !isAuthPage) {
         router.push('/login');
-      } else if (user && (pathname === '/login' || pathname === '/register')) {
+      } else if (user && isAuthPage && pathname !== '/admin') {
+         router.push('/');
+      } else if (user && isAdminPage && user.email !== ADMIN_EMAIL) {
+        // Redirect non-admins trying to access admin pages
         router.push('/');
       }
     });
