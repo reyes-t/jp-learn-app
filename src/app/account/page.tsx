@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2, BrainCircuit, RefreshCw } from "lucide-react";
+import { Trash2, BrainCircuit, RefreshCw, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { basicDecks, quizzes } from "@/lib/data";
 import type { Deck, Card as CardType } from "@/lib/types";
@@ -16,7 +16,15 @@ import { useAuth } from "@/hooks/use-auth";
 
 export default function AccountPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
+  const [name, setName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+        setName(user.displayName || '');
+    }
+  }, [user]);
 
   const handleResetProgress = () => {
     const userDecks: Deck[] = JSON.parse(localStorage.getItem('userDecks') || '[]');
@@ -58,6 +66,25 @@ export default function AccountPage() {
     });
   };
 
+  const handleProfileSave = async () => {
+    setIsSaving(true);
+    try {
+        await updateUserProfile(name);
+        toast({
+            title: "Profile Updated",
+            description: "Your name has been successfully updated.",
+        });
+    } catch (error: any) {
+        toast({
+            title: "Update Failed",
+            description: error.message || "Could not update your profile.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
   return (
     <div className="container mx-auto max-w-2xl">
         <h1 className="text-3xl font-bold font-headline mb-2">Account Settings</h1>
@@ -67,18 +94,23 @@ export default function AccountPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Profile</CardTitle>
-                    <CardDescription>This information is managed by your authentication provider.</CardDescription>
+                    <CardDescription>Update your display name here.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="name">Name</Label>
-                        <Input id="name" value="Sakura Chan" disabled />
+                        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
                         <Input id="email" type="email" value={user?.email || ''} disabled />
                     </div>
                 </CardContent>
+                <CardFooter>
+                    <Button onClick={handleProfileSave} disabled={isSaving}>
+                        {isSaving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                </CardFooter>
             </Card>
 
             <Card>

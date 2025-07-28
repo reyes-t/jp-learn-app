@@ -8,6 +8,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  updateProfile,
   User,
   Auth,
 } from 'firebase/auth';
@@ -19,6 +20,7 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<any>;
   register: (email: string, pass: string) => Promise<any>;
   logout: () => Promise<any>;
+  updateUserProfile: (name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -27,6 +29,7 @@ const AuthContext = createContext<AuthContextType>({
   login: () => Promise.resolve(),
   register: () => Promise.resolve(),
   logout: () => Promise.resolve(),
+  updateUserProfile: () => Promise.resolve(),
 });
 
 const ADMIN_EMAIL = "admin@sakuralearn.com";
@@ -70,12 +73,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return signOut(auth);
   };
 
+  const updateUserProfile = async (name: string) => {
+    if (auth.currentUser) {
+      await updateProfile(auth.currentUser, { displayName: name });
+      // To get the updated user object, we need to re-set it
+      // onAuthStateChanged will fire again, but we can also set it manually
+      // for immediate UI update.
+      setUser(auth.currentUser);
+    }
+  };
+
+
   const value = {
     user,
     loading,
     login,
     register,
     logout,
+    updateUserProfile,
   };
 
   return (
