@@ -188,7 +188,7 @@ export function DashboardHeader() {
           <DropdownMenuContent align="end">
             {user ? (
               <>
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel>{user.displayName || user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                     <Link href="/account">Account</Link>
