@@ -27,6 +27,7 @@ import { DashboardHeader } from "@/components/dashboard-header"
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 import { AuthProvider, useAuth } from "@/hooks/use-auth"
+import { cn } from "@/lib/utils"
 
 function AppContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
