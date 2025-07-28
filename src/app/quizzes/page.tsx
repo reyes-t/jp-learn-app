@@ -165,7 +165,7 @@ const ReviewQuizCard = ({ quiz }: { quiz: QuizMeta }) => {
                 <Button className="w-full" asChild disabled={reviewCount === 0}>
                     <Link href={`/quizzes/${quiz.id}`}>
                         <PlayCircle className="mr-2 h-4 w-4" />
-                        Start Review ({reviewCount ?? 0})
+                        Start Review
                     </Link>
                 </Button>
             </CardFooter>
