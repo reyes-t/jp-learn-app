@@ -198,7 +198,13 @@ export default function QuizPage() {
                 const cardsColRef = collection(db, "users", user.uid, "decks", vocabDeckId, "cards");
                 const cardsSnap = await getDocs(cardsColRef);
                 
-                potentialQuestionItems = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                if (cardsSnap.empty) {
+                  const basicCards = initialCards.filter(c => c.deckId === vocabDeckId);
+                  potentialQuestionItems = basicCards;
+                } else {
+                  potentialQuestionItems = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                }
+
                 allItemsForGenerator = potentialQuestionItems;
                 questionGenerator = (item, allItems, isReview) => createVocabQuestion(item, allItems, isReview);
                 quizLength = VOCAB_QUIZ_LENGTH;

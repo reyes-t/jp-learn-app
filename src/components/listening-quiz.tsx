@@ -10,6 +10,9 @@ import { ArrowLeft, CheckCircle2, Volume2, XCircle, History } from 'lucide-react
 import { cn } from '@/lib/utils';
 import type { ListeningQuizQuestion, QuizMeta } from '@/lib/types';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect';
@@ -20,6 +23,7 @@ interface ListeningQuizProps {
 }
 
 export function ListeningQuiz({ quizMeta, questions: sessionQuestions }: ListeningQuizProps) {
+    const { user } = useAuth();
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [userAnswer, setUserAnswer] = useState('');
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
@@ -39,25 +43,30 @@ export function ListeningQuiz({ quizMeta, questions: sessionQuestions }: Listeni
     const isQuizFinished = currentQuestionIndex >= sessionQuestions.length;
     
     useEffect(() => {
-        if (isQuizFinished && sessionQuestions.length > 0) {
+        if (isQuizFinished && sessionQuestions.length > 0 && user) {
             const score = Math.round((correctAnswersCount / sessionQuestions.length) * 100);
-            const bestScoreKey = `quiz_best_score_${quizMeta.id}`;
-            const bestScore = JSON.parse(localStorage.getItem(bestScoreKey) || '0');
-            if (score > bestScore) {
-                localStorage.setItem(bestScoreKey, JSON.stringify(score));
+            const quizDataRef = doc(db, "users", user.uid, "quizData", quizMeta.id);
+
+            const saveProgress = async () => {
+                const docSnap = await getDoc(quizDataRef);
+                const data = docSnap.exists() ? docSnap.data() : { weights: {}, bestScore: 0 };
+                
+                if (score > (data.bestScore || 0)) {
+                    data.bestScore = score;
+                }
+
+                const allWeights = data.weights || {};
+                Object.entries(sessionQuestionUpdates).forEach(([id, change]) => {
+                    const currentWeight = allWeights[id] || 0;
+                    const newWeight = Math.max(0, currentWeight + change);
+                    allWeights[id] = newWeight;
+                });
+                await setDoc(quizDataRef, { bestScore: data.bestScore, weights: allWeights }, { merge: true });
             }
 
-            // Save weights
-            const weightsStorageKey = `quiz_weights_${quizMeta.id}`;
-            const allWeights: Record<string, number> = JSON.parse(localStorage.getItem(weightsStorageKey) || '{}');
-            Object.entries(sessionQuestionUpdates).forEach(([id, change]) => {
-                const currentWeight = allWeights[id] || 0;
-                const newWeight = Math.max(0, currentWeight + change);
-                allWeights[id] = newWeight;
-            });
-            localStorage.setItem(weightsStorageKey, JSON.stringify(allWeights));
+            saveProgress();
         }
-    }, [isQuizFinished, correctAnswersCount, sessionQuestions, quizMeta.id, sessionQuestionUpdates]);
+    }, [isQuizFinished, correctAnswersCount, sessionQuestions, quizMeta.id, sessionQuestionUpdates, user]);
 
 
     const currentQuestion = sessionQuestions[currentQuestionIndex];
