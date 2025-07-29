@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   onAuthStateChanged,
@@ -13,6 +13,7 @@ import {
   Auth,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase'; // Assuming your firebase setup is in 'lib/firebase'
+import { useToast } from './use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -39,6 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -65,11 +67,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return signInWithEmailAndPassword(auth, email, pass);
   };
 
-  const register = async (email: string, pass: string, name: string) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    await updateProfile(userCredential.user, { displayName: name });
-    return userCredential;
-  };
+  const register = useCallback(async (email: string, pass: string, name: string) => {
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+        await updateProfile(userCredential.user, { displayName: name });
+        return userCredential;
+    } catch (error: any) {
+        console.error("Registration failed:", error);
+        toast({
+            title: "Registration Failed",
+            description: error.message || "An unexpected error occurred.",
+            variant: "destructive",
+        });
+        // If registration fails, the user might be on the homepage.
+        // We should redirect them back to the register page.
+        router.push('/register');
+        return Promise.reject(error);
+    }
+  }, [toast, router]);
+
 
   const logout = () => {
     return signOut(auth);

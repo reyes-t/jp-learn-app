@@ -40,20 +40,13 @@ export default function RegisterPage() {
       });
       return;
     }
+    
     setIsLoading(true);
-    try {
-      await register(email, password, name);
-      router.push('/');
-    } catch (error: any) {
-      console.error(error);
-      toast({
-        title: "Registration Failed",
-        description: error.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    
+    // Don't await the register function. Redirect immediately.
+    // Error handling is now done inside the useAuth hook.
+    register(email, password, name);
+    router.push('/');
   };
 
   return (
