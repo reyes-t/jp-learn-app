@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, writeBatch, getDocs, query, orderBy } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const MASTERY_THRESHOLD = 5; // SRS level 5+ is considered "mastered"
@@ -103,6 +104,7 @@ export default function DeckDetailPage() {
   
   const [deck, setDeck] = useState<Deck | undefined>(undefined);
   const [cards, setCards] = useState<CardType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const isBasicDeck = useMemo(() => initialDecks.some(d => d.id === deckId), [deckId]);
@@ -161,7 +163,7 @@ export default function DeckDetailPage() {
   // Effect for fetching cards
   useEffect(() => {
     if (!user || !deckId) return;
-    
+    setIsLoading(true);
     let unsubCards: () => void;
     const cardsColRef = collection(db, 'users', user.uid, 'decks', deckId, 'cards');
     
@@ -186,6 +188,7 @@ export default function DeckDetailPage() {
       unsubCards = onSnapshot(q, (snapshot) => {
         const fetchedCards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CardType));
         setCards(fetchedCards);
+        setIsLoading(false);
       });
     }
 
@@ -302,7 +305,19 @@ export default function DeckDetailPage() {
 
 
   if (!deck) {
-    return null; 
+    return (
+        <div className="container mx-auto">
+            <Skeleton className="h-6 w-48 mb-4" />
+            <Skeleton className="h-10 w-96 mb-2" />
+            <Skeleton className="h-6 w-full max-w-lg mb-6" />
+            <Skeleton className="h-40 w-full mb-6" />
+            <div className="space-y-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </div>
+        </div>
+    ); 
   }
 
   return (
@@ -344,69 +359,77 @@ export default function DeckDetailPage() {
                         <div>
                             <CardTitle>Cards in this Deck</CardTitle>
                             <CardDescription>
-                                This deck has {cards.length} card{cards.length === 1 ? '' : 's'}.
+                                This deck has {isLoading ? '...' : `${cards.length} card${cards.length === 1 ? '' : 's'}`}.
                             </CardDescription>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Front</TableHead>
-                                <TableHead>Back</TableHead>
-                                {deck.isCustom && <TableHead className="text-right w-[180px]">Actions</TableHead>}
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {cards.length > 0 ? (
-                                cards.map((card) => (
-                                    <TableRow key={card.id}>
-                                        <TableCell className="font-medium">{card.front}</TableCell>
-                                        <TableCell>{card.back}</TableCell>
-                                        {deck.isCustom && (
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <EditCardSheet card={card} onCardUpdated={handleCardUpdated} />
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Delete
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                This action cannot be undone. This will permanently delete this card.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction
-                                                                onClick={() => handleCardDeleted(card.id)}
-                                                                className="bg-destructive hover:bg-destructive/90"
-                                                            >
-                                                                Delete
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </div>
-                                        </TableCell>
-                                        )}
-                                    </TableRow>
-                                ))
-                            ) : (
+                    {isLoading ? (
+                         <div className="space-y-2">
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                         </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={deck.isCustom ? 3 : 2} className="h-24 text-center">
-                                        No cards yet. {deck.isCustom ? "Add one to get started!" : ""}
-                                    </TableCell>
+                                    <TableHead>Front</TableHead>
+                                    <TableHead>Back</TableHead>
+                                    {deck.isCustom && <TableHead className="text-right w-[180px]">Actions</TableHead>}
                                 </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {cards.length > 0 ? (
+                                    cards.map((card) => (
+                                        <TableRow key={card.id}>
+                                            <TableCell className="font-medium">{card.front}</TableCell>
+                                            <TableCell>{card.back}</TableCell>
+                                            {deck.isCustom && (
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <EditCardSheet card={card} onCardUpdated={handleCardUpdated} />
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                Delete
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    This action cannot be undone. This will permanently delete this card.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction
+                                                                    onClick={() => handleCardDeleted(card.id)}
+                                                                    className="bg-destructive hover:bg-destructive/90"
+                                                                >
+                                                                    Delete
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                            </TableCell>
+                                            )}
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={deck.isCustom ? 3 : 2} className="h-24 text-center">
+                                            No cards yet. {deck.isCustom ? "Add one to get started!" : ""}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
             </Card>
         </TabsContent>
@@ -550,3 +573,4 @@ export default function DeckDetailPage() {
     </div>
   );
 }
+
