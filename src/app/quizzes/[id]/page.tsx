@@ -105,15 +105,25 @@ export default function QuizPage() {
         const generateQuiz = async () => {
 
             if (quizMeta.type === 'review') {
-                const potentialReviewItems: {
-                    item: any;
-                    weight: number;
-                    type: string;
-                    originalQuizId: string;
-                }[] = [];
-
                 const quizDataCol = collection(db, "users", user.uid, "quizData");
                 const quizDataSnap = await getDocs(quizDataCol);
+
+                // 1. Pre-fetch all user's vocabulary cards
+                const vocabDecksToFetch = ['n5-vocab', 'n4-vocab', 'n3-vocab', 'n2-vocab', 'n1-vocab'];
+                const allVocabCards: Record<string, CardType[]> = {};
+                for (const deckId of vocabDecksToFetch) {
+                    const cardsColRef = collection(db, "users", user.uid, "decks", deckId, "cards");
+                    const cardsSnap = await getDocs(cardsColRef);
+                    if (cardsSnap.empty) {
+                        // If user has no cards, use initial data
+                        allVocabCards[deckId] = initialCards.filter(c => c.deckId === deckId);
+                    } else {
+                        allVocabCards[deckId] = cardsSnap.docs.map(d => ({ id: d.id, ...d.data() } as CardType));
+                    }
+                }
+
+                // 2. Go through quiz data to find all items with weight > 0
+                const potentialReviewItems: { item: any; weight: number; type: string; originalQuizId: string; }[] = [];
 
                 for (const doc of quizDataSnap.docs) {
                     const data = doc.data();
@@ -123,32 +133,34 @@ export default function QuizPage() {
                     
                     const incorrectEntries = Object.entries(data.weights).filter(([, w]) => (w as number) > 0);
                     
-                    let sourceItems: any[] = [];
-                    let itemFinder: (id: string) => any = () => null;
-                    let allSourceItemsForSimilar: any[] = [];
-
-                    if (originalQuizMeta.type === 'grammar') {
-                        sourceItems = grammarPoints;
-                        allSourceItemsForSimilar = grammarPoints;
-                        itemFinder = (id) => sourceItems.find(p => p.id === id);
-                    } else if (originalQuizMeta.type === 'vocabulary') {
-                        const vocabDeckId = originalQuizId === 'vocabulary-n5' ? 'n5-vocab' : 'n4-vocab';
-                        const cardsColRef = collection(db, "users", user.uid, "decks", vocabDeckId, "cards");
-                        const cardsSnap = await getDocs(cardsColRef);
-                        sourceItems = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));
-                        allSourceItemsForSimilar = sourceItems;
-                        itemFinder = (id) => sourceItems.find((c: CardType) => c.id === id);
-                    }
-                    
                     for (const [id, weight] of incorrectEntries) {
-                        const item = itemFinder(id);
+                        let item;
+                        if (originalQuizMeta.type === 'grammar') {
+                            item = grammarPoints.find(p => p.id === id);
+                        } else if (originalQuizMeta.type === 'vocabulary') {
+                            const vocabDeckId = originalQuizMeta.level === 'N5' ? 'n5-vocab' : (originalQuizMeta.level === 'N4' ? 'n4-vocab' : 'n3-vocab'); // Extend for other levels
+                            if (allVocabCards[vocabDeckId]) {
+                                item = allVocabCards[vocabDeckId].find((c: CardType) => c.id === id);
+                            }
+                        }
+
                         if (item) {
                             potentialReviewItems.push({ item, weight: weight as number, type: originalQuizMeta.type, originalQuizId });
-                             const similarItems = shuffleArray(allSourceItemsForSimilar.filter(i => i.id !== item.id)).slice(0, 2);
-                             similarItems.forEach(similarItem => {
+                            
+                            // Add 2 similar items
+                            let sourceForSimilar: any[] = [];
+                            if (originalQuizMeta.type === 'grammar') {
+                                sourceForSimilar = grammarPoints;
+                            } else if (originalQuizMeta.type === 'vocabulary') {
+                                const vocabDeckId = originalQuizMeta.level === 'N5' ? 'n5-vocab' : (originalQuizMeta.level === 'N4' ? 'n4-vocab' : 'n3-vocab');
+                                sourceForSimilar = allVocabCards[vocabDeckId] || [];
+                            }
+                            
+                            const similarItems = shuffleArray(sourceForSimilar.filter(i => i.id !== item.id)).slice(0, 2);
+                            similarItems.forEach(similarItem => {
                                 potentialReviewItems.push({
                                     item: similarItem,
-                                    weight: 1, // Give it a base weight
+                                    weight: 1, // Base weight for similar items
                                     type: originalQuizMeta.type,
                                     originalQuizId: originalQuizId,
                                 });
@@ -157,27 +169,28 @@ export default function QuizPage() {
                     }
                 }
 
+                // 3. Generate questions from the collected items
                 const sortedItems = potentialReviewItems.sort((a, b) => b.weight - a.weight);
-                const potentialQuestions = await Promise.all(sortedItems.map(async ({ item, weight, type, originalQuizId }) => {
+                const potentialQuestions = sortedItems.map(({ item, weight, type, originalQuizId }) => {
                     let question: QuizQuestion;
-                     if (type === 'grammar') {
+                    if (type === 'grammar') {
                         question = createGrammarQuestion(item, grammarPoints, true);
                     } else { // vocabulary
-                        const vocabDeckId = originalQuizId === 'vocabulary-n5' ? 'n5-vocab' : 'n4-vocab';
-                        const cardsColRef = collection(db, "users", user.uid, "decks", vocabDeckId, "cards");
-                        const cardsSnap = await getDocs(cardsColRef);
-                        const allCards = cardsSnap.docs.map(d => ({id: d.id, ...d.data() as any}));
-                        question = createVocabQuestion(item, allCards, true);
+                         const vocabDeckId = originalQuizId === 'vocabulary-n5' ? 'n5-vocab' : (originalQuizId === 'vocabulary-n4' ? 'n4-vocab' : 'n3-vocab');
+                         const allCardsForDeck = allVocabCards[vocabDeckId] || [];
+                         question = createVocabQuestion(item, allCardsForDeck, true);
                     }
                     return { ...question, weight, originalQuizId };
-                }));
+                });
 
                 const uniqueQuestions = Array.from(new Map(potentialQuestions.map(q => [q.question, q])).values());
                 const reviewQuestions = uniqueQuestions.slice(0, REVIEW_QUIZ_LENGTH);
+
                 setSessionQuestions(reviewQuestions);
                 setIsLoading(false);
                 return;
             }
+
 
             const quizDataRef = doc(db, 'users', user.uid, 'quizData', quizMeta.id);
             const quizDataSnap = await getDoc(quizDataRef);
@@ -292,8 +305,7 @@ export default function QuizPage() {
     const handleFinish = async () => {
         if (!user) return;
         
-        const batch = writeBatch(db);
-        const updates: Record<string, any> = {};
+        const updatesByQuizId: Record<string, Record<string, number>> = {};
 
         // Aggregate all weight changes first
         for (const id in sessionQuestionUpdates) {
@@ -301,23 +313,29 @@ export default function QuizPage() {
             const quizIdToUpdate = originalQuizId || quizMeta?.id;
 
             if (quizIdToUpdate) {
-                if (!updates[quizIdToUpdate]) {
-                    const quizDataRef = doc(db, "users", user.uid, "quizData", quizIdToUpdate);
-                    const docSnap = await getDoc(quizDataRef);
-                    updates[quizIdToUpdate] = {
-                        ref: quizDataRef,
-                        weights: docSnap.exists() ? docSnap.data().weights || {} : {}
-                    };
+                if (!updatesByQuizId[quizIdToUpdate]) {
+                    updatesByQuizId[quizIdToUpdate] = {};
                 }
-
-                const currentWeight = updates[quizIdToUpdate].weights[id] || 0;
-                updates[quizIdToUpdate].weights[id] = Math.max(0, currentWeight + change);
+                // Store the change, not the final value yet
+                updatesByQuizId[quizIdToUpdate][id] = (updatesByQuizId[quizIdToUpdate][id] || 0) + change;
             }
         }
+        
+        const batch = writeBatch(db);
 
         // Apply all updates in a batch
-        for (const qid in updates) {
-            batch.set(updates[qid].ref, { weights: updates[qid].weights }, { merge: true });
+        for (const qid in updatesByQuizId) {
+            const quizDataRef = doc(db, "users", user.uid, "quizData", qid);
+            const docSnap = await getDoc(quizDataRef);
+            const existingWeights = docSnap.exists() ? docSnap.data().weights || {} : {};
+            
+            const newWeights = { ...existingWeights };
+            for (const itemId in updatesByQuizId[qid]) {
+                 const change = updatesByQuizId[qid][itemId];
+                 const currentWeight = newWeights[itemId] || 0;
+                 newWeights[itemId] = Math.max(0, currentWeight + change);
+            }
+            batch.set(quizDataRef, { weights: newWeights }, { merge: true });
         }
 
         await batch.commit();
