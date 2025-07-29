@@ -45,10 +45,10 @@ function ProgressCard({ cards: deckCards, cardCount }: { cards: CardType[], card
 
       const learning = srsCards.filter(c => (c.srsLevel || 0) > 0 && (c.srsLevel || 0) < MASTERY_THRESHOLD).length;
       setLearningCount(learning);
-      
+
       const mastered = srsCards.filter(c => (c.srsLevel || 0) >= MASTERY_THRESHOLD).length;
       setMasteredCount(mastered);
-      
+
     } else {
       setDueCount(0);
       setLearningCount(0);
@@ -65,32 +65,32 @@ function ProgressCard({ cards: deckCards, cardCount }: { cards: CardType[], card
         <CardTitle>Deck Progress</CardTitle>
       </CardHeader>
       <CardContent>
-          <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
-            <div
-              className="absolute h-full bg-primary/50 transition-all"
-              style={{ width: `${learningPercentage + masteredPercentage}%` }}
-            />
-            <div
-              className="absolute h-full bg-primary transition-all"
-              style={{ width: `${masteredPercentage}%` }}
-            />
+        <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
+          <div
+            className="absolute h-full bg-primary/50 transition-all"
+            style={{ width: `${learningPercentage + masteredPercentage}%` }}
+          />
+          <div
+            className="absolute h-full bg-primary transition-all"
+            style={{ width: `${masteredPercentage}%` }}
+          />
+        </div>
+        <div className="mt-3 flex justify-between text-sm text-muted-foreground">
+          <div className="flex gap-4">
+            <div className="flex items-center gap-2">
+              <Dot className="text-primary/50" />
+              <span>Learning ({Math.round(learningPercentage)}%)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Dot className="text-primary" />
+              <span>Mastered ({Math.round(masteredPercentage)}%)</span>
+            </div>
           </div>
-          <div className="mt-3 flex justify-between text-sm text-muted-foreground">
-              <div className="flex gap-4">
-                  <div className="flex items-center gap-2">
-                      <Dot className="text-primary/50" />
-                      <span>Learning ({Math.round(learningPercentage)}%)</span>
-                  </div>
-                   <div className="flex items-center gap-2">
-                      <Dot className="text-primary" />
-                      <span>Mastered ({Math.round(masteredPercentage)}%)</span>
-                  </div>
-              </div>
-              <div className="flex items-center gap-2 text-primary font-semibold">
-                  <BookCheck className="w-4 h-4"/>
-                  <span>{dueCount} due</span>
-              </div>
+          <div className="flex items-center gap-2 text-primary font-semibold">
+            <BookCheck className="w-4 h-4" />
+            <span>{dueCount} due</span>
           </div>
+        </div>
       </CardContent>
     </Card>
   )
@@ -101,7 +101,7 @@ export default function DeckDetailPage() {
   const router = useRouter();
   const deckId = params.id as string;
   const { user } = useAuth();
-  
+
   const [deck, setDeck] = useState<Deck | undefined>(undefined);
   const [cards, setCards] = useState<CardType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -129,7 +129,7 @@ export default function DeckDetailPage() {
       const basicDeckData = initialDecks.find(d => d.id === deckId)!;
       // Fetch or create deck document in Firestore for basic decks to store settings
       const deckDocRef = doc(db, "users", user.uid, "decks", deckId);
-      
+
       const getOrCreateDeck = async () => {
         const docSnap = await getDoc(deckDocRef);
         if (docSnap.exists()) {
@@ -159,29 +159,38 @@ export default function DeckDetailPage() {
 
     return () => unsub && unsub();
   }, [user, deckId, isBasicDeck, deckRef]);
-  
+
   // Effect for fetching cards
   useEffect(() => {
     if (!user || !deckId) return;
     setIsLoading(true);
     let unsubCards: () => void;
     const cardsColRef = collection(db, 'users', user.uid, 'decks', deckId, 'cards');
-    
+
     const getCards = async () => {
       const snapshot = await getDocs(cardsColRef);
       if (snapshot.empty && isBasicDeck) {
-          // Cards for this basic deck not yet in Firestore, let's add them
-          const batch = writeBatch(db);
-          const originalCards = initialCards.filter(c => c.deckId === deckId);
-          originalCards.forEach(card => {
-            const cardRef = doc(cardsColRef, card.id);
-            batch.set(cardRef, { 
-                ...card, 
-                srsLevel: 0, 
-                nextReview: new Date()
-            });
+        // Cards for this basic deck not yet in Firestore, let's add them
+        const batch = writeBatch(db);
+        const originalCards = initialCards.filter(c => c.deckId === deckId);
+
+        if (originalCards.length === 0) {
+          console.warn(`No initial cards found for deck ${deckId}`);
+          return;
+        }
+
+        originalCards.forEach(card => {
+          const cardRef = doc(cardsColRef, card.id);
+          batch.set(cardRef, {
+            ...card,
+            srsLevel: 0,
+            nextReview: new Date()
           });
-          await batch.commit();
+        });
+        await batch.commit();
+
+        // Add a small delay to ensure Firestore write propagation
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       const q = query(cardsColRef, orderBy('front'));
@@ -196,7 +205,7 @@ export default function DeckDetailPage() {
 
     return () => unsubCards && unsubCards();
   }, [user, deckId, isBasicDeck]);
-  
+
 
   const [deckName, setDeckName] = useState('');
   const [deckDescription, setDeckDescription] = useState('');
@@ -214,18 +223,18 @@ export default function DeckDetailPage() {
   const handleCardAdded = async (newCard: { front: string; back: string }) => {
     if (!cardsRef || !deckRef) return;
 
-    const cardWithData: Omit<CardType, 'id'|'deckId'> = {
+    const cardWithData: Omit<CardType, 'id' | 'deckId'> = {
       ...newCard,
       srsLevel: 0,
       nextReview: new Date(),
     };
-    
+
     await addDoc(cardsRef, cardWithData);
     await updateDoc(deckRef, { cardCount: cards.length + 1 });
-    
+
     toast({
-        title: "Card Added!",
-        description: "Your new card has been saved to the deck.",
+      title: "Card Added!",
+      description: "Your new card has been saved to the deck.",
     });
   };
 
@@ -233,8 +242,8 @@ export default function DeckDetailPage() {
     if (!cardsRef) return;
     const cardDocRef = doc(cardsRef, updatedCard.id);
     await updateDoc(cardDocRef, {
-        front: updatedCard.front,
-        back: updatedCard.back
+      front: updatedCard.front,
+      back: updatedCard.back
     });
 
     toast({
@@ -242,14 +251,14 @@ export default function DeckDetailPage() {
       description: 'Your changes have been saved.',
     });
   };
-  
+
   const handleCardDeleted = async (cardId: string) => {
     if (!cardsRef || !deckRef) return;
     await deleteDoc(doc(cardsRef, cardId));
     await updateDoc(deckRef, { cardCount: cards.length - 1 });
     toast({
-        title: 'Card Deleted',
-        description: 'The card has been removed from your deck.',
+      title: 'Card Deleted',
+      description: 'The card has been removed from your deck.',
     });
   };
 
@@ -259,12 +268,12 @@ export default function DeckDetailPage() {
     // For now, we just delete the deck doc. Cards become orphaned.
     await deleteDoc(deckRef);
     toast({
-        title: 'Deck Deleted',
-        description: `The deck "${deck?.name}" has been deleted.`,
+      title: 'Deck Deleted',
+      description: `The deck "${deck?.name}" has been deleted.`,
     });
     router.push('/decks');
   };
-  
+
   const handleSaveDeckDetails = async () => {
     if (!deck?.isCustom || !deckRef) return;
     await updateDoc(deckRef, {
@@ -272,8 +281,8 @@ export default function DeckDetailPage() {
       description: deckDescription,
     });
     toast({
-        title: "Deck Updated",
-        description: "Your deck details have been saved.",
+      title: "Deck Updated",
+      description: "Your deck details have been saved.",
     });
   };
 
@@ -283,8 +292,8 @@ export default function DeckDetailPage() {
     const size = sessionSize === '' ? null : Number(sessionSize);
     await updateDoc(deckRef, { sessionSize: size });
     toast({
-        title: "Settings Saved",
-        description: "Your study settings have been updated.",
+      title: "Settings Saved",
+      description: "Your study settings have been updated.",
     });
   };
 
@@ -298,37 +307,37 @@ export default function DeckDetailPage() {
     await batch.commit();
 
     toast({
-        title: "Progress Reset",
-        description: `Study progress for "${deck?.name}" has been reset.`,
+      title: "Progress Reset",
+      description: `Study progress for "${deck?.name}" has been reset.`,
     });
   };
 
 
   if (!deck) {
     return (
-        <div className="container mx-auto">
-            <Skeleton className="h-6 w-48 mb-4" />
-            <Skeleton className="h-10 w-96 mb-2" />
-            <Skeleton className="h-6 w-full max-w-lg mb-6" />
-            <Skeleton className="h-40 w-full mb-6" />
-            <div className="space-y-2">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-            </div>
+      <div className="container mx-auto">
+        <Skeleton className="h-6 w-48 mb-4" />
+        <Skeleton className="h-10 w-96 mb-2" />
+        <Skeleton className="h-6 w-full max-w-lg mb-6" />
+        <Skeleton className="h-40 w-full mb-6" />
+        <div className="space-y-2">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
         </div>
-    ); 
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto">
-       <Link
-          href="/decks"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to all decks
-        </Link>
+      <Link
+        href="/decks"
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to all decks
+      </Link>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline">{deck.name}</h1>
@@ -346,228 +355,228 @@ export default function DeckDetailPage() {
       </div>
 
       <ProgressCard cards={cards} cardCount={deck.cardCount} />
-      
+
       <Tabs defaultValue="cards" className="w-full">
         <TabsList className="mb-4">
-            <TabsTrigger value="cards">Cards</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="cards">Cards</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="cards">
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle>Cards in this Deck</CardTitle>
-                            <CardDescription>
-                                This deck has {isLoading ? '...' : `${cards.length} card${cards.length === 1 ? '' : 's'}`}.
-                            </CardDescription>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                         <div className="space-y-2">
-                            <Skeleton className="h-12 w-full" />
-                            <Skeleton className="h-12 w-full" />
-                            <Skeleton className="h-12 w-full" />
-                         </div>
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>Cards in this Deck</CardTitle>
+                  <CardDescription>
+                    This deck has {isLoading ? '...' : `${cards.length} card${cards.length === 1 ? '' : 's'}`}.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Front</TableHead>
+                      <TableHead>Back</TableHead>
+                      {deck.isCustom && <TableHead className="text-right w-[180px]">Actions</TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {cards.length > 0 ? (
+                      cards.map((card) => (
+                        <TableRow key={card.id}>
+                          <TableCell className="font-medium">{card.front}</TableCell>
+                          <TableCell>{card.back}</TableCell>
+                          {deck.isCustom && (
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <EditCardSheet card={card} onCardUpdated={handleCardUpdated} />
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete this card.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleCardDeleted(card.id)}
+                                        className="bg-destructive hover:bg-destructive/90"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Front</TableHead>
-                                    <TableHead>Back</TableHead>
-                                    {deck.isCustom && <TableHead className="text-right w-[180px]">Actions</TableHead>}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {cards.length > 0 ? (
-                                    cards.map((card) => (
-                                        <TableRow key={card.id}>
-                                            <TableCell className="font-medium">{card.front}</TableCell>
-                                            <TableCell>{card.back}</TableCell>
-                                            {deck.isCustom && (
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <EditCardSheet card={card} onCardUpdated={handleCardUpdated} />
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                Delete
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    This action cannot be undone. This will permanently delete this card.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction
-                                                                    onClick={() => handleCardDeleted(card.id)}
-                                                                    className="bg-destructive hover:bg-destructive/90"
-                                                                >
-                                                                    Delete
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </div>
-                                            </TableCell>
-                                            )}
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={deck.isCustom ? 3 : 2} className="h-24 text-center">
-                                            No cards yet. {deck.isCustom ? "Add one to get started!" : ""}
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                      <TableRow>
+                        <TableCell colSpan={deck.isCustom ? 3 : 2} className="h-24 text-center">
+                          No cards yet. {deck.isCustom ? "Add one to get started!" : ""}
+                        </TableCell>
+                      </TableRow>
                     )}
-                </CardContent>
-            </Card>
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="settings">
-             <Card>
-                <CardHeader>
-                    <CardTitle>Deck Settings</CardTitle>
-                    <CardDescription>Manage your study sessions and deck options.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                    {deck.isCustom && (
-                        <div>
-                            <h3 className="font-semibold text-lg">Deck Details</h3>
-                            <div className="mt-2 p-4 border rounded-lg space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="deck-name">Deck Name</Label>
-                                    <Input 
-                                        id="deck-name" 
-                                        value={deckName}
-                                        onChange={(e) => setDeckName(e.target.value)}
-                                        placeholder="e.g. Japanese Food"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="deck-description">Description</Label>
-                                    <Textarea
-                                        id="deck-description"
-                                        value={deckDescription}
-                                        onChange={(e) => setDeckDescription(e.target.value)}
-                                        placeholder="What's this deck about?"
-                                    />
-                                </div>
-                                <Button onClick={handleSaveDeckDetails}>
-                                    <Save className="mr-2 h-4 w-4"/>
-                                    Save Deck Details
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                    <div>
-                        <h3 className="font-semibold text-lg">Study Settings</h3>
-                        <div className="mt-2 p-4 border rounded-lg">
-                           <div className="max-w-sm space-y-2">
-                             <Label htmlFor="session-size">Max cards per study session</Label>
-                             <Input 
-                                id="session-size" 
-                                type="number" 
-                                placeholder="All due cards"
-                                value={sessionSize}
-                                onChange={(e) => setSessionSize(e.target.value)}
-                                min="1"
-                                max={deck.cardCount > 0 ? deck.cardCount : undefined}
-                             />
-                             <p className="text-xs text-muted-foreground">Leave blank to review all due cards in one session.</p>
-                           </div>
-                           <Button className="mt-4" onClick={handleSaveSettings}>
-                             <Save className="mr-2 h-4 w-4"/>
-                             Save Settings
-                           </Button>
-                        </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Deck Settings</CardTitle>
+              <CardDescription>Manage your study sessions and deck options.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {deck.isCustom && (
+                <div>
+                  <h3 className="font-semibold text-lg">Deck Details</h3>
+                  <div className="mt-2 p-4 border rounded-lg space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="deck-name">Deck Name</Label>
+                      <Input
+                        id="deck-name"
+                        value={deckName}
+                        onChange={(e) => setDeckName(e.target.value)}
+                        placeholder="e.g. Japanese Food"
+                      />
                     </div>
-                    
-                    <div>
-                        <h3 className="font-semibold text-lg text-destructive">Danger Zone</h3>
-                         <div className="mt-2 p-4 border border-destructive/50 rounded-lg flex flex-col gap-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h4 className="font-medium">Reset Study Progress</h4>
-                                    <p className="text-sm text-muted-foreground">This will reset all SRS progress for this deck. This action cannot be undone.</p>
-                                </div>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                            <RefreshCw className="mr-2 h-4 w-4" />
-                                            Reset Progress
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                This will permanently reset study progress for the <strong>{deck.name}</strong> deck.
-                                                Your cards will not be deleted, but you will start over from the beginning. This action cannot be undone.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction
-                                                onClick={handleResetDeckProgress}
-                                                className="bg-destructive hover:bg-destructive/90"
-                                            >
-                                                Yes, reset progress
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="deck-description">Description</Label>
+                      <Textarea
+                        id="deck-description"
+                        value={deckDescription}
+                        onChange={(e) => setDeckDescription(e.target.value)}
+                        placeholder="What's this deck about?"
+                      />
+                    </div>
+                    <Button onClick={handleSaveDeckDetails}>
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Deck Details
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div>
+                <h3 className="font-semibold text-lg">Study Settings</h3>
+                <div className="mt-2 p-4 border rounded-lg">
+                  <div className="max-w-sm space-y-2">
+                    <Label htmlFor="session-size">Max cards per study session</Label>
+                    <Input
+                      id="session-size"
+                      type="number"
+                      placeholder="All due cards"
+                      value={sessionSize}
+                      onChange={(e) => setSessionSize(e.target.value)}
+                      min="1"
+                      max={deck.cardCount > 0 ? deck.cardCount : undefined}
+                    />
+                    <p className="text-xs text-muted-foreground">Leave blank to review all due cards in one session.</p>
+                  </div>
+                  <Button className="mt-4" onClick={handleSaveSettings}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Settings
+                  </Button>
+                </div>
+              </div>
 
-                            {deck.isCustom && (
-                                <>
-                                <hr className="border-destructive/20"/>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h4 className="font-medium">Delete this deck</h4>
-                                        <p className="text-sm text-muted-foreground">This will permanently delete the deck and all of its cards. This action cannot be undone.</p>
-                                    </div>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="destructive">
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete Deck
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    This will permanently delete the <strong>{deck.name}</strong> deck and all of its cards. This action cannot be undone.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction
-                                                    onClick={handleDeleteDeck}
-                                                    className="bg-destructive hover:bg-destructive/90"
-                                                >
-                                                    Yes, delete deck
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </div>
-                                </>
-                            )}
-                        </div>
+              <div>
+                <h3 className="font-semibold text-lg text-destructive">Danger Zone</h3>
+                <div className="mt-2 p-4 border border-destructive/50 rounded-lg flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Reset Study Progress</h4>
+                      <p className="text-sm text-muted-foreground">This will reset all SRS progress for this deck. This action cannot be undone.</p>
                     </div>
-                </CardContent>
-            </Card>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Reset Progress
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently reset study progress for the <strong>{deck.name}</strong> deck.
+                            Your cards will not be deleted, but you will start over from the beginning. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleResetDeckProgress}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Yes, reset progress
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+
+                  {deck.isCustom && (
+                    <>
+                      <hr className="border-destructive/20" />
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">Delete this deck</h4>
+                          <p className="text-sm text-muted-foreground">This will permanently delete the deck and all of its cards. This action cannot be undone.</p>
+                        </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete Deck
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the <strong>{deck.name}</strong> deck and all of its cards. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={handleDeleteDeck}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Yes, delete deck
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
