@@ -17,9 +17,13 @@ import { collection, doc, getDocs, writeBatch, query, where, getDoc } from "fire
 
 export default function AccountPage() {
   const { toast } = useToast();
-  const { user, updateUserProfile } = useAuth();
+  const { user, updateUserProfile, changePassword } = useAuth();
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -113,6 +117,45 @@ export default function AccountPage() {
     }
   };
 
+  const handlePasswordChange = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure your new passwords match.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!currentPassword || !newPassword) {
+        toast({
+            title: "Missing fields",
+            description: "Please fill out all password fields.",
+            variant: "destructive"
+        });
+        return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+        await changePassword(currentPassword, newPassword);
+        toast({
+            title: "Password Changed",
+            description: "Your password has been successfully updated.",
+        });
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+    } catch (error: any) {
+        toast({
+            title: "Password Change Failed",
+            description: error.message || "An error occurred. Your current password may be incorrect.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsChangingPassword(false);
+    }
+  };
+
   return (
     <div className="container mx-auto max-w-2xl">
         <h1 className="text-3xl font-bold font-headline mb-2">Account Settings</h1>
@@ -136,6 +179,7 @@ export default function AccountPage() {
                 </CardContent>
                 <CardFooter>
                     <Button onClick={handleProfileSave} disabled={isSaving}>
+                        <Save className="mr-2 h-4 w-4" />
                         {isSaving ? 'Saving...' : 'Save Changes'}
                     </Button>
                 </CardFooter>
@@ -149,19 +193,21 @@ export default function AccountPage() {
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="current-password">Current Password</Label>
-                        <Input id="current-password" type="password" />
+                        <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="new-password">New Password</Label>
-                        <Input id="new-password" type="password" />
+                        <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="confirm-password">Confirm New Password</Label>
-                        <Input id="confirm-password" type="password" />
+                        <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button>Change Password</Button>
+                    <Button onClick={handlePasswordChange} disabled={isChangingPassword}>
+                        {isChangingPassword ? 'Changing...' : 'Change Password'}
+                    </Button>
                 </CardFooter>
             </Card>
 

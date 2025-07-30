@@ -9,6 +9,9 @@ import {
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   User,
   Auth,
 } from 'firebase/auth';
@@ -22,6 +25,7 @@ interface AuthContextType {
   register: (email: string, pass: string, name: string) => Promise<any>;
   logout: () => Promise<any>;
   updateUserProfile: (name: string) => Promise<void>;
+  changePassword: (currentPass: string, newPass: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -31,6 +35,7 @@ const AuthContext = createContext<AuthContextType>({
   register: () => Promise.resolve(),
   logout: () => Promise.resolve(),
   updateUserProfile: () => Promise.resolve(),
+  changePassword: () => Promise.resolve(),
 });
 
 const ADMIN_EMAIL = "admin@sakuralearn.com";
@@ -101,6 +106,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const changePassword = async (currentPass: string, newPass: string) => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+        throw new Error("No user is currently signed in.");
+    }
+    const user = auth.currentUser;
+    const credential = EmailAuthProvider.credential(user.email, currentPass);
+
+    // Re-authenticate the user
+    await reauthenticateWithCredential(user, credential);
+
+    // If re-authentication is successful, update the password
+    await updatePassword(user, newPass);
+  };
+
 
   const value = {
     user,
@@ -109,6 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     register,
     logout,
     updateUserProfile,
+    changePassword,
   };
 
   return (
