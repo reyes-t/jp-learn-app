@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { CircleUser, Home, Search } from "lucide-react"
+import { CircleUser, Home, Search, Edit } from "lucide-react"
 import React, { useState, useEffect } from "react"
 import { basicDecks as initialDecks } from "@/lib/data"
 import type { Deck } from "@/lib/types"
@@ -118,8 +118,8 @@ export function DashboardHeader() {
 
   const handleLogout = async () => {
     try {
-      await logout();
       router.push('/login');
+      await logout();
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out.",
