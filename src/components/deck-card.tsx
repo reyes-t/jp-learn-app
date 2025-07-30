@@ -63,7 +63,7 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
         const srsCards = allDeckCards.map(c => ({
           ...c,
           srsLevel: c.srsLevel ?? 0,
-          nextReview: c.nextReview ? (c.nextReview as any).toDate() : new Date(0),
+          nextReview: c.nextReview && typeof (c.nextReview as any).toDate === 'function' ? (c.nextReview as any).toDate() : (c.nextReview || new Date(0)),
         }));
 
         const actualDue = srsCards.filter(c => c.nextReview <= now).length;
