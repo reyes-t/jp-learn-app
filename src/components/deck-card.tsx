@@ -121,7 +121,7 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
 
   return (
     <Card className="group flex flex-col h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 relative">
-      <Link href={`/decks/${deck.id}`} className="absolute top-2 left-2 z-10 p-2 bg-background/50 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity" aria-label={`Edit deck: ${deck.name}`}>
+      <Link href={`/decks/${deck.id}`} className="absolute top-2 left-2 z-10 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity border hover:border-border" aria-label={`Edit deck: ${deck.name}`}>
           <Edit className="w-4 h-4 text-muted-foreground" />
       </Link>
       <Link href={`/decks/${deck.id}`} className="flex flex-col flex-grow" aria-label={`View deck: ${deck.name}`}>
