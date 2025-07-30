@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, writeBatch, getDocs, query, orderBy } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, writeBatch, getDocs, query, orderBy, setDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
@@ -136,7 +136,7 @@ export default function DeckDetailPage() {
           setDeck({ ...basicDeckData, ...docSnap.data() });
         } else {
           // If it doesn't exist, create it with default data
-          await updateDoc(deckDocRef, { ...basicDeckData, id: deckId }, { merge: true });
+          await setDoc(deckDocRef, { ...basicDeckData, id: deckId }, { merge: true });
           setDeck(basicDeckData);
         }
       }
@@ -215,7 +215,7 @@ export default function DeckDetailPage() {
     if (deck) {
       setDeckName(deck.name);
       setDeckDescription(deck.description);
-      setSessionSize((deck as any).sessionSize || '');
+      setSessionSize((deck as any).sessionSize ?? '');
     }
   }, [deck]);
 
@@ -290,7 +290,7 @@ export default function DeckDetailPage() {
   const handleSaveSettings = async () => {
     if (!deckRef) return;
     const size = sessionSize === '' ? null : Number(sessionSize);
-    await updateDoc(deckRef, { sessionSize: size });
+    await setDoc(deckRef, { sessionSize: size }, { merge: true });
     toast({
       title: "Settings Saved",
       description: "Your study settings have been updated.",
@@ -583,3 +583,4 @@ export default function DeckDetailPage() {
   );
 }
 
+    
