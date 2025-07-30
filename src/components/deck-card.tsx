@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react';
 import { cards as initialCards } from '@/lib/data';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs, doc } from 'firebase/firestore';
 
 
 type DeckCardProps = {
@@ -19,8 +19,9 @@ type DeckCardProps = {
 
 const MASTERY_THRESHOLD = 5; // SRS level 5+ is considered "mastered"
 
-export function DeckCard({ deck }: DeckCardProps) {
+export function DeckCard({ deck: initialDeck }: DeckCardProps) {
   const { user } = useAuth();
+  const [deck, setDeck] = useState(initialDeck);
   const [learningCount, setLearningCount] = useState(0);
   const [masteredCount, setMasteredCount] = useState(0);
   const [dueCount, setDueCount] = useState(0);
@@ -28,30 +29,33 @@ export function DeckCard({ deck }: DeckCardProps) {
 
   useEffect(() => {
     if (!user) return;
+    
+    const deckRef = doc(db, 'users', user.uid, 'decks', initialDeck.id);
+    const unsubDeck = onSnapshot(deckRef, (doc) => {
+      if (doc.exists()) {
+        setDeck({ ...initialDeck, ...doc.data() });
+      } else {
+        setDeck(initialDeck);
+      }
+    });
 
-    let cardsRef: any;
-    if (deck.isCustom) {
-      cardsRef = collection(db, 'users', user.uid, 'decks', deck.id, 'cards');
-    } else {
-      // For basic decks, we need to check the user's progress copy of the cards
-      cardsRef = collection(db, 'users', user.uid, 'decks', deck.id, 'cards');
-    }
-
+    const cardsRef = collection(db, 'users', user.uid, 'decks', initialDeck.id, 'cards');
     const q = query(cardsRef);
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribeCards = onSnapshot(q, (snapshot) => {
       let allDeckCards: CardType[] = snapshot.docs.map(doc => doc.data() as CardType);
 
-      // If it's a basic deck and user has no cards yet, use initial data for display
-      if (allDeckCards.length === 0 && !deck.isCustom) {
-        allDeckCards = initialCards.filter(card => card.deckId === deck.id);
+      if (allDeckCards.length === 0 && !initialDeck.isCustom) {
+        allDeckCards = initialCards.filter(card => card.deckId === initialDeck.id).map(c => ({
+          ...c,
+          srsLevel: 0,
+          nextReview: new Date(0) // Treat as due
+        }));
       }
 
-      // For basic decks, always use the total available cards, not just the ones the user has started
-      if (deck.isCustom) {
+      if (initialDeck.isCustom) {
         setCardCount(snapshot.size);
       } else {
-        // For basic decks, use the total available cards from the data
-        setCardCount(deck.cardCount);
+        setCardCount(initialDeck.cardCount);
       }
 
       if (allDeckCards.length > 0) {
@@ -59,11 +63,17 @@ export function DeckCard({ deck }: DeckCardProps) {
         const srsCards = allDeckCards.map(c => ({
           ...c,
           srsLevel: c.srsLevel ?? 0,
-          nextReview: c.nextReview ? (c.nextReview as any).toDate() : now,
+          nextReview: c.nextReview ? (c.nextReview as any).toDate() : new Date(0),
         }));
 
-        const due = srsCards.filter(c => c.nextReview <= now).length;
-        setDueCount(due);
+        const actualDue = srsCards.filter(c => c.nextReview <= now).length;
+        
+        const sessionSize = (deck as any).sessionSize;
+        if (sessionSize && actualDue > sessionSize) {
+            setDueCount(sessionSize);
+        } else {
+            setDueCount(actualDue);
+        }
 
         const learning = srsCards.filter(c => (c.srsLevel || 0) > 0 && (c.srsLevel || 0) < MASTERY_THRESHOLD).length;
         setLearningCount(learning);
@@ -77,8 +87,11 @@ export function DeckCard({ deck }: DeckCardProps) {
       }
     });
 
-    return () => unsubscribe();
-  }, [user, deck.id, deck.isCustom, deck.cardCount]);
+    return () => {
+      unsubDeck();
+      unsubscribeCards();
+    }
+  }, [user, initialDeck.id, initialDeck.isCustom, initialDeck.cardCount, deck]);
 
   const learningPercentage = cardCount > 0 ? (learningCount / cardCount) * 100 : 0;
   const masteredPercentage = cardCount > 0 ? (masteredCount / cardCount) * 100 : 0;
