@@ -53,12 +53,16 @@ export default function StudyPage() {
             const deckSnap = await getDoc(deckRef);
 
             let currentDeckData: Deck | undefined;
-            let isBasic = initialDecks.some(d => d.id === deckId);
+            const isBasic = initialDecks.some(d => d.id === deckId);
+            
+            const basicDeckInfo = initialDecks.find(d => d.id === deckId);
+
             if (deckSnap.exists()) {
-                currentDeckData = deckSnap.data() as Deck;
+                currentDeckData = { ...basicDeckInfo, ...deckSnap.data() } as Deck;
             } else if (isBasic) {
-                currentDeckData = initialDecks.find(d => d.id === deckId);
+                currentDeckData = basicDeckInfo;
             }
+            
             if (!currentDeckData) {
                 // notFound();
                 return;
@@ -69,33 +73,25 @@ export default function StudyPage() {
             const cardsSnap = await getDocs(cardsRef);
             let loadedCards = cardsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as CardType[];
 
-            if (loadedCards.length === 0 && isBasic) {
-                // First time user is studying this basic deck, populate cards.
+            if (cardsSnap.empty && isBasic) {
                 const batch = writeBatch(db);
                 const originalCards = initialCards.filter(c => c.deckId === deckId);
-
+                
                 if (originalCards.length === 0) {
-                    console.warn(`No initial cards found for deck ${deckId}`);
-                    setIsLoading(false);
-                    return;
+                     console.warn(`No initial cards found for deck ${deckId}`);
+                     setIsLoading(false);
+                     return;
                 }
 
-                originalCards.forEach(card => {
-                    const cardRef = doc(cardsRef, card.id);
+                loadedCards = originalCards.map(card => {
                     const newCard = { ...card, srsLevel: 0, nextReview: new Date() };
+                    const cardRef = doc(cardsRef, card.id);
                     batch.set(cardRef, newCard);
+                    return newCard as CardType;
                 });
                 await batch.commit();
-
-                // Add a small delay to ensure Firestore write propagation
-                await new Promise(resolve => setTimeout(resolve, 100));
-
-                // After committing the batch, fetch the cards again to get the populated data
-                const cardsSnapAfterCommit = await getDocs(cardsRef);
-                loadedCards = cardsSnapAfterCommit.docs.map(d => ({ id: d.id, ...d.data() })) as CardType[];
-
-                console.log(`Populated ${loadedCards.length} cards for deck ${deckId}`);
             }
+
 
             const now = new Date();
             const cardsWithSrs = loadedCards.map(card => ({
@@ -109,7 +105,11 @@ export default function StudyPage() {
                 .filter(card => new Date(card.nextReview) <= now)
                 .sort(() => Math.random() - 0.5);
 
-            const sessionSize = (currentDeckData as any).sessionSize;
+            let sessionSize = (currentDeckData as any).sessionSize;
+            if (sessionSize === undefined && currentDeckData.cardCount >= 100) {
+                sessionSize = 100;
+            }
+
             const session = sessionSize && dueCards.length > sessionSize ? dueCards.slice(0, sessionSize) : dueCards;
             setSessionQueue(session);
             setInitialSessionSize(session.length);

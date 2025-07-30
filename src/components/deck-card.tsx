@@ -68,7 +68,11 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
 
         const actualDue = srsCards.filter(c => c.nextReview <= now).length;
         
-        const sessionSize = (deck as any).sessionSize;
+        let sessionSize = (deck as any).sessionSize;
+        if (sessionSize === undefined && cardCount >= 100) {
+            sessionSize = 100;
+        }
+        
         if (sessionSize && actualDue > sessionSize) {
             setDueCount(sessionSize);
         } else {
@@ -91,7 +95,7 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
       unsubDeck();
       unsubscribeCards();
     }
-  }, [user, initialDeck.id, initialDeck.isCustom, initialDeck.cardCount, deck]);
+  }, [user, initialDeck.id, initialDeck.isCustom, initialDeck.cardCount, deck, cardCount]);
 
   const learningPercentage = cardCount > 0 ? (learningCount / cardCount) * 100 : 0;
   const masteredPercentage = cardCount > 0 ? (masteredCount / cardCount) * 100 : 0;
