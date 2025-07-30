@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Deck, Card as CardType } from '@/lib/types';
-import { BookCheck, Layers, Dot } from 'lucide-react';
+import { BookCheck, Layers, Dot, Edit } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cards as initialCards } from '@/lib/data';
 import { useAuth } from '@/hooks/use-auth';
@@ -40,68 +40,90 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
     });
 
     const cardsRef = collection(db, 'users', user.uid, 'decks', initialDeck.id, 'cards');
-    const q = query(cardsRef);
-    const unsubscribeCards = onSnapshot(q, (snapshot) => {
-      let allDeckCards: CardType[] = snapshot.docs.map(doc => doc.data() as CardType);
+    
+    const setupListeners = async () => {
+        const snapshot = await getDocs(cardsRef);
+        let allDeckCards: CardType[] = snapshot.docs.map(doc => doc.data() as CardType);
 
-      if (allDeckCards.length === 0 && !initialDeck.isCustom) {
-        allDeckCards = initialCards.filter(card => card.deckId === initialDeck.id).map(c => ({
-          ...c,
-          srsLevel: 0,
-          nextReview: new Date(0) // Treat as due
-        }));
-      }
-
-      if (initialDeck.isCustom) {
-        setCardCount(snapshot.size);
-      } else {
-        setCardCount(initialDeck.cardCount);
-      }
-
-      if (allDeckCards.length > 0) {
-        const now = new Date();
-        const srsCards = allDeckCards.map(c => ({
-          ...c,
-          srsLevel: c.srsLevel ?? 0,
-          nextReview: c.nextReview && typeof (c.nextReview as any).toDate === 'function' ? (c.nextReview as any).toDate() : (c.nextReview || new Date(0)),
-        }));
-
-        const actualDue = srsCards.filter(c => c.nextReview <= now).length;
-        
-        let sessionSize = (deck as any).sessionSize;
-        if (sessionSize === undefined && cardCount >= 100) {
-            sessionSize = 100;
+        if (allDeckCards.length === 0 && !initialDeck.isCustom) {
+            allDeckCards = initialCards.filter(card => card.deckId === initialDeck.id).map(c => ({
+            ...c,
+            srsLevel: 0,
+            nextReview: new Date(0) // Treat as due
+            }));
         }
-        
-        if (sessionSize && actualDue > sessionSize) {
-            setDueCount(sessionSize);
+
+        if (initialDeck.isCustom) {
+            setCardCount(snapshot.size);
         } else {
-            setDueCount(actualDue);
+            setCardCount(initialDeck.cardCount);
         }
 
-        const learning = srsCards.filter(c => (c.srsLevel || 0) > 0 && (c.srsLevel || 0) < MASTERY_THRESHOLD).length;
-        setLearningCount(learning);
+        const updateCounts = (cards: CardType[]) => {
+            if (cards.length > 0) {
+                const now = new Date();
+                const srsCards = cards.map(c => ({
+                ...c,
+                srsLevel: c.srsLevel ?? 0,
+                nextReview: c.nextReview && typeof (c.nextReview as any).toDate === 'function' 
+                                ? (c.nextReview as any).toDate() 
+                                : (c.nextReview || new Date(0)),
+                }));
+        
+                const actualDue = srsCards.filter(c => c.nextReview <= now).length;
+                
+                let sessionSize = (deck as any).sessionSize;
+                if (sessionSize === undefined && cardCount >= 100) {
+                    sessionSize = 100;
+                }
+                
+                if (sessionSize && actualDue > sessionSize) {
+                    setDueCount(sessionSize);
+                } else {
+                    setDueCount(actualDue);
+                }
+        
+                const learning = srsCards.filter(c => (c.srsLevel || 0) > 0 && (c.srsLevel || 0) < MASTERY_THRESHOLD).length;
+                setLearningCount(learning);
+        
+                const mastered = srsCards.filter(c => (c.srsLevel || 0) >= MASTERY_THRESHOLD).length;
+                setMasteredCount(mastered);
+            } else {
+                setDueCount(0);
+                setLearningCount(0);
+                setMasteredCount(0);
+            }
+        }
 
-        const mastered = srsCards.filter(c => (c.srsLevel || 0) >= MASTERY_THRESHOLD).length;
-        setMasteredCount(mastered);
-      } else {
-        setDueCount(0);
-        setLearningCount(0);
-        setMasteredCount(0);
-      }
-    });
+        updateCounts(allDeckCards); // Initial update
+
+        const unsubscribeCards = onSnapshot(query(cardsRef), (snapshot) => {
+            const updatedCards = snapshot.docs.map(doc => doc.data() as CardType);
+            updateCounts(updatedCards);
+             if (initialDeck.isCustom) {
+                setCardCount(snapshot.size);
+            }
+        });
+
+        return unsubscribeCards;
+    };
+
+    const unsubscribePromise = setupListeners();
 
     return () => {
       unsubDeck();
-      unsubscribeCards();
+      unsubscribePromise.then(unsub => unsub && unsub());
     }
-  }, [user, initialDeck.id, initialDeck.isCustom, initialDeck.cardCount, deck, cardCount]);
+  }, [user, initialDeck, deck, cardCount]);
 
   const learningPercentage = cardCount > 0 ? (learningCount / cardCount) * 100 : 0;
   const masteredPercentage = cardCount > 0 ? (masteredCount / cardCount) * 100 : 0;
 
   return (
-    <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
+    <Card className="group flex flex-col h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 relative">
+      <Link href={`/decks/${deck.id}`} className="absolute top-2 left-2 z-10 p-2 bg-background/50 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity" aria-label={`Edit deck: ${deck.name}`}>
+          <Edit className="w-4 h-4 text-muted-foreground" />
+      </Link>
       <Link href={`/decks/${deck.id}`} className="flex flex-col flex-grow" aria-label={`View deck: ${deck.name}`}>
         <div className="flex flex-col flex-grow bg-card p-4 pb-2">
           <CardHeader className="p-0 pb-2">
