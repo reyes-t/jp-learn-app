@@ -49,7 +49,7 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
             allDeckCards = initialCards.filter(card => card.deckId === initialDeck.id).map(c => ({
             ...c,
             srsLevel: 0,
-            nextReview: new Date(0) // Treat as due
+            nextReview: new Date()
             }));
         }
 
@@ -67,7 +67,7 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
                 srsLevel: c.srsLevel ?? 0,
                 nextReview: c.nextReview && typeof (c.nextReview as any).toDate === 'function' 
                                 ? (c.nextReview as any).toDate() 
-                                : (c.nextReview || new Date(0)),
+                                : new Date(c.nextReview || 0),
                 }));
         
                 const actualDue = srsCards.filter(c => c.nextReview <= now).length;
@@ -122,7 +122,7 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
   return (
     <Card className="group flex flex-col h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 relative">
       <Link href={`/decks/${deck.id}`} className="absolute top-2 right-2 z-10 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity border hover:border-border" aria-label={`Edit deck: ${deck.name}`}>
-          <Edit className="w-4 h-4 text-muted-foreground" />
+          <Edit className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
       </Link>
       <Link href={`/decks/${deck.id}`} className="flex flex-col flex-grow" aria-label={`View deck: ${deck.name}`}>
         <div className="flex flex-col flex-grow bg-card p-4 pb-2">
@@ -131,7 +131,6 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
               <CardTitle className="font-headline text-lg mb-2">
                 {deck.name}
               </CardTitle>
-              {deck.isCustom && <Badge variant="outline">Custom</Badge>}
             </div>
           </CardHeader>
           <CardContent className="flex-grow p-0">
