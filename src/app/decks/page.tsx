@@ -10,14 +10,17 @@ import type { Deck } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DecksPage() {
   const [userDecks, setUserDecks] = useState<Deck[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
     if (!user) {
       setUserDecks([]);
+      setIsLoading(false);
       return;
     };
 
@@ -30,6 +33,7 @@ export default function DecksPage() {
             decks.push({ id: doc.id, ...doc.data() } as Deck);
         });
         setUserDecks(decks);
+        setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -64,7 +68,13 @@ export default function DecksPage() {
             <BookHeart className="text-primary"/>
             Your Custom Decks
         </h2>
-        {userDecks.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Skeleton className="h-56 w-full" />
+            <Skeleton className="h-56 w-full" />
+            <Skeleton className="h-56 w-full" />
+          </div>
+        ) : userDecks.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {userDecks.map((deck) => (
               <DeckCard key={deck.id} deck={deck} />
