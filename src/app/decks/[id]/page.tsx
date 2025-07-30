@@ -26,7 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const MASTERY_THRESHOLD = 5; // SRS level 5+ is considered "mastered"
 
-function ProgressCard({ cards: deckCards, cardCount }: { cards: CardType[], cardCount: number }) {
+function ProgressCard({ cards: deckCards, cardCount, sessionSize }: { cards: CardType[], cardCount: number, sessionSize?: number | null }) {
   const [learningCount, setLearningCount] = useState(0);
   const [masteredCount, setMasteredCount] = useState(0);
   const [dueCount, setDueCount] = useState(0);
@@ -40,8 +40,12 @@ function ProgressCard({ cards: deckCards, cardCount }: { cards: CardType[], card
         nextReview: c.nextReview ? (c.nextReview as any).toDate() : now,
       }));
 
-      const due = srsCards.filter(c => c.nextReview <= now).length;
-      setDueCount(due);
+      const actualDue = srsCards.filter(c => c.nextReview <= now).length;
+      if (sessionSize && actualDue > sessionSize) {
+        setDueCount(sessionSize);
+      } else {
+        setDueCount(actualDue);
+      }
 
       const learning = srsCards.filter(c => (c.srsLevel || 0) > 0 && (c.srsLevel || 0) < MASTERY_THRESHOLD).length;
       setLearningCount(learning);
@@ -54,7 +58,7 @@ function ProgressCard({ cards: deckCards, cardCount }: { cards: CardType[], card
       setLearningCount(0);
       setMasteredCount(0);
     }
-  }, [deckCards]);
+  }, [deckCards, sessionSize]);
 
   const learningPercentage = cardCount > 0 ? (learningCount / cardCount) * 100 : 0;
   const masteredPercentage = cardCount > 0 ? (masteredCount / cardCount) * 100 : 0;
@@ -354,7 +358,7 @@ export default function DeckDetailPage() {
         </div>
       </div>
 
-      <ProgressCard cards={cards} cardCount={deck.cardCount} />
+      <ProgressCard cards={cards} cardCount={deck.cardCount} sessionSize={(deck as any).sessionSize} />
 
       <Tabs defaultValue="cards" className="w-full">
         <TabsList className="mb-4">
