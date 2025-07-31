@@ -45,10 +45,15 @@ export default function RegisterPage() {
     
     setIsLoading(true);
     
-    // Don't await the register function. Redirect immediately.
-    // Error handling is now done inside the useAuth hook.
-    register(email, password, name);
-    router.push('/');
+    try {
+      await register(email, password, name);
+      router.push('/');
+    } catch (error) {
+      // Error is already handled by the useAuth hook (toast message)
+      // We just need to stop loading.
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

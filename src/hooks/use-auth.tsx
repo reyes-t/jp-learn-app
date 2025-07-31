@@ -84,12 +84,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             description: error.message || "An unexpected error occurred.",
             variant: "destructive",
         });
-        // If registration fails, the user might be on the homepage.
-        // We should redirect them back to the register page.
-        router.push('/register');
         return Promise.reject(error);
     }
-  }, [toast, router]);
+  }, [toast]);
 
 
   const logout = () => {
