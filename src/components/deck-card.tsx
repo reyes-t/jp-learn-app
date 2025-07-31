@@ -67,7 +67,7 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
                 srsLevel: c.srsLevel ?? 0,
                 nextReview: c.nextReview && typeof (c.nextReview as any).toDate === 'function' 
                                 ? (c.nextReview as any).toDate() 
-                                : new Date(c.nextReview || 0),
+                                : new Date(c.nextReview || new Date()),
                 }));
         
                 const actualDue = srsCards.filter(c => c.nextReview <= now).length;
@@ -89,7 +89,7 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
                 const mastered = srsCards.filter(c => (c.srsLevel || 0) >= MASTERY_THRESHOLD).length;
                 setMasteredCount(mastered);
             } else {
-                setDueCount(0);
+                setDueCount(initialDeck.isCustom ? 0 : initialDeck.cardCount);
                 setLearningCount(0);
                 setMasteredCount(0);
             }
