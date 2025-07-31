@@ -164,7 +164,6 @@ export function DashboardHeader() {
                 <DropdownMenuItem asChild>
                     <Link href="/account">Account</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
               </>
