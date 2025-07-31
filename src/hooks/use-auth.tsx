@@ -12,6 +12,7 @@ import {
   updatePassword,
   reauthenticateWithCredential,
   EmailAuthProvider,
+  deleteUser,
   User,
   Auth,
 } from 'firebase/auth';
@@ -26,6 +27,7 @@ interface AuthContextType {
   logout: () => Promise<any>;
   updateUserProfile: (name: string) => Promise<void>;
   changePassword: (currentPass: string, newPass: string) => Promise<void>;
+  deleteAccount: (currentPass: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -36,6 +38,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => Promise.resolve(),
   updateUserProfile: () => Promise.resolve(),
   changePassword: () => Promise.resolve(),
+  deleteAccount: () => Promise.resolve(),
 });
 
 const ADMIN_EMAIL = "admin@sakuralearn.com";
@@ -76,6 +79,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
         await updateProfile(userCredential.user, { displayName: name });
+        // Manually setting user here to update UI immediately
+        setUser(userCredential.user);
         return userCredential;
     } catch (error: any) {
         console.error("Registration failed:", error);
@@ -84,7 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             description: error.message || "An unexpected error occurred.",
             variant: "destructive",
         });
-        return Promise.reject(error);
+        throw error;
     }
   }, [toast]);
 
@@ -96,10 +101,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const updateUserProfile = async (name: string) => {
     if (auth.currentUser) {
       await updateProfile(auth.currentUser, { displayName: name });
-      // To get the updated user object, we need to re-set it
-      // onAuthStateChanged will fire again, but we can also set it manually
-      // for immediate UI update.
-      setUser(auth.currentUser);
+      // Create a new user object to trigger re-render
+      setUser({ ...auth.currentUser });
     }
   };
 
@@ -117,6 +120,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await updatePassword(user, newPass);
   };
 
+  const deleteAccount = async (currentPass: string) => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+        throw new Error("No user is currently signed in.");
+    }
+    const user = auth.currentUser;
+    const credential = EmailAuthProvider.credential(user.email, currentPass);
+
+    // Re-authenticate the user
+    await reauthenticateWithCredential(user, credential);
+    
+    // If re-authentication is successful, delete the user
+    await deleteUser(user);
+  };
+
 
   const value = {
     user,
@@ -126,6 +143,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     logout,
     updateUserProfile,
     changePassword,
+    deleteAccount,
   };
 
   return (

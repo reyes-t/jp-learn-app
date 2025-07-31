@@ -17,13 +17,16 @@ import { collection, doc, getDocs, writeBatch, query, where, getDoc } from "fire
 
 export default function AccountPage() {
   const { toast } = useToast();
-  const { user, updateUserProfile, changePassword } = useAuth();
+  const { user, updateUserProfile, changePassword, deleteAccount } = useAuth();
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
 
   useEffect(() => {
     if (user) {
@@ -156,6 +159,34 @@ export default function AccountPage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      toast({
+        title: 'Password required',
+        description: 'Please enter your password to delete your account.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      await deleteAccount(deletePassword);
+      // Success will be handled by the auth listener redirecting the user
+      toast({
+        title: 'Account Deleted',
+        description: 'Your account has been permanently deleted.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Account Deletion Failed',
+        description: error.message || 'An error occurred. Your password may be incorrect.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="container mx-auto max-w-2xl">
         <h1 className="text-3xl font-bold font-headline mb-2">Account Settings</h1>
@@ -254,36 +285,81 @@ export default function AccountPage() {
             <div>
                 <h3 className="font-semibold text-lg text-destructive mb-2">Danger Zone</h3>
                 <Card className="border-destructive/50">
-                    <CardContent className="p-4 flex items-center justify-between">
-                         <div>
-                            <h4 className="font-medium">Reset All Study Progress</h4>
-                            <p className="text-sm text-muted-foreground">This will reset all Spaced Repetition progress on every deck. Your decks and cards will not be deleted. This action cannot be undone.</p>
+                    <CardContent className="p-4 flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className="font-medium">Reset All Study Progress</h4>
+                                <p className="text-sm text-muted-foreground">This will reset all Spaced Repetition progress on every deck. Your decks and cards will not be deleted. This action cannot be undone.</p>
+                            </div>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        Reset Progress
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will permanently reset all study progress for every deck. You will start over from the beginning. This action cannot be undone.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleResetProgress}
+                                            className="bg-destructive hover:bg-destructive/90"
+                                        >
+                                            Yes, reset all progress
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Reset Progress
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will permanently reset all study progress for every deck. You will start over from the beginning. This action cannot be undone.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                        onClick={handleResetProgress}
-                                        className="bg-destructive hover:bg-destructive/90"
-                                    >
-                                        Yes, reset all progress
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                        <hr />
+                         <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className="font-medium">Delete Account</h4>
+                                <p className="text-sm text-muted-foreground">This will permanently delete your account and all associated data. This action cannot be undone.</p>
+                            </div>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete Account
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action is irreversible. You will be logged out and your account will be permanently deleted. Please enter your password to confirm.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <div className="space-y-2 py-2">
+                                        <Label htmlFor="delete-confirm-password">Password</Label>
+                                        <Input 
+                                            id="delete-confirm-password" 
+                                            type="password"
+                                            value={deletePassword}
+                                            onChange={(e) => setDeletePassword(e.target.value)}
+                                            placeholder="Enter your password"
+                                        />
+                                    </div>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleDeleteAccount}
+                                            disabled={isDeleting}
+                                            className="bg-destructive hover:bg-destructive/90"
+                                        >
+                                            {isDeleting ? 'Deleting...' : 'Yes, delete my account'}
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
