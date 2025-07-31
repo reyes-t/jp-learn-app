@@ -89,7 +89,11 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
                 const mastered = srsCards.filter(c => (c.srsLevel || 0) >= MASTERY_THRESHOLD).length;
                 setMasteredCount(mastered);
             } else {
-                setDueCount(initialDeck.isCustom ? 0 : initialDeck.cardCount);
+                setDueCount(initialDeck.isCustom
+                    ? 0
+                    : initialDeck.cardCount > 100
+                      ? 100
+                      : initialDeck.cardCount);
                 setLearningCount(0);
                 setMasteredCount(0);
             }
