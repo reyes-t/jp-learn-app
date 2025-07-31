@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,34 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { Languages, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+const PasswordStrengthIndicator = ({ strength }: { strength: number }) => {
+  const levels = [
+    { width: '20%', color: 'bg-red-500', label: 'Very Weak' },
+    { width: '40%', color: 'bg-red-500', label: 'Weak' },
+    { width: '60%', color: 'bg-orange-500', label: 'Medium' },
+    { width: '80%', color: 'bg-yellow-500', label: 'Strong' },
+    { width: '100%', color: 'bg-green-500', label: 'Very Strong' },
+  ];
+
+  const currentLevel = levels[strength];
+
+  return (
+    <div className="space-y-2">
+      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+        <div
+          className={cn("h-full transition-all duration-300", currentLevel?.color)}
+          style={{ width: currentLevel?.width || '0%' }}
+        />
+      </div>
+      <p className="text-xs text-right text-muted-foreground">
+        {currentLevel?.label}
+      </p>
+    </div>
+  );
+};
+
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -23,6 +51,25 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+
+  const passwordStrength = useMemo(() => {
+    let score = 0;
+    if (!password) return -1;
+    if (password.length >= 8) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
+    if (password.length > 12) score++;
+    
+    // Scale score to 0-4 range for the indicator
+    if (score <= 1) return 0; // Very Weak
+    if (score === 2) return 1; // Weak
+    if (score === 3) return 2; // Medium
+    if (score === 4) return 3; // Strong
+    if (score >= 5) return 4; // Very Strong
+    return 0;
+  }, [password]);
+
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,6 +159,7 @@ export default function RegisterPage() {
                     <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
                 </Button>
               </div>
+               {password.length > 0 && <PasswordStrengthIndicator strength={passwordStrength} />}
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Confirm Password</Label>
