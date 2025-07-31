@@ -11,7 +11,7 @@ import {
   ShieldCheck,
   User,
 } from "lucide-react"
-
+import React, { useEffect } from "react"
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,7 @@ import {
   SidebarMenuButton,
   SidebarProvider,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Toaster } from "@/components/ui/toaster"
@@ -32,8 +33,14 @@ import { cn } from "@/lib/utils"
 function AppContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { user, loading } = useAuth();
+  const { setOpenMobile } = useSidebar();
   
   const isActive = (path: string) => pathname === path
+
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [pathname, setOpenMobile]);
+
 
   if (loading) {
     return (
@@ -49,7 +56,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
 
   return (
-    <SidebarProvider>
+    <>
       {showNav && (
         <Sidebar>
           <SidebarHeader>
@@ -150,7 +157,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </SidebarInset>
-    </SidebarProvider>
+    </>
   );
 }
 
@@ -169,7 +176,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
-          <AppContent>{children}</AppContent>
+          <SidebarProvider>
+            <AppContent>{children}</AppContent>
+          </SidebarProvider>
         </AuthProvider>
         <Toaster />
       </body>
