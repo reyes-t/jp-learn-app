@@ -63,19 +63,19 @@ function ProgressCard({ cards: deckCards, cardCount, sessionSize, lastSessionCom
       <CardContent>
         <Progress 
             multiValue={[
-                { value: masteredPercentage, className: 'bg-primary' },
-                { value: learningPercentage, className: 'bg-primary/50' }
+                { value: learningPercentage, className: 'bg-primary/50' },
+                { value: masteredPercentage, className: 'bg-primary' }
             ]}
         />
         <div className="mt-3 flex justify-between text-sm text-muted-foreground">
           <div className="flex gap-4">
             <div className="flex items-center gap-2">
-              <Dot className="text-primary" />
-              <span>Mastered ({Math.round(masteredPercentage)}%)</span>
-            </div>
-            <div className="flex items-center gap-2">
               <Dot className="text-primary/50" />
               <span>Learning ({Math.round(learningPercentage)}%)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Dot className="text-primary" />
+              <span>Mastered ({Math.round(masteredPercentage)}%)</span>
             </div>
              <div className="flex items-center gap-2">
               <Dot className="text-secondary" />

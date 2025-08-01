@@ -188,18 +188,18 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
       <div className="bg-card px-4 pt-2">
         <Progress 
             multiValue={[
-                { value: masteredPercentage, className: 'bg-primary' },
-                { value: learningPercentage, className: 'bg-primary/50' }
+                { value: learningPercentage, className: 'bg-primary/50' },
+                { value: masteredPercentage, className: 'bg-primary' }
             ]}
         />
         <div className="mt-2 flex justify-end gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
-            <Dot className="text-primary" />
-            <span>Mastered ({Math.round(masteredPercentage)}%)</span>
-          </div>
-          <div className="flex items-center gap-1">
             <Dot className="text-primary/50" />
             <span>Learning ({Math.round(learningPercentage)}%)</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Dot className="text-primary" />
+            <span>Mastered ({Math.round(masteredPercentage)}%)</span>
           </div>
         </div>
       </div>
