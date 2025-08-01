@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, getDocs, doc } from 'firebase/firestore';
 import { isToday } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
 
 
 type DeckCardProps = {
@@ -185,24 +186,20 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
       </Link>
 
       <div className="bg-card px-4 pt-2">
-        <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
-          <div
-            className="absolute h-full bg-primary/50 transition-all"
-            style={{ width: `${learningPercentage + masteredPercentage}%` }}
-          />
-          <div
-            className="absolute h-full bg-primary transition-all"
-            style={{ width: `${masteredPercentage}%` }}
-          />
-        </div>
+        <Progress 
+            multiValue={[
+                { value: masteredPercentage, className: 'bg-primary' },
+                { value: learningPercentage, className: 'bg-primary/50' }
+            ]}
+        />
         <div className="mt-2 flex justify-end gap-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Dot className="text-primary/50" />
-            <span>Learning ({Math.round(learningPercentage)}%)</span>
-          </div>
           <div className="flex items-center gap-1">
             <Dot className="text-primary" />
             <span>Mastered ({Math.round(masteredPercentage)}%)</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Dot className="text-primary/50" />
+            <span>Learning ({Math.round(learningPercentage)}%)</span>
           </div>
         </div>
       </div>

@@ -23,6 +23,7 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, writeBatch, getDocs, query, orderBy, setDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { isToday } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
 
 
 const MASTERY_THRESHOLD = 5; // SRS level 5+ is considered "mastered"
@@ -52,6 +53,7 @@ function ProgressCard({ cards: deckCards, cardCount, sessionSize, lastSessionCom
 
   const learningPercentage = cardCount > 0 ? (learningCount / cardCount) * 100 : 0;
   const masteredPercentage = cardCount > 0 ? (masteredCount / cardCount) * 100 : 0;
+  const newPercentage = cardCount > 0 ? 100 - learningPercentage - masteredPercentage : 100;
 
   return (
     <Card className="mb-6">
@@ -59,25 +61,25 @@ function ProgressCard({ cards: deckCards, cardCount, sessionSize, lastSessionCom
         <CardTitle>Deck Progress</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
-          <div
-            className="absolute h-full bg-primary/50 transition-all"
-            style={{ width: `${learningPercentage + masteredPercentage}%` }}
-          />
-          <div
-            className="absolute h-full bg-primary transition-all"
-            style={{ width: `${masteredPercentage}%` }}
-          />
-        </div>
+        <Progress 
+            multiValue={[
+                { value: masteredPercentage, className: 'bg-primary' },
+                { value: learningPercentage, className: 'bg-primary/50' }
+            ]}
+        />
         <div className="mt-3 flex justify-between text-sm text-muted-foreground">
           <div className="flex gap-4">
+            <div className="flex items-center gap-2">
+              <Dot className="text-primary" />
+              <span>Mastered ({Math.round(masteredPercentage)}%)</span>
+            </div>
             <div className="flex items-center gap-2">
               <Dot className="text-primary/50" />
               <span>Learning ({Math.round(learningPercentage)}%)</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Dot className="text-primary" />
-              <span>Mastered ({Math.round(masteredPercentage)}%)</span>
+             <div className="flex items-center gap-2">
+              <Dot className="text-secondary" />
+              <span>New ({Math.round(newPercentage)}%)</span>
             </div>
           </div>
           <div className="flex items-center gap-2 text-primary font-semibold">
