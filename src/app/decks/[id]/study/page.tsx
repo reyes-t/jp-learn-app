@@ -183,7 +183,7 @@ export default function StudyPage() {
     }, [isFinished, user, deck, deckId]);
 
 
-    if (!deck || isLoading) {
+    if (isLoading) {
         return (
             <div className="container mx-auto flex flex-col items-center justify-center h-full">
                 <Card className="w-full max-w-md text-center">
@@ -203,7 +203,7 @@ export default function StudyPage() {
     const progress = initialSessionSize > 0 ? (cardsCompletedThisSession / initialSessionSize) * 100 : (isFinished ? 100 : 0);
     const currentCard = sessionQueue[0];
 
-    if (allCards.length === 0) {
+    if (deck && allCards.length === 0) {
         return (
             <div className="container mx-auto flex flex-col items-center justify-center h-full">
                 <Card className="w-full max-w-md text-center">
@@ -215,7 +215,7 @@ export default function StudyPage() {
                     </CardContent>
                     <CardFooter className="flex-col gap-4">
                         <Button variant="outline" asChild>
-                            <Link href={`/decks/${deck.id}`}>Back to Deck</Link>
+                            <Link href={`/decks/${deckId}`}>Back to Deck</Link>
                         </Button>
                     </CardFooter>
                 </Card>
@@ -235,7 +235,7 @@ export default function StudyPage() {
                     </CardContent>
                     <CardFooter className="flex-col gap-4">
                         <Button variant="outline" asChild>
-                            <Link href={`/decks/${deck.id}`}>Back to Deck</Link>
+                            <Link href={`/decks/${deckId}`}>Back to Deck</Link>
                         </Button>
                     </CardFooter>
                 </Card>
@@ -274,7 +274,7 @@ export default function StudyPage() {
                             <Button onClick={resetStudySession}>Start Next Session</Button>
                         )}
                         <Button variant="outline" asChild>
-                            <Link href={`/decks/${deck.id}`}>Back to Deck</Link>
+                            <Link href={`/decks/${deckId}`}>Back to Deck</Link>
                         </Button>
                     </CardFooter>
                 </Card>
@@ -287,7 +287,7 @@ export default function StudyPage() {
             <div className="w-full max-w-lg">
                 <div className="flex justify-between items-center mb-2">
                     <Link
-                        href={`/decks/${deck.id}`}
+                        href={`/decks/${deckId}`}
                         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
                     >
                         <ArrowLeft className="w-4 h-4" />
