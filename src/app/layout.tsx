@@ -43,7 +43,11 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
 
   if (loading) {
-    return <p>Loading...</p>;
+    return (
+        <div className="flex items-center justify-center h-screen">
+            <p>Loading...</p>
+        </div>
+    );
   }
 
   const noNavRoutes = ['/login', '/register', '/admin'];
@@ -158,13 +162,8 @@ function AppContent({ children }: { children: React.ReactNode }) {
 }
 
 function AppContainer({ children }: { children: React.ReactNode }) {
-    const { loading } = useAuth();
-    
     return (
-        <body className={cn(
-            "font-body antialiased",
-            loading && "flex items-center justify-center h-screen"
-        )}>
+        <body className="font-body antialiased">
             {children}
         </body>
     )
