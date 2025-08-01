@@ -43,11 +43,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen w-screen">
-        <p>Loading...</p>
-      </div>
-    );
+    return <p>Loading...</p>;
   }
 
   const noNavRoutes = ['/login', '/register', '/admin'];
@@ -161,6 +157,19 @@ function AppContent({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AppContainer({ children }: { children: React.ReactNode }) {
+    const { loading } = useAuth();
+    
+    return (
+        <body className={cn(
+            "font-body antialiased",
+            loading && "flex items-center justify-center h-screen"
+        )}>
+            {children}
+        </body>
+    )
+}
+
 
 export default function RootLayout({
   children,
@@ -174,14 +183,14 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased">
-        <AuthProvider>
-          <SidebarProvider>
-            <AppContent>{children}</AppContent>
-          </SidebarProvider>
-        </AuthProvider>
-        <Toaster />
-      </body>
+      <AuthProvider>
+        <AppContainer>
+            <SidebarProvider>
+                <AppContent>{children}</AppContent>
+            </SidebarProvider>
+            <Toaster />
+        </AppContainer>
+      </AuthProvider>
     </html>
   )
 }
