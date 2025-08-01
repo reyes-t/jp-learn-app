@@ -22,11 +22,12 @@ import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, writeBatch, getDocs, query, orderBy, setDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { isToday } from 'date-fns';
 
 
 const MASTERY_THRESHOLD = 5; // SRS level 5+ is considered "mastered"
 
-function ProgressCard({ cards: deckCards, cardCount, sessionSize }: { cards: CardType[], cardCount: number, sessionSize?: number | null }) {
+function ProgressCard({ cards: deckCards, cardCount, sessionSize, lastSessionCompletedAt }: { cards: CardType[], cardCount: number, sessionSize?: number | null, lastSessionCompletedAt?: Date | null }) {
   const [learningCount, setLearningCount] = useState(0);
   const [masteredCount, setMasteredCount] = useState(0);
   const [dueCount, setDueCount] = useState(0);
@@ -41,7 +42,10 @@ function ProgressCard({ cards: deckCards, cardCount, sessionSize }: { cards: Car
       }));
 
       const actualDue = srsCards.filter(c => c.nextReview <= now).length;
-      if (sessionSize && actualDue > sessionSize) {
+      
+      if (lastSessionCompletedAt && isToday(lastSessionCompletedAt) && sessionSize && actualDue > 0) {
+        setDueCount(0);
+      } else if (sessionSize && actualDue > sessionSize) {
         setDueCount(sessionSize);
       } else {
         setDueCount(actualDue);
@@ -58,7 +62,7 @@ function ProgressCard({ cards: deckCards, cardCount, sessionSize }: { cards: Car
       setLearningCount(0);
       setMasteredCount(0);
     }
-  }, [deckCards, sessionSize]);
+  }, [deckCards, sessionSize, lastSessionCompletedAt]);
 
   const learningPercentage = cardCount > 0 ? (learningCount / cardCount) * 100 : 0;
   const masteredPercentage = cardCount > 0 ? (masteredCount / cardCount) * 100 : 0;
@@ -137,7 +141,9 @@ export default function DeckDetailPage() {
       const getOrCreateDeck = async () => {
         const docSnap = await getDoc(deckDocRef);
         if (docSnap.exists()) {
-          setDeck({ ...basicDeckData, ...docSnap.data() });
+          const data = docSnap.data();
+          const lastSessionCompletedAt = data.lastSessionCompletedAt ? data.lastSessionCompletedAt.toDate() : null;
+          setDeck({ ...basicDeckData, ...data, lastSessionCompletedAt });
         } else {
           // If it doesn't exist, create it with default data
           await setDoc(deckDocRef, { ...basicDeckData, id: deckId }, { merge: true });
@@ -146,7 +152,9 @@ export default function DeckDetailPage() {
       }
       getOrCreateDeck();
       unsub = onSnapshot(deckDocRef, (doc) => {
-        setDeck({ ...basicDeckData, ...doc.data() });
+        const data = doc.data();
+        const lastSessionCompletedAt = data?.lastSessionCompletedAt ? data.lastSessionCompletedAt.toDate() : null;
+        setDeck({ ...basicDeckData, ...data, lastSessionCompletedAt });
       });
 
     } else {
@@ -154,7 +162,9 @@ export default function DeckDetailPage() {
       if (!deckRef) return;
       unsub = onSnapshot(deckRef, (doc) => {
         if (doc.exists()) {
-          setDeck({ id: doc.id, ...doc.data() } as Deck);
+          const data = doc.data();
+          const lastSessionCompletedAt = data.lastSessionCompletedAt ? data.lastSessionCompletedAt.toDate() : null;
+          setDeck({ id: doc.id, ...data, lastSessionCompletedAt } as Deck);
         } else {
           // Handle case where custom deck is not found
         }
@@ -302,13 +312,15 @@ export default function DeckDetailPage() {
   };
 
   const handleResetDeckProgress = async () => {
-    if (!cardsRef) return;
+    if (!cardsRef || !deckRef) return;
     const batch = writeBatch(db);
     const cardsSnapshot = await getDocs(cardsRef);
     cardsSnapshot.forEach((doc) => {
       batch.update(doc.ref, { srsLevel: 0, nextReview: new Date() });
     });
     await batch.commit();
+
+    await updateDoc(deckRef, { lastSessionCompletedAt: null });
 
     toast({
       title: "Progress Reset",
@@ -358,7 +370,12 @@ export default function DeckDetailPage() {
         </div>
       </div>
 
-      <ProgressCard cards={cards} cardCount={deck.cardCount} sessionSize={(deck as any).sessionSize} />
+      <ProgressCard 
+        cards={cards} 
+        cardCount={deck.cardCount} 
+        sessionSize={(deck as any).sessionSize}
+        lastSessionCompletedAt={(deck as any).lastSessionCompletedAt}
+      />
 
       <Tabs defaultValue="cards" className="w-full">
         <TabsList className="mb-4">
@@ -586,5 +603,3 @@ export default function DeckDetailPage() {
     </div>
   );
 }
-
-    

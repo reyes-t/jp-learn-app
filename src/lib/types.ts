@@ -8,6 +8,7 @@ export type Deck = {
   cardCount: number;
   isCustom: boolean;
   createdAt?: any;
+  lastSessionCompletedAt?: Date | null;
 };
 
 export type Card = {

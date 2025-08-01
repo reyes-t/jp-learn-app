@@ -170,6 +170,19 @@ export default function StudyPage() {
         window.location.reload();
     };
 
+    const isFinished = sessionQueue.length === 0 && initialSessionSize > 0;
+    
+    useEffect(() => {
+        const markSessionComplete = async () => {
+            if (isFinished && user && deck) {
+                 const deckRef = doc(db, 'users', user.uid, 'decks', deckId);
+                 await updateDoc(deckRef, { lastSessionCompletedAt: new Date() });
+            }
+        }
+        markSessionComplete();
+    }, [isFinished, user, deck, deckId]);
+
+
     if (!deck || isLoading) {
         return (
             <div className="container mx-auto flex flex-col items-center justify-center h-full">
@@ -185,7 +198,7 @@ export default function StudyPage() {
         );
     }
 
-    const isFinished = sessionQueue.length === 0 && initialSessionSize > 0;
+    
     const cardsCompletedThisSession = sessionCorrect;
     const progress = initialSessionSize > 0 ? (cardsCompletedThisSession / initialSessionSize) * 100 : (isFinished ? 100 : 0);
     const currentCard = sessionQueue[0];

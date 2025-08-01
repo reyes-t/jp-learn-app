@@ -11,6 +11,7 @@ import { cards as initialCards } from '@/lib/data';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, getDocs, doc } from 'firebase/firestore';
+import { isToday } from 'date-fns';
 
 
 type DeckCardProps = {
@@ -33,7 +34,9 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
     const deckRef = doc(db, 'users', user.uid, 'decks', initialDeck.id);
     const unsubDeck = onSnapshot(deckRef, (doc) => {
       if (doc.exists()) {
-        setDeck({ ...initialDeck, ...doc.data() });
+        const data = doc.data();
+        const lastSessionCompletedAt = data.lastSessionCompletedAt ? data.lastSessionCompletedAt.toDate() : null;
+        setDeck({ ...initialDeck, ...data, lastSessionCompletedAt });
       } else {
         setDeck(initialDeck);
       }
@@ -73,11 +76,15 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
                 const actualDue = srsCards.filter(c => c.nextReview <= now).length;
                 
                 let sessionSize = (deck as any).sessionSize;
+                const lastSessionCompletedAt = (deck as any).lastSessionCompletedAt;
+
                 if (sessionSize === undefined && cardCount >= 100) {
                     sessionSize = 100;
                 }
                 
-                if (sessionSize && actualDue > sessionSize) {
+                if (lastSessionCompletedAt && isToday(lastSessionCompletedAt) && sessionSize && actualDue > 0) {
+                    setDueCount(0);
+                } else if (sessionSize && actualDue > sessionSize) {
                     setDueCount(sessionSize);
                 } else {
                     setDueCount(actualDue);
