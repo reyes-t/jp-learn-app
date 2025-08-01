@@ -244,7 +244,6 @@ export default function StudyPage() {
     }
 
     if (isFinished) {
-        const remainingDue = totalDueCount - sessionCorrect;
         return (
             <div className="container mx-auto flex flex-col items-center justify-center h-full">
                 <Card className="w-full max-w-md text-center">
@@ -263,16 +262,8 @@ export default function StudyPage() {
                                 <p>Incorrect Attempts</p>
                             </div>
                         </div>
-                        {remainingDue > 0 && (
-                            <p className="mt-4 text-sm text-muted-foreground">
-                                You have {remainingDue} more cards due for review in this deck.
-                            </p>
-                        )}
                     </CardContent>
                     <CardFooter className="flex-col gap-4">
-                        {remainingDue > 0 && (
-                            <Button onClick={resetStudySession}>Start Next Session</Button>
-                        )}
                         <Button variant="outline" asChild>
                             <Link href={`/decks/${deckId}`}>Back to Deck</Link>
                         </Button>

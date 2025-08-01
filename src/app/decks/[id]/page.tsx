@@ -205,15 +205,17 @@ export default function DeckDetailPage() {
 
         const actualDue = srsCards.filter(c => c.nextReview <= now).length;
         
-        const lastSessionCompletedAt = (deck as any)?.lastSessionCompletedAt;
-        let sessionSize = (deck as any)?.sessionSize;
-
-        if (lastSessionCompletedAt && isToday(lastSessionCompletedAt) && actualDue > 0) {
+        const lastSessionCompletedAt = deck?.lastSessionCompletedAt;
+        
+        if (lastSessionCompletedAt && isToday(lastSessionCompletedAt)) {
             setDueCount(0);
-        } else if (sessionSize && actualDue > sessionSize) {
-            setDueCount(sessionSize);
         } else {
-            setDueCount(actualDue);
+            const sessionSize = (deck as any)?.sessionSize;
+            if (sessionSize && actualDue > sessionSize) {
+                setDueCount(sessionSize);
+            } else {
+                setDueCount(actualDue);
+            }
         }
 
         setIsLoading(false);
