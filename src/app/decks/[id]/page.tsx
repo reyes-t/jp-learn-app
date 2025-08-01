@@ -27,29 +27,16 @@ import { isToday } from 'date-fns';
 
 const MASTERY_THRESHOLD = 5; // SRS level 5+ is considered "mastered"
 
-function ProgressCard({ cards: deckCards, cardCount, sessionSize, lastSessionCompletedAt }: { cards: CardType[], cardCount: number, sessionSize?: number | null, lastSessionCompletedAt?: Date | null }) {
+function ProgressCard({ cards: deckCards, cardCount, sessionSize, lastSessionCompletedAt, dueCount }: { cards: CardType[], cardCount: number, sessionSize?: number | null, lastSessionCompletedAt?: Date | null, dueCount: number }) {
   const [learningCount, setLearningCount] = useState(0);
   const [masteredCount, setMasteredCount] = useState(0);
-  const [dueCount, setDueCount] = useState(0);
 
   useEffect(() => {
     if (deckCards.length > 0) {
-      const now = new Date();
       const srsCards = deckCards.map(c => ({
         ...c,
         srsLevel: c.srsLevel ?? 0,
-        nextReview: c.nextReview ? (c.nextReview as any).toDate() : now,
       }));
-
-      const actualDue = srsCards.filter(c => c.nextReview <= now).length;
-      
-      if (lastSessionCompletedAt && isToday(lastSessionCompletedAt) && sessionSize && actualDue > 0) {
-        setDueCount(0);
-      } else if (sessionSize && actualDue > sessionSize) {
-        setDueCount(sessionSize);
-      } else {
-        setDueCount(actualDue);
-      }
 
       const learning = srsCards.filter(c => (c.srsLevel || 0) > 0 && (c.srsLevel || 0) < MASTERY_THRESHOLD).length;
       setLearningCount(learning);
@@ -58,11 +45,10 @@ function ProgressCard({ cards: deckCards, cardCount, sessionSize, lastSessionCom
       setMasteredCount(mastered);
 
     } else {
-      setDueCount(0);
       setLearningCount(0);
       setMasteredCount(0);
     }
-  }, [deckCards, sessionSize, lastSessionCompletedAt]);
+  }, [deckCards]);
 
   const learningPercentage = cardCount > 0 ? (learningCount / cardCount) * 100 : 0;
   const masteredPercentage = cardCount > 0 ? (masteredCount / cardCount) * 100 : 0;
@@ -113,6 +99,7 @@ export default function DeckDetailPage() {
   const [deck, setDeck] = useState<Deck | undefined>(undefined);
   const [cards, setCards] = useState<CardType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [dueCount, setDueCount] = useState(0);
   const { toast } = useToast();
 
   const isBasicDeck = useMemo(() => initialDecks.some(d => d.id === deckId), [deckId]);
@@ -174,7 +161,7 @@ export default function DeckDetailPage() {
     return () => unsub && unsub();
   }, [user, deckId, isBasicDeck, deckRef]);
 
-  // Effect for fetching cards
+  // Effect for fetching cards and calculating due count
   useEffect(() => {
     if (!user || !deckId) return;
     setIsLoading(true);
@@ -202,8 +189,6 @@ export default function DeckDetailPage() {
           });
         });
         await batch.commit();
-
-        // Add a small delay to ensure Firestore write propagation
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
@@ -211,6 +196,26 @@ export default function DeckDetailPage() {
       unsubCards = onSnapshot(q, (snapshot) => {
         const fetchedCards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CardType));
         setCards(fetchedCards);
+
+        const now = new Date();
+        const srsCards = fetchedCards.map(c => ({
+            ...c,
+            nextReview: c.nextReview ? (c.nextReview as any).toDate() : now,
+        }));
+
+        const actualDue = srsCards.filter(c => c.nextReview <= now).length;
+        
+        const lastSessionCompletedAt = (deck as any)?.lastSessionCompletedAt;
+        let sessionSize = (deck as any)?.sessionSize;
+
+        if (lastSessionCompletedAt && isToday(lastSessionCompletedAt) && actualDue > 0) {
+            setDueCount(0);
+        } else if (sessionSize && actualDue > sessionSize) {
+            setDueCount(sessionSize);
+        } else {
+            setDueCount(actualDue);
+        }
+
         setIsLoading(false);
       });
     }
@@ -218,7 +223,7 @@ export default function DeckDetailPage() {
     getCards();
 
     return () => unsubCards && unsubCards();
-  }, [user, deckId, isBasicDeck]);
+  }, [user, deckId, isBasicDeck, deck]);
 
 
   const [deckName, setDeckName] = useState('');
@@ -360,7 +365,7 @@ export default function DeckDetailPage() {
           <p className="text-muted-foreground mt-1">{deck.description}</p>
         </div>
         <div className="flex gap-2">
-          <Button asChild>
+          <Button asChild disabled={dueCount === 0}>
             <Link href={`/decks/${deck.id}/study`}>
               <PlayCircle className="mr-2 h-4 w-4" />
               Study Deck
@@ -375,6 +380,7 @@ export default function DeckDetailPage() {
         cardCount={deck.cardCount} 
         sessionSize={(deck as any).sessionSize}
         lastSessionCompletedAt={(deck as any).lastSessionCompletedAt}
+        dueCount={dueCount}
       />
 
       <Tabs defaultValue="cards" className="w-full">

@@ -45,8 +45,16 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
     const cardsRef = collection(db, 'users', user.uid, 'decks', initialDeck.id, 'cards');
     
     const setupListeners = async () => {
-        const snapshot = await getDocs(cardsRef);
-        let allDeckCards: CardType[] = snapshot.docs.map(doc => doc.data() as CardType);
+        let allDeckCards: CardType[] = [];
+        try {
+            const snapshot = await getDocs(cardsRef);
+            allDeckCards = snapshot.docs.map(doc => doc.data() as CardType);
+            if (initialDeck.isCustom) {
+                setCardCount(snapshot.size);
+            }
+        } catch (e) {
+            console.error("Error fetching cards for deck card", e);
+        }
 
         if (allDeckCards.length === 0 && !initialDeck.isCustom) {
             allDeckCards = initialCards.filter(card => card.deckId === initialDeck.id).map(c => ({
@@ -55,14 +63,12 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
             nextReview: new Date()
             }));
         }
-
-        if (initialDeck.isCustom) {
-            setCardCount(snapshot.size);
-        } else {
+        
+        if (!initialDeck.isCustom) {
             setCardCount(initialDeck.cardCount);
         }
 
-        const updateCounts = (cards: CardType[]) => {
+        const updateCounts = (cards: CardType[], currentDeck: Deck) => {
             if (cards.length > 0) {
                 const now = new Date();
                 const srsCards = cards.map(c => ({
@@ -70,19 +76,15 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
                 srsLevel: c.srsLevel ?? 0,
                 nextReview: c.nextReview && typeof (c.nextReview as any).toDate === 'function' 
                                 ? (c.nextReview as any).toDate() 
-                                : new Date(c.nextReview || new Date()),
+                                : new Date(c.nextReview || now),
                 }));
         
                 const actualDue = srsCards.filter(c => c.nextReview <= now).length;
                 
-                let sessionSize = (deck as any).sessionSize;
-                const lastSessionCompletedAt = (deck as any).lastSessionCompletedAt;
-
-                if (sessionSize === undefined && cardCount >= 100) {
-                    sessionSize = 100;
-                }
+                let sessionSize = (currentDeck as any).sessionSize;
+                const lastSessionCompletedAt = (currentDeck as any).lastSessionCompletedAt;
                 
-                if (lastSessionCompletedAt && isToday(lastSessionCompletedAt) && sessionSize && actualDue > 0) {
+                if (lastSessionCompletedAt && isToday(lastSessionCompletedAt) && actualDue > 0) {
                     setDueCount(0);
                 } else if (sessionSize && actualDue > sessionSize) {
                     setDueCount(sessionSize);
@@ -96,24 +98,24 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
                 const mastered = srsCards.filter(c => (c.srsLevel || 0) >= MASTERY_THRESHOLD).length;
                 setMasteredCount(mastered);
             } else {
-                setDueCount(initialDeck.isCustom
-                    ? 0
-                    : initialDeck.cardCount > 100
-                      ? 100
-                      : initialDeck.cardCount);
+                setDueCount(0); // If no cards, nothing is due
                 setLearningCount(0);
                 setMasteredCount(0);
             }
         }
-
-        updateCounts(allDeckCards); // Initial update
+        
+        updateCounts(allDeckCards, deck);
 
         const unsubscribeCards = onSnapshot(query(cardsRef), (snapshot) => {
             const updatedCards = snapshot.docs.map(doc => doc.data() as CardType);
-            updateCounts(updatedCards);
-             if (initialDeck.isCustom) {
+            if (initialDeck.isCustom) {
                 setCardCount(snapshot.size);
             }
+            // We need the latest deck state for accurate due count
+            setDeck(prevDeck => {
+                updateCounts(updatedCards, prevDeck);
+                return prevDeck;
+            });
         });
 
         return unsubscribeCards;
@@ -125,7 +127,39 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
       unsubDeck();
       unsubscribePromise.then(unsub => unsub && unsub());
     }
-  }, [user, initialDeck, deck, cardCount]);
+  }, [user, initialDeck.id]); // Rerun when deck or user changes
+
+  useEffect(() => {
+    // This effect ensures due count is recalculated when the deck state changes (e.g., lastSessionCompletedAt)
+    // We pass a dummy card list because the cards themselves haven't changed, just the deck properties.
+    const cardsColRef = collection(db, 'users', user.uid, 'decks', initialDeck.id, 'cards');
+    getDocs(cardsColRef).then(snapshot => {
+        const allDeckCards = snapshot.docs.map(doc => doc.data() as CardType);
+        
+        const now = new Date();
+        const srsCards = allDeckCards.map(c => ({
+        ...c,
+        srsLevel: c.srsLevel ?? 0,
+        nextReview: c.nextReview && typeof (c.nextReview as any).toDate === 'function' 
+                        ? (c.nextReview as any).toDate() 
+                        : new Date(c.nextReview || now),
+        }));
+
+        const actualDue = srsCards.filter(c => c.nextReview <= now).length;
+        
+        let sessionSize = (deck as any).sessionSize;
+        const lastSessionCompletedAt = (deck as any).lastSessionCompletedAt;
+        
+        if (lastSessionCompletedAt && isToday(lastSessionCompletedAt) && actualDue > 0) {
+            setDueCount(0);
+        } else if (sessionSize && actualDue > sessionSize) {
+            setDueCount(sessionSize);
+        } else {
+            setDueCount(actualDue);
+        }
+    })
+  }, [deck, user, initialDeck.id]);
+
 
   const learningPercentage = cardCount > 0 ? (learningCount / cardCount) * 100 : 0;
   const masteredPercentage = cardCount > 0 ? (masteredCount / cardCount) * 100 : 0;
@@ -184,7 +218,7 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
             <span>{cardCount} cards</span>
           </div>
         </div>
-        <Button asChild size="sm" onClick={(e) => e.stopPropagation()} className="shrink-0">
+        <Button asChild size="sm" onClick={(e) => e.stopPropagation()} className="shrink-0" disabled={dueCount === 0}>
           <Link href={`/decks/${deck.id}/study`}>Study</Link>
         </Button>
       </CardFooter>

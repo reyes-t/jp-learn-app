@@ -174,13 +174,13 @@ export default function StudyPage() {
     
     useEffect(() => {
         const markSessionComplete = async () => {
-            if (isFinished && user && deck) {
+            if (isFinished && user && deckId) {
                  const deckRef = doc(db, 'users', user.uid, 'decks', deckId);
                  await updateDoc(deckRef, { lastSessionCompletedAt: new Date() });
             }
         }
         markSessionComplete();
-    }, [isFinished, user, deck, deckId]);
+    }, [isFinished, user, deckId]);
 
 
     if (isLoading) {
