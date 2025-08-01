@@ -43,6 +43,8 @@ export default function StudyPage() {
     const [sessionCorrect, setSessionCorrect] = useState(0);
     const [sessionIncorrect, setSessionIncorrect] = useState(0);
     const [showAnswer, setShowAnswer] = useState(false);
+    const [flashcardKey, setFlashcardKey] = useState(0);
+
 
     // Load initial data and set up the study session
     useEffect(() => {
@@ -159,6 +161,7 @@ export default function StudyPage() {
         }
 
         setShowAnswer(false);
+        setFlashcardKey(prev => prev + 1); // Force remount of Flashcard component
     };
 
     const totalDueCount = useMemo(() => {
@@ -294,7 +297,7 @@ export default function StudyPage() {
             {currentCard ? (
                 <>
                     <Flashcard
-                        key={currentCard.id}
+                        key={flashcardKey}
                         front={currentCard.front}
                         back={currentCard.back}
                         onFlip={() => setShowAnswer(true)}
@@ -328,3 +331,5 @@ export default function StudyPage() {
         </div>
     );
 }
+
+    
