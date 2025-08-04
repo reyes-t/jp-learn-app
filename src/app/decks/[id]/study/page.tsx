@@ -13,7 +13,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, getDocs, collection, query, where, updateDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, query, where, updateDoc, writeBatch, setDoc } from 'firebase/firestore';
+import { isToday } from 'date-fns';
 
 
 // SRS Intervals in days for each level
@@ -33,6 +34,7 @@ export default function StudyPage() {
     const [deck, setDeck] = useState<Deck | undefined>(undefined);
     const [allCards, setAllCards] = useState<CardType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [totalDueCount, setTotalDueCount] = useState<number | null>(null);
 
     // State for the current session
     const [sessionQueue, setSessionQueue] = useState<CardType[]>([]);
@@ -59,10 +61,15 @@ export default function StudyPage() {
             
             const basicDeckInfo = initialDecks.find(d => d.id === deckId);
 
-            if (deckSnap.exists()) {
-                currentDeckData = { ...basicDeckInfo, ...deckSnap.data() } as Deck;
+             if (deckSnap.exists()) {
+                const data = deckSnap.data();
+                const lastSessionCompletedAt = data.lastSessionCompletedAt ? data.lastSessionCompletedAt.toDate() : null;
+                currentDeckData = { ...basicDeckInfo, ...data, lastSessionCompletedAt } as Deck;
             } else if (isBasic) {
-                currentDeckData = basicDeckInfo;
+                // If it doesn't exist, create it with default data for the user
+                const deckToCreate = { ...basicDeckInfo!, id: deckId };
+                await setDoc(deckRef, deckToCreate, { merge: true });
+                currentDeckData = deckToCreate;
             }
             
             if (!currentDeckData) {
@@ -81,6 +88,8 @@ export default function StudyPage() {
                 
                 if (originalCards.length === 0) {
                      console.warn(`No initial cards found for deck ${deckId}`);
+                     setAllCards([]);
+                     setTotalDueCount(0);
                      setIsLoading(false);
                      return;
                 }
@@ -104,17 +113,21 @@ export default function StudyPage() {
             setAllCards(cardsWithSrs);
 
             const dueCards = cardsWithSrs
-                .filter(card => new Date(card.nextReview) <= now)
-                .sort(() => Math.random() - 0.5);
-
-            let sessionSize = (currentDeckData as any).sessionSize;
-            if (sessionSize === undefined && currentDeckData.cardCount >= 100) {
-                sessionSize = 100;
+                .filter(card => new Date(card.nextReview) <= now);
+            
+            const lastSessionCompletedAt = (currentDeckData as any).lastSessionCompletedAt;
+            if (lastSessionCompletedAt && isToday(lastSessionCompletedAt)) {
+                setTotalDueCount(0);
+                setIsLoading(false);
+                return;
             }
 
+            let sessionSize = (currentDeckData as any).sessionSize;
             const session = sessionSize && dueCards.length > sessionSize ? dueCards.slice(0, sessionSize) : dueCards;
+            
             setSessionQueue(session);
             setInitialSessionSize(session.length);
+            setTotalDueCount(session.length);
             setIsLoading(false);
         }
 
@@ -163,11 +176,6 @@ export default function StudyPage() {
         setShowAnswer(false);
         setFlashcardKey(prev => prev + 1); // Force remount of Flashcard component
     };
-
-    const totalDueCount = useMemo(() => {
-        const now = new Date();
-        return allCards.filter(card => new Date((card.nextReview as any)) <= now).length;
-    }, [allCards]);
 
     const resetStudySession = () => {
         window.location.reload();
@@ -331,5 +339,7 @@ export default function StudyPage() {
         </div>
     );
 }
+
+    
 
     
