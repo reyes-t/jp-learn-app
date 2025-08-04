@@ -226,7 +226,7 @@ export default function StudyPage() {
                     </CardContent>
                     <CardFooter className="flex-col gap-4">
                         <Button variant="outline" asChild>
-                            <Link href={`/decks/${deckId}`}>Back to Deck</Link>
+                            <Link href={`/decks`}>Back to Decks</Link>
                         </Button>
                     </CardFooter>
                 </Card>
@@ -246,7 +246,7 @@ export default function StudyPage() {
                     </CardContent>
                     <CardFooter className="flex-col gap-4">
                         <Button variant="outline" asChild>
-                            <Link href={`/decks/${deckId}`}>Back to Deck</Link>
+                            <Link href={`/decks`}>Back to Decks</Link>
                         </Button>
                     </CardFooter>
                 </Card>
@@ -339,6 +339,8 @@ export default function StudyPage() {
         </div>
     );
 }
+
+    
 
     
 
