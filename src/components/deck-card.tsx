@@ -131,6 +131,7 @@ export function DeckCard({ deck: initialDeck }: DeckCardProps) {
   }, [user, initialDeck.id]); // Rerun when deck or user changes
 
   useEffect(() => {
+    if (!user) return;
     // This effect ensures due count is recalculated when the deck state changes (e.g., lastSessionCompletedAt)
     // We pass a dummy card list because the cards themselves haven't changed, just the deck properties.
     const cardsColRef = collection(db, 'users', user.uid, 'decks', initialDeck.id, 'cards');
