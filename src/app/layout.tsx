@@ -1,7 +1,7 @@
 
 "use client"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   BookOpen,
   FileQuestion,
@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils"
 
 function AppContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter();
   const { user, loading } = useAuth();
   const { setOpenMobile } = useSidebar();
   
@@ -42,6 +43,16 @@ function AppContent({ children }: { children: React.ReactNode }) {
   }, [pathname, setOpenMobile]);
 
 
+  const noNavRoutes = ['/login', '/register', '/admin'];
+  const isAuthPage = noNavRoutes.includes(pathname);
+  const showNav = user && !isAuthPage;
+  const isAdmin = user?.email === 'admin@sakuralearn.com';
+  
+  // This logic prevents flicker on logout. 
+  // If we are loading, we show a loader.
+  // If we are not loading, but there's no user and we are NOT on an auth page,
+  // it means we are about to be redirected. So we render null to avoid showing
+  // the logged-out page for a split second.
   if (loading) {
     return (
         <div className="flex items-center justify-center h-screen">
@@ -50,9 +61,9 @@ function AppContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const noNavRoutes = ['/login', '/register', '/admin'];
-  const showNav = user && !noNavRoutes.includes(pathname);
-  const isAdmin = user?.email === 'admin@sakuralearn.com';
+  if (!user && !isAuthPage) {
+    return null; 
+  }
 
 
   return (
